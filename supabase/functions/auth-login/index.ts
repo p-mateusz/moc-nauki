@@ -39,8 +39,9 @@ Deno.serve(async (req) => {
     const adminPassword = Deno.env.get("ADMIN_PASSWORD");
     const adminEmail = Deno.env.get("ADMIN_EMAIL") || "wieza@lovable.cloud";
     const adminName = Deno.env.get("ADMIN_NAME") || "Mateusz";
+    const ADMIN_USERNAME = adminName.trim().toLowerCase();
 
-    // Bootstrap admin (only if matching ADMIN_USERNAME and ADMIN_PASSWORD provided)
+    // Bootstrap admin (only if matching ADMIN_NAME and ADMIN_PASSWORD provided)
     if (normalizedUsername === ADMIN_USERNAME && adminPassword && password === adminPassword) {
       await supabase
         .from("user_accounts")
