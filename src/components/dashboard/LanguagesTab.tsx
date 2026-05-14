@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Trash2, AlertTriangle } from "lucide-react";
 import { t, type Language, LANGUAGE_META, DEFAULT_LANGUAGE_ORDER } from "@/lib/i18n";

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Filter, Plus, Trash2, Upload, X, Heart, Star, BookOpen, PenLine, ChevronDown, ChevronUp } from "lucide-react";
