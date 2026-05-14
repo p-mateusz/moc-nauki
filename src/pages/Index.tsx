@@ -293,10 +293,10 @@ const Index = () => {
               <p className="cookie-banner__text">
                 Używamy cookies, aby zapewnić Ci najlepsze doświadczenie.{" "}
                 <span
-                  onClick={() => openTermsDocument("privacy")}
+                  onClick={() => openTermsDocument("cookies")}
                   className="cookie-banner__link"
                 >
-                  Polityka prywatności
+                  Polityka cookies
                 </span>
               </p>
             </div>
