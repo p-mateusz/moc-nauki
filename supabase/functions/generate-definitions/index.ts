@@ -34,9 +34,12 @@ serve(async (req) => {
       });
     }
 
-    // Tymczasowo hardkodowany webhook n8n do tworzenia definicji fiszek.
-    // Zignoruj konfigurację app_settings dla webhook_languages.
-    const webhookUrl = "https://mateusz1234.app.n8n.cloud/webhook/7d73923d-05ab-482b-b453-8308ac693381";
+    const webhookUrl = Deno.env.get("N8N_DEFINITIONS_WEBHOOK");
+    if (!webhookUrl) {
+      return new Response(JSON.stringify({ error: "Service not configured" }), {
+        status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Format: {word1 | def1}, {word2 | -}, ...
     const formattedWords = (words || [])
