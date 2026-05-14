@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 // Mock supabase client used in the component
-vi.mock("@/integrations/supabase/client", () => ({
+vi.mock("@/lib/supabase", () => ({
   supabase: {
     from: () => ({ select: () => Promise.resolve({ data: [], error: null }) }),
     functions: { invoke: () => Promise.resolve({ error: null }) },

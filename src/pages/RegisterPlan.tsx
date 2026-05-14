@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 const STRIPE_LINK_30_DNI = "https://buy.stripe.com/5kQ4gy4Qy3321DB24Bco000";
 const STRIPE_LINK_90_DNI = "https://buy.stripe.com/bJe8wO3MufPOeqncJfco001";

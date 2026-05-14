@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 const MAX_RETRIES = 3;
 
 type RecState = "idle" | "recording" | "paused";

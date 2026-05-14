@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRoles } from "@/hooks/use-roles";
 import AvatarCropModal from "./AvatarCropModal";
