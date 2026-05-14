@@ -1,0 +1,1 @@
+UPDATE public.user_accounts SET username = 'mateusz' WHERE username = 'wieża';
