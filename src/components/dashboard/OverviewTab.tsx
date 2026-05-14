@@ -208,7 +208,6 @@ const OverviewTab = ({
     useState<Reminder | null>(null);
 
   const [showCompleted, setShowCompleted] = useState(false);
-  const [showCompletedMain, setShowCompletedMain] = useState(false);
 
   const [colorPickerListId, setColorPickerListId] = useState<string | null>(
     null
@@ -284,6 +283,28 @@ const OverviewTab = ({
 
     const sortOrder = remindersForList(activeList.id).length;
 
+    if (guestMode) {
+      const localReminder: Reminder = {
+        id: `guest-${Date.now()}`,
+        listId: activeList.id,
+        title: newTitle.trim(),
+        notes: newNotes.trim(),
+        completed: false,
+        dueDate: null,
+        priority: 0,
+        sortOrder,
+      };
+
+      setReminders((prev) => [...prev, localReminder]);
+
+      setNewTitle("");
+      setNewNotes("");
+
+      setTimeout(() => titleRef.current?.focus(), 50);
+
+      return;
+    }
+
     const { data, error } = await supabase
       .from("reminders")
       .insert({
@@ -327,10 +348,12 @@ const OverviewTab = ({
   const toggleCompleted = async (r: Reminder) => {
     const newVal = !r.completed;
 
-    await supabase
-      .from("reminders")
-      .update({ completed: newVal })
-      .eq("id", r.id);
+    if (!guestMode) {
+      await supabase
+        .from("reminders")
+        .update({ completed: newVal })
+        .eq("id", r.id);
+    }
 
     setReminders((prev) =>
       prev.map((x) =>
@@ -344,14 +367,16 @@ const OverviewTab = ({
       return;
     }
 
-    await supabase
-      .from("reminders")
-      .update({
-        title: editingReminder.title,
-        notes: editingReminder.notes,
-        due_date: editingReminder.dueDate || null,
-      })
-      .eq("id", editingReminder.id);
+    if (!guestMode) {
+      await supabase
+        .from("reminders")
+        .update({
+          title: editingReminder.title,
+          notes: editingReminder.notes,
+          due_date: editingReminder.dueDate || null,
+        })
+        .eq("id", editingReminder.id);
+    }
 
     setReminders((prev) =>
       prev.map((r) =>
@@ -369,15 +394,17 @@ const OverviewTab = ({
 
     setReminders((prev) => prev.filter((r) => r.id !== id));
 
-    const { error } = await supabase
-      .from("reminders")
-      .delete()
-      .eq("id", id);
+    if (!guestMode) {
+      const { error } = await supabase
+        .from("reminders")
+        .delete()
+        .eq("id", id);
 
-    if (error) {
-      setReminders(old);
-      toast.error("Nie udało się usunąć");
-      return;
+      if (error) {
+        setReminders(old);
+        toast.error("Nie udało się usunąć");
+        return;
+      }
     }
 
     toast.success("Usunięto");
@@ -387,10 +414,12 @@ const OverviewTab = ({
     listId: string,
     color: string
   ) => {
-    await supabase
-      .from("reminder_lists")
-      .update({ color })
-      .eq("id", listId);
+    if (!guestMode) {
+      await supabase
+        .from("reminder_lists")
+        .update({ color })
+        .eq("id", listId);
+    }
 
     setLists((prev) =>
       prev.map((l) =>
@@ -549,8 +578,39 @@ const OverviewTab = ({
         },
       ];
 
+      const demoRecentNotes: RecentNote[] = [
+        {
+          id: "demo-note-1",
+          title: "Fotosynteza",
+          sectionName: "Biologia",
+          notebookName: "Szkoła",
+          notebookColor: "#34d399",
+          modified: "15 maj",
+        },
+        {
+          id: "demo-note-2",
+          title: "Wzory skróconego mnożenia",
+          sectionName: "Matematyka",
+          notebookName: "Matura",
+          notebookColor: "#3b82f6",
+          modified: "14 maj",
+        },
+      ];
+
+      const demoActivity: string[] = [
+        todayISO(),
+        isoAddDays(todayISO(), -1),
+        isoAddDays(todayISO(), -2),
+        isoAddDays(todayISO(), -4),
+        isoAddDays(todayISO(), -6),
+        isoAddDays(todayISO(), -7),
+        isoAddDays(todayISO(), -8),
+      ];
+
       setLists(demoLists);
       setReminders(demoReminders);
+      setRecentNotes(demoRecentNotes);
+      setActivityDays(demoActivity);
 
       setLoading(false);
 
@@ -857,6 +917,75 @@ const OverviewTab = ({
 
   return (
     <div className="md-content">
+      {/* ─── HEADER ─── */}
+      <div
+        style={{
+          marginBottom: 24,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: "1.4rem",
+              fontWeight: 900,
+              color: "#fff",
+              marginBottom: 6,
+            }}
+          >
+            👋 Witaj, {userName}
+          </div>
+
+          <div
+            style={{
+              fontSize: ".85rem",
+              color: "#8899b4",
+            }}
+          >
+            Miło Cię znowu widzieć ✨
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          {onNavigateToCalendar && (
+            <button
+              onClick={onNavigateToCalendar}
+              style={quickButtonStyle}
+            >
+              📅 Kalendarz
+            </button>
+          )}
+
+          {onNavigateToTests && (
+            <button
+              onClick={onNavigateToTests}
+              style={quickButtonStyle}
+            >
+              📝 Testy
+            </button>
+          )}
+
+          {onNavigateToLanguagesTab && (
+            <button
+              onClick={onNavigateToLanguagesTab}
+              style={quickButtonStyle}
+            >
+              🌍 Języki
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* ─── REMINDERS ─── */}
       <div style={{ marginBottom: 24 }}>
         <div
@@ -1569,5 +1698,17 @@ const StreakStatCard = ({
     </div>
   </div>
 );
+
+const quickButtonStyle: React.CSSProperties = {
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.04)",
+  color: "#e2e8f0",
+  borderRadius: 10,
+  padding: "10px 14px",
+  cursor: "pointer",
+  fontSize: ".8rem",
+  fontWeight: 700,
+  transition: ".2s",
+};
 
 export default OverviewTab;
