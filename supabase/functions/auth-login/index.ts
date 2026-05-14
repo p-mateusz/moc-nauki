@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ADMIN_USERNAME = "wieża";
+
 
 async function getSessionTokens(supabaseUrl: string, anonKey: string, email: string, password: string) {
   const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
