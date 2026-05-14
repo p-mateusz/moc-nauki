@@ -62,7 +62,8 @@ const MocDashboard = () => {
   );
   useEffect(() => { localStorage.removeItem("userAvatarUrl"); }, []);
   const { role: serverRole } = useUserRole();
-  const userRole = serverRole || localStorage.getItem("userRole") || "uczeń";
+  // Server-verified role only — never trust localStorage for authorization
+  const userRole = serverRole ?? "uczeń";
   const [unreadCounts, setUnreadCounts] = useState({ teacher: 0, student: 0 });
   const [authReady, setAuthReady] = useState(false);
   const navigate = useNavigate();

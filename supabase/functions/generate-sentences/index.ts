@@ -49,8 +49,12 @@ serve(async (req) => {
       });
     }
 
-    // Tymczasowo hardkodowany webhook n8n do tworzenia zdań.
-    const webhookUrl = "https://mateusz1234.app.n8n.cloud/webhook/b99b2329-1d48-4325-a51e-531d5c045cf9";
+    const webhookUrl = Deno.env.get("N8N_SENTENCES_WEBHOOK");
+    if (!webhookUrl) {
+      return new Response(JSON.stringify({ error: "Service not configured" }), {
+        status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const formatted = words.map((w: any) => {
       const def = w.definition?.trim() ? w.definition.trim() : "-";
