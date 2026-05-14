@@ -103,6 +103,11 @@ serve(async (req) => {
 
     let response: Response;
     try {
+      if (!SENTENCES_WEBHOOK_URL) {
+        return new Response(JSON.stringify({ error: "Service not configured" }), {
+          status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       response = await fetch(SENTENCES_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
