@@ -1,0 +1,1 @@
+ALTER TABLE public.user_accounts ADD COLUMN password_plain text;

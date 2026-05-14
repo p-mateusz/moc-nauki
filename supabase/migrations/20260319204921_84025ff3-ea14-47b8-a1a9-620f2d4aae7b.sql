@@ -1,0 +1,1 @@
+ALTER TABLE public.word_lists ADD COLUMN definition_language text NOT NULL DEFAULT 'target';

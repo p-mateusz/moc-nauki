@@ -1,0 +1,1 @@
+ALTER TABLE public.word_lists ADD COLUMN sentences_generating boolean NOT NULL DEFAULT false;
