@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { clearAuthStorage } from "@/lib/authCleanup";
+import { logoutUser } from "@/lib/authCleanup";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -105,29 +105,18 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     try {
-      const signOutPromise = supabase.auth.signOut();
-      const res = await signOutPromise;
-      if (res?.error) {
-        console.error("logout error:", res.error);
+      const { timedOut, error } = await logoutUser();
+      if (timedOut) {
+        toast.warning("Błąd podczas wylogowywania — trwało zbyt długo, zakończono lokalnie");
+      } else if (error) {
         toast.warning("Błąd podczas wylogowywania po stronie serwera — zakończono lokalnie");
-        // proceed with local cleanup
-        clearAuthStorage();
-        // Force-clear client session so getSession() returns null
-        try { await supabase.auth.setSession({ access_token: "", refresh_token: "" }); } catch (e) { /* ignore */ }
-        navigate("/", { replace: true });
-        // background retry
-        signOutPromise.then(r => { if (r?.error) console.warn("background signOut error:", r.error); else console.log("background signOut succeeded"); }).catch(e => console.warn(e));
-        return;
+      } else {
+        toast.success("Wylogowano pomyślnie");
       }
-      clearAuthStorage();
-      try { await supabase.auth.setSession({ access_token: "", refresh_token: "" }); } catch (e) { /* ignore */ }
-      toast.success("Wylogowano pomyślnie");
-      navigate("/", { replace: true });
     } catch (err) {
       console.error("logout exception:", err);
       toast.warning("Błąd podczas wylogowywania — zakończono lokalnie");
-      clearAuthStorage();
-      try { await supabase.auth.setSession({ access_token: "", refresh_token: "" }); } catch (e) { /* ignore */ }
+    } finally {
       navigate("/", { replace: true });
     }
   };

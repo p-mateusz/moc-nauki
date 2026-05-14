@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useRoles } from "@/hooks/use-roles";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useAccessGuard } from "@/hooks/use-access-guard";
-import { clearAuthStorage } from "@/lib/authCleanup";
+import { clearAuthStorage, logoutUser } from "@/lib/authCleanup";
 import LanguagesTab from "@/components/dashboard/LanguagesTab";
 import NotesTab from "@/components/dashboard/NotesTab";
 import CalendarTab, { type CalEvent } from "@/components/dashboard/CalendarTab";
@@ -316,79 +316,35 @@ const MocDashboard = () => {
   }
 
   const handleLogout = async () => {
-    // Prevent race condition: don't allow multiple simultaneous logout attempts
     if (isLoggingOut) return;
 
     setIsLoggingOut(true);
     setShowLogout(false);
 
-    const TIMEOUT_MS = 20000; // 20s timeout to account for slow networks / broadcast channel issues
-    let timedOut = false;
+    // Reset UI state before logout to avoid stale state while navigating away
+    setActiveTab("overview");
+    setUnreadCounts({ teacher: 0, student: 0 });
+    setPendingEvents([]);
+    setInitialNotePageId(null);
+    setSidebarOpen(false);
+    setAvatarUrl(null);
 
     try {
       console.log("handleLogout: starting");
-
-      const signOutPromise = supabase.auth.signOut();
-      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ _timedOut: true }), TIMEOUT_MS));
-
-      // Wrap signOut result to a uniform shape so the timeout doesn't throw
-      const wrappedSignOut = signOutPromise.then(r => ({ result: r })).catch(e => ({ result: { error: e } }));
-      const raceResult = await Promise.race([wrappedSignOut, timeoutPromise]);
-
-      if ((raceResult as any)?._timedOut) {
-        timedOut = true;
-        console.warn("handleLogout: signOut timed out, proceeding with local cleanup");
-        toast.warning("Wylogowywanie trwało zbyt długo — kończę lokalnie");
-      } else {
-        const { result } = raceResult as any;
-        if (result?.error) {
-          console.error("supabase.auth.signOut error:", result.error);
-          toast.warning("Błąd podczas wylogowywania po stronie serwera — zakończono lokalnie");
-          // Attempt background retry but continue
-          (async () => {
-            try {
-              const r = await signOutPromise;
-              if (r?.error) console.warn("background signOut error:", r.error);
-              else console.log("background signOut succeeded");
-            } catch (e) {
-              console.warn("background signOut exception:", e);
-            }
-          })();
-        }
-      }
-
-      // Reset component state BEFORE clearing localStorage
-      setActiveTab("overview");
-      setUnreadCounts({ teacher: 0, student: 0 });
-      setPendingEvents([]);
-      setInitialNotePageId(null);
-      setSidebarOpen(false);
-      setAvatarUrl(null);
-
-      // Force-clear the Supabase client session so getSession() returns null immediately
-      try {
-        await supabase.auth.setSession({ access_token: "", refresh_token: "" });
-      } catch (e) {
-        console.warn("setSession clear failed:", e);
-      }
-
-      // Clean all auth-related localStorage (including sb-*-auth-token)
-      clearAuthStorage();
-
-      console.log("handleLogout: completed successfully", timedOut ? "(timed out)" : "");
-      if (!timedOut) toast.success("Wylogowano pomyślnie");
-      navigate("/", { replace: true });
-
-      // If we timed out, attempt a background signOut (best-effort)
+      const { timedOut, error } = await logoutUser();
       if (timedOut) {
-        signOutPromise.then((r: any) => {
-          if (r?.error) console.warn("background signOut error:", r.error);
-          else console.log("background signOut succeeded");
-        }).catch((e: any) => console.warn("background signOut exception:", e));
+        toast.warning("Wylogowywanie trwało zbyt długo — zakończono lokalnie");
+      } else if (error) {
+        toast.warning("Błąd podczas wylogowywania po stronie serwera — zakończono lokalnie");
+      } else {
+        toast.success("Wylogowano pomyślnie");
       }
+      navigate("/", { replace: true });
+      console.log("handleLogout: completed", timedOut ? "(timed out)" : error ? "(server error)" : "");
     } catch (err) {
       console.error("handleLogout unexpected exception:", err);
       toast.error("Błąd podczas wylogowywania (sprawdź konsolę)");
+      navigate("/", { replace: true });
     } finally {
       setIsLoggingOut(false);
     }

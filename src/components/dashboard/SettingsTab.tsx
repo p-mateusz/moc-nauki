@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRoles } from "@/hooks/use-roles";
-import { clearAuthStorage } from "@/lib/authCleanup";
+import { logoutUser } from "@/lib/authCleanup";
 import AvatarCropModal from "./AvatarCropModal";
 import { setAvatarCache } from "@/lib/avatarCache";
 import {
@@ -233,23 +233,11 @@ const SettingsTab = ({ onNavigateToFriends }: { onNavigateToFriends?: () => void
       await supabase.from("user_profiles").delete().eq("user_id", userId);
       await supabase.from("activity_days").delete().eq("user_id", userId);
       
-      // Sign out from auth (best-effort). If it fails, continue with local cleanup.
-      const signOutPromise = supabase.auth.signOut();
-      const signOutRes = await signOutPromise;
-      if (signOutRes?.error) {
-        console.error("signOut error:", signOutRes.error);
+      const { timedOut, error } = await logoutUser();
+      if (timedOut || error) {
+        console.warn("signOut after account delete failed or timed out", { timedOut, error });
         toast.warning("Błąd wylogowywania po usunięciu konta — zakończono lokalnie");
-        clearAuthStorage();
-        try { await supabase.auth.setSession({ access_token: "", refresh_token: "" }); } catch (e) { /* ignore */ }
-        navigate("/", { replace: true });
-        // background retry
-        signOutPromise.then(r => { if (r?.error) console.warn("background signOut error:", r.error); else console.log("background signOut succeeded"); }).catch(e => console.warn(e));
-        return;
       }
-
-      // Clear all localStorage and force client session clear
-      clearAuthStorage();
-      try { await supabase.auth.setSession({ access_token: "", refresh_token: "" }); } catch (e) { /* ignore */ }
 
       toast.success("Konto zostało trwale usunięte");
       navigate("/", { replace: true });

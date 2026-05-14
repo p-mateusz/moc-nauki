@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { clearAuthStorage } from "@/lib/authCleanup";
+import { logoutUser } from "@/lib/authCleanup";
 
 const features = [
   "Zautomatyzowane notatki AI z lekcji",
@@ -124,24 +124,16 @@ export default function Pricing() {
           </button>
           <button onClick={async () => { 
             try {
-              const signOutPromise = supabase.auth.signOut();
-              const res = await signOutPromise;
-              if (res?.error) {
-                console.error("logout error:", res.error);
-                toast.warning("Błąd podczas wylogowywania po stronie serwera — zakończono lokalnie");
-                clearAuthStorage();
-                navigate("/login", { replace: true });
-                // background retry
-                signOutPromise.then(r => { if (r?.error) console.warn("background signOut error:", r.error); else console.log("background signOut succeeded"); }).catch(e => console.warn(e));
-                return;
+              const { timedOut, error } = await logoutUser();
+              if (timedOut || error) {
+                toast.warning("Błąd podczas wylogowywania — zakończono lokalnie");
+              } else {
+                toast.success("Wylogowano pomyślnie");
               }
-              clearAuthStorage();
-              toast.success("Wylogowano pomyślnie");
-              navigate("/login", { replace: true });
             } catch (err) {
               console.error("logout error:", err);
               toast.warning("Błąd podczas wylogowywania — zakończono lokalnie");
-              clearAuthStorage();
+            } finally {
               navigate("/login", { replace: true });
             }
           }} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: ".85rem" }}>
