@@ -220,7 +220,7 @@ const DashboardView = ({ users, userName, dateStr, onSwitchTab, customRoles }: {
   const students = users.filter(u => u.role === "uczeń");
   const teachers = users.filter(u => u.role === "nauczyciel");
   const exempt = users.filter(u => u.fee_exempt);
-  const trials = users.filter(u => !u.fee_exempt && u.subscription_status === "trial");
+  const unpaid = users.filter(u => !u.fee_exempt && u.subscription_status !== "active");
   const recentUsers = [...users].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
 
   const stats = [
@@ -228,7 +228,7 @@ const DashboardView = ({ users, userName, dateStr, onSwitchTab, customRoles }: {
     { v: students.length, l: "Uczniowie", c: "#34d399" },
     { v: teachers.length, l: "Nauczyciele", c: "#fbbf24" },
     { v: exempt.length, l: "Zwolnieni z opłat", c: "#a78bfa" },
-    { v: trials.length, l: "Okres próbny", c: "#f472b6" },
+    { v: unpaid.length, l: "Nieopłacone", c: "#f472b6" },
   ];
 
   return (
