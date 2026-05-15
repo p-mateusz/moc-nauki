@@ -329,14 +329,17 @@ const UsersView = ({ users, allUsers, search, onSearch, onEdit, onDelete, onRefr
       updates.payment_method = null;
       updates.payment_date = null;
     } else {
-      updates.subscription_status = "trial";
-      updates.subscription_end_date = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      updates.subscription_status = "inactive";
+      updates.subscription_end_date = null;
     }
     try {
       await adminUpdateUser(user.id, updates);
       toast.success(newVal ? `Zwolniono „${user.username}" z opłat` : `Usunięto zwolnienie „${user.username}"`);
       onRefresh();
-    } catch (e: any) { toast.error(e?.message || "Błąd"); }
+    } catch (e: any) {
+      console.error("toggleFeeExempt error:", e);
+      toast.error(e?.message || "Błąd zmiany statusu zwolnienia");
+    }
   };
 
   const updatePaymentMethod = async (user: UserAccount, method: string) => {
