@@ -32,11 +32,20 @@ const Login = () => {
         body: { username: username.trim(), password },
       });
       if (error) {
-        const message = (error as any)?.context?.error || (error as any)?.message || "Nieprawidłowa nazwa użytkownika lub hasło";
+        let message = "Nieprawidłowa nazwa użytkownika lub hasło";
+        try {
+          const ctx = (error as any)?.context;
+          if (ctx && typeof ctx.json === "function") {
+            const body = await ctx.json();
+            if (body?.error) message = body.error;
+          } else if (ctx?.error) {
+            message = ctx.error;
+          }
+        } catch {}
         toast.error(message);
         return;
       }
-      if (data.error) {
+      if (data?.error) {
         toast.error(data.error);
         return;
       }
