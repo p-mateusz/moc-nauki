@@ -69,7 +69,7 @@ const Hero: React.FC<HeroProps> = ({ heroRef, featRef, priceRef, scrollTo, navig
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.6 }}
             >
-              Zapomnij o żmudnym przepisywaniu. Ucz się języków w mgnieniu oka dzięki pomocy AI. Nie przegap żadnego sprawdzianu ze inteligentnym kalendarzem - wszystko w jednej aplikacji.
+              Zapomnij o żmudnym przepisywaniu. Ucz się języków z pomocą AI. Nie przegap niczego z inteligentnym kalendarzem - wszystko w jednej aplikacji.
             </motion.p>
 
             <motion.div
