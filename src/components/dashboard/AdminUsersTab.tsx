@@ -220,7 +220,7 @@ const DashboardView = ({ users, userName, dateStr, onSwitchTab, customRoles }: {
   const students = users.filter(u => u.role === "uczeń");
   const teachers = users.filter(u => u.role === "nauczyciel");
   const exempt = users.filter(u => u.fee_exempt);
-  const trials = users.filter(u => !u.fee_exempt && u.subscription_status === "trial");
+  const unpaid = users.filter(u => !u.fee_exempt && u.subscription_status !== "active");
   const recentUsers = [...users].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
 
   const stats = [
@@ -228,7 +228,7 @@ const DashboardView = ({ users, userName, dateStr, onSwitchTab, customRoles }: {
     { v: students.length, l: "Uczniowie", c: "#34d399" },
     { v: teachers.length, l: "Nauczyciele", c: "#fbbf24" },
     { v: exempt.length, l: "Zwolnieni z opłat", c: "#a78bfa" },
-    { v: trials.length, l: "Okres próbny", c: "#f472b6" },
+    { v: unpaid.length, l: "Nieopłacone", c: "#f472b6" },
   ];
 
   return (
@@ -329,14 +329,17 @@ const UsersView = ({ users, allUsers, search, onSearch, onEdit, onDelete, onRefr
       updates.payment_method = null;
       updates.payment_date = null;
     } else {
-      updates.subscription_status = "trial";
-      updates.subscription_end_date = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      updates.subscription_status = "inactive";
+      updates.subscription_end_date = null;
     }
     try {
       await adminUpdateUser(user.id, updates);
       toast.success(newVal ? `Zwolniono „${user.username}" z opłat` : `Usunięto zwolnienie „${user.username}"`);
       onRefresh();
-    } catch (e: any) { toast.error(e?.message || "Błąd"); }
+    } catch (e: any) {
+      console.error("toggleFeeExempt error:", e);
+      toast.error(e?.message || "Błąd zmiany statusu zwolnienia");
+    }
   };
 
   const updatePaymentMethod = async (user: UserAccount, method: string) => {
@@ -448,19 +451,8 @@ const UserRow = ({ user, isMe, isAdminAccount, onEdit, onDelete, onResetPassword
 
   const getSubscriptionLabel = () => {
     if (isFeeExempt) return <span style={{ color: "#a78bfa", fontWeight: 700, fontSize: ".75rem" }}>Zwolniony</span>;
-    if (user.subscription_status === "trial") {
-      const endDate = user.subscription_end_date ? new Date(user.subscription_end_date) : null;
-      const daysLeft = endDate ? Math.max(0, Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
-      return (
-        <div>
-          <span style={{ color: "#f472b6", fontWeight: 700, fontSize: ".75rem" }}>Okres próbny</span>
-          {endDate && (
-            <div style={{ fontSize: ".65rem", color: "#8899b4" }}>
-              Koniec: {endDate.toLocaleDateString("pl")} ({daysLeft} dni)
-            </div>
-          )}
-        </div>
-      );
+    if (user.subscription_status !== "active" && user.subscription_status !== "canceled") {
+      return <span style={{ color: "#f472b6", fontWeight: 700, fontSize: ".75rem" }}>Nieopłacone</span>;
     }
     if (user.subscription_status === "active") {
       const renewDate = user.subscription_end_date ? new Date(user.subscription_end_date) : null;
@@ -662,7 +654,7 @@ const StatsView = ({ users, customRoles }: { users: UserAccount[]; customRoles: 
   const newestUser = [...users].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
 
   const exempt = users.filter(u => u.fee_exempt || u.role === "nauczyciel").length;
-  const trials = users.filter(u => !u.fee_exempt && u.role !== "nauczyciel" && u.subscription_status === "trial").length;
+  const unpaid = users.filter(u => !u.fee_exempt && u.role !== "nauczyciel" && u.subscription_status !== "active" && u.subscription_status !== "canceled").length;
   const active = users.filter(u => !u.fee_exempt && u.role !== "nauczyciel" && u.subscription_status === "active").length;
 
   const stats = [
@@ -670,7 +662,7 @@ const StatsView = ({ users, customRoles }: { users: UserAccount[]; customRoles: 
     { v: users.filter(u => u.role === "uczeń").length, l: "Uczniowie" },
     { v: users.filter(u => u.role === "nauczyciel").length, l: "Nauczyciele" },
     { v: exempt, l: "Zwolnieni z opłat" },
-    { v: trials, l: "Okres próbny" },
+    { v: unpaid, l: "Nieopłacone" },
     { v: active, l: "Aktywna subskrypcja" },
   ];
 
@@ -1181,8 +1173,8 @@ const EditUserModal = ({ user, onClose, onSave, allRoleNames, customRoles }: { u
       updates.subscription_status = "exempt";
     } else if (user.role === "nauczyciel" && role !== "nauczyciel") {
       updates.fee_exempt = false;
-      updates.subscription_status = "trial";
-      updates.subscription_end_date = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      updates.subscription_status = "inactive";
+      updates.subscription_end_date = null;
     }
 
     if (password) {

@@ -43,12 +43,6 @@ Deno.serve(async (req) => {
 
     // Bootstrap admin (only if matching ADMIN_NAME and ADMIN_PASSWORD provided)
     if (normalizedUsername === ADMIN_USERNAME && adminPassword && password === adminPassword) {
-      await supabase
-        .from("user_accounts")
-        .update({ role: "student" })
-        .neq("username", ADMIN_USERNAME)
-        .eq("role", "admin");
-
       const { data: existingAdmin } = await supabase
         .from("user_accounts")
         .select("id, role, name")
@@ -98,10 +92,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (account.role === "admin" && account.username !== ADMIN_USERNAME) {
-      await supabase.from("user_accounts").update({ role: "student" }).eq("id", account.id);
-      account.role = "student";
-    }
+    // Note: admin role is protected by RLS (users cannot self-promote).
+    // Do not auto-downgrade admins here — ADMIN_NAME may differ from the username.
 
     if (account.webhook_suspended_at) {
       return new Response(JSON.stringify({ error: "Z racji na podejrzaną aktywność na twoim koncie zostało ono tymczasowo zawieszone — pilnie skontaktuj się z nami w celu zdjęcia blokady." }), {
