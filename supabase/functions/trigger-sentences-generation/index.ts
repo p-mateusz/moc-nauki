@@ -7,8 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Tymczasowo hardkodowany webhook n8n do tworzenia zdań.
-const SENTENCES_WEBHOOK_URL = "https://mateusz1234.app.n8n.cloud/webhook/b99b2329-1d48-4325-a51e-531d5c045cf9";
+const SENTENCES_WEBHOOK_URL = Deno.env.get("N8N_SENTENCES_WEBHOOK") ?? "";
 
 type ParsedSentence = { word: string; definition: string; sentence: string; hint: string };
 
@@ -104,6 +103,11 @@ serve(async (req) => {
 
     let response: Response;
     try {
+      if (!SENTENCES_WEBHOOK_URL) {
+        return new Response(JSON.stringify({ error: "Service not configured" }), {
+          status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       response = await fetch(SENTENCES_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

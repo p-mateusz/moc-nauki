@@ -184,7 +184,7 @@ const TipsTab = ({ userId, isAdmin, guestMode }: TipsTabProps) => {
       title: title.trim(),
       description: description.trim(),
       url: normalizedUrl,
-      approved: isAdmin,
+      approved: false,
     });
 
     setSubmitting(false);
