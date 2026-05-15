@@ -42,15 +42,14 @@ const RecordingWidget = ({
 
   const [seconds, setSeconds] = useState(0);
 
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] =
+    useState(false);
 
-  const [sending, setSending] = useState(false);
+  const [sending, setSending] =
+    useState(false);
 
   const [targetInfo, setTargetInfo] =
     useState<string>("");
-
-  const [stealthMode, setStealthMode] =
-    useState(false);
 
   const mediaRecorderRef =
     useRef<MediaRecorder | null>(null);
@@ -173,7 +172,7 @@ const RecordingWidget = ({
       );
 
       setTimeout(() => {
-        setStealthMode(true);
+        setCollapsed(true);
       }, 10000);
     } catch (err: any) {
       toast.error(
@@ -259,8 +258,6 @@ const RecordingWidget = ({
 
     setSeconds(0);
 
-    setStealthMode(false);
-
     toast.info("Nagranie anulowane.");
   };
 
@@ -297,8 +294,6 @@ const RecordingWidget = ({
       setState("idle");
 
       setSeconds(0);
-
-      setStealthMode(false);
 
       if (finalSeconds < 3) {
         toast.warning(
@@ -697,44 +692,23 @@ const RecordingWidget = ({
     );
   }
 
-  if (collapsed) {
-    return (
-      <div
-        className="rec-btn recording"
-        onClick={() =>
-          setCollapsed(false)
-        }
-        style={{
-          position: "fixed",
-          bottom: 22,
-          right: 22,
-          zIndex: 400,
-          cursor: "pointer",
-        }}
-      >
-        <div className="rec-dot" />
-
-        <span>
-          {state === "paused"
-            ? `⏸ ${recTime}`
-            : `● ${recTime}`}
-        </span>
-      </div>
-    );
-  }
-
   return (
     <div
       onMouseEnter={(e) => {
-        if (stealthMode) {
+        if (collapsed) {
           e.currentTarget.style.opacity =
             "0.55";
         }
       }}
       onMouseLeave={(e) => {
-        if (stealthMode) {
+        if (collapsed) {
           e.currentTarget.style.opacity =
-            "0.18";
+            "0.16";
+        }
+      }}
+      onClick={() => {
+        if (collapsed) {
+          setCollapsed(false);
         }
       }}
       style={{
@@ -743,37 +717,37 @@ const RecordingWidget = ({
         right: 22,
         zIndex: 400,
 
-        background: stealthMode
-          ? "rgba(12,26,48,0.12)"
+        background: collapsed
+          ? "rgba(12,26,48,0.10)"
           : "#0c1a30",
 
-        border: stealthMode
-          ? "1px solid rgba(255,255,255,0.05)"
+        border: collapsed
+          ? "1px solid rgba(255,255,255,0.04)"
           : "1px solid rgba(248,113,113,0.4)",
 
         borderRadius: 14,
 
-        padding: stealthMode
-          ? "10px 12px"
+        padding: collapsed
+          ? "8px 12px"
           : "16px 20px",
 
-        width: stealthMode
-          ? 160
-          : 300,
+        width: collapsed ? 145 : 300,
 
-        boxShadow: stealthMode
+        boxShadow: collapsed
           ? "none"
           : "0 8px 30px rgba(0,0,0,0.4)",
 
-        backdropFilter: stealthMode
+        backdropFilter: collapsed
           ? "blur(2px)"
           : "blur(12px)",
 
-        opacity: stealthMode
-          ? 0.18
-          : 1,
+        opacity: collapsed ? 0.16 : 1,
 
         transition: "all .25s ease",
+
+        cursor: collapsed
+          ? "pointer"
+          : "default",
       }}
     >
       <div
@@ -783,7 +757,9 @@ const RecordingWidget = ({
           justifyContent:
             "space-between",
 
-          marginBottom: 10,
+          marginBottom: collapsed
+            ? 0
+            : 10,
         }}
       >
         <div
@@ -804,54 +780,26 @@ const RecordingWidget = ({
             }}
           />
 
-          <span
-            style={{
-              fontSize: ".82rem",
-              fontWeight: 800,
+          {!collapsed && (
+            <span
+              style={{
+                fontSize: ".82rem",
+                fontWeight: 800,
 
-              color:
-                state === "paused"
-                  ? "#fbbf24"
-                  : "#f87171",
-            }}
-          >
-            {state === "paused"
-              ? "Wstrzymane"
-              : "Słucham lekcji…"}
-          </span>
+                color:
+                  state === "paused"
+                    ? "#fbbf24"
+                    : "#f87171",
+              }}
+            >
+              {state === "paused"
+                ? "Wstrzymane"
+                : "Słucham lekcji…"}
+            </span>
+          )}
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 4,
-          }}
-        >
-          <button
-            onClick={() =>
-              setStealthMode(
-                !stealthMode
-              )
-            }
-            style={{
-              background: "none",
-              border: "none",
-
-              color: stealthMode
-                ? "#60a5fa"
-                : "#8899b4",
-
-              cursor: "pointer",
-
-              fontSize: ".9rem",
-
-              padding: "2px 6px",
-            }}
-            title="Tryb ukryty"
-          >
-            👁
-          </button>
-
+        {!collapsed && (
           <button
             onClick={() =>
               setCollapsed(true)
@@ -871,11 +819,11 @@ const RecordingWidget = ({
           >
             ▼
           </button>
-        </div>
+        )}
       </div>
 
       {targetInfo &&
-        !stealthMode && (
+        !collapsed && (
           <div
             style={{
               fontSize: ".72rem",
@@ -892,8 +840,8 @@ const RecordingWidget = ({
 
       <div
         style={{
-          fontSize: stealthMode
-            ? "1rem"
+          fontSize: collapsed
+            ? ".92rem"
             : "1.6rem",
 
           fontWeight: 900,
@@ -908,15 +856,15 @@ const RecordingWidget = ({
 
           textAlign: "center",
 
-          margin: stealthMode
-            ? "4px 0"
+          margin: collapsed
+            ? "0"
             : "8px 0 14px",
         }}
       >
         {recTime}
       </div>
 
-      {stealthMode && (
+      {collapsed && (
         <div
           style={{
             textAlign: "center",
@@ -926,7 +874,7 @@ const RecordingWidget = ({
             color:
               "rgba(255,255,255,0.45)",
 
-            marginTop: -4,
+            marginTop: -2,
 
             letterSpacing: ".5px",
           }}
@@ -935,7 +883,7 @@ const RecordingWidget = ({
         </div>
       )}
 
-      {!stealthMode && (
+      {!collapsed && (
         <div
           style={{
             height: 24,
@@ -993,7 +941,7 @@ const RecordingWidget = ({
         </div>
       )}
 
-      {!stealthMode && (
+      {!collapsed && (
         <>
           <div
             style={{
