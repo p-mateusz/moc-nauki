@@ -37,12 +37,12 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const adminPassword = Deno.env.get("ADMIN_PASSWORD");
-    const adminEmail = Deno.env.get("ADMIN_EMAIL") || "wieza@lovable.cloud";
-    const adminName = Deno.env.get("ADMIN_NAME") || "Mateusz";
-    const ADMIN_USERNAME = adminName.trim().toLowerCase();
+    const adminEmail = Deno.env.get("ADMIN_EMAIL");
+    const adminName = Deno.env.get("ADMIN_NAME");
+    const ADMIN_USERNAME = adminName ? adminName.trim().toLowerCase() : null;
 
     // Bootstrap admin (only if matching ADMIN_NAME and ADMIN_PASSWORD provided)
-    if (normalizedUsername === ADMIN_USERNAME && adminPassword && password === adminPassword) {
+    if (ADMIN_USERNAME && adminEmail && adminPassword && normalizedUsername === ADMIN_USERNAME && password === adminPassword) {
       const { data: existingAdmin } = await supabase
         .from("user_accounts")
         .select("id, role, name")
