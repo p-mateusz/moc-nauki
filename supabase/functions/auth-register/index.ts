@@ -85,12 +85,14 @@ Deno.serve(async (req) => {
     });
 
     if (authError) {
-      if (authError.message?.includes("already been registered")) {
+      console.error("auth.admin.createUser error:", authError);
+      const msg = authError.message || "";
+      if (msg.includes("already been registered") || msg.includes("already registered") || msg.toLowerCase().includes("already exists")) {
         return new Response(JSON.stringify({ error: "Ten email jest już zajęty" }), {
           status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      return new Response(JSON.stringify({ error: "Błąd tworzenia konta" }), {
+      return new Response(JSON.stringify({ error: `Błąd tworzenia konta: ${msg}` }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -137,8 +139,7 @@ Deno.serve(async (req) => {
     
     await supabase
       .from("app_settings")
-      .upsert({ key: "registered_users_count", value: newCount.toString() })
-      .eq("key", "registered_users_count");
+      .upsert({ key: "registered_users_count", value: newCount.toString() }, { onConflict: "key" });
 
     const tokenRes = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
       method: "POST",
@@ -159,7 +160,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: unknown) {
-    return new Response(JSON.stringify({ error: "Wystąpił błąd serwera" }), {
+    console.error("auth-register fatal:", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    return new Response(JSON.stringify({ error: `Wystąpił błąd serwera: ${msg}` }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
