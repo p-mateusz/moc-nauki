@@ -1173,8 +1173,8 @@ const EditUserModal = ({ user, onClose, onSave, allRoleNames, customRoles }: { u
       updates.subscription_status = "exempt";
     } else if (user.role === "nauczyciel" && role !== "nauczyciel") {
       updates.fee_exempt = false;
-      updates.subscription_status = "trial";
-      updates.subscription_end_date = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      updates.subscription_status = "inactive";
+      updates.subscription_end_date = null;
     }
 
     if (password) {
