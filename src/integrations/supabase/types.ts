@@ -974,6 +974,24 @@ export type Database = {
       }
     }
     Views: {
+      app_settings_public: {
+        Row: {
+          key: string | null
+          updated_at: string | null
+          value: string | null
+        }
+        Insert: {
+          key?: string | null
+          updated_at?: string | null
+          value?: string | null
+        }
+        Update: {
+          key?: string | null
+          updated_at?: string | null
+          value?: string | null
+        }
+        Relationships: []
+      }
       user_accounts_public: {
         Row: {
           created_at: string | null
