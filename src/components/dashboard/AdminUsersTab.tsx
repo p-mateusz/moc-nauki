@@ -654,7 +654,7 @@ const StatsView = ({ users, customRoles }: { users: UserAccount[]; customRoles: 
   const newestUser = [...users].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
 
   const exempt = users.filter(u => u.fee_exempt || u.role === "nauczyciel").length;
-  const trials = users.filter(u => !u.fee_exempt && u.role !== "nauczyciel" && u.subscription_status === "trial").length;
+  const unpaid = users.filter(u => !u.fee_exempt && u.role !== "nauczyciel" && u.subscription_status !== "active" && u.subscription_status !== "canceled").length;
   const active = users.filter(u => !u.fee_exempt && u.role !== "nauczyciel" && u.subscription_status === "active").length;
 
   const stats = [
@@ -662,7 +662,7 @@ const StatsView = ({ users, customRoles }: { users: UserAccount[]; customRoles: 
     { v: users.filter(u => u.role === "uczeń").length, l: "Uczniowie" },
     { v: users.filter(u => u.role === "nauczyciel").length, l: "Nauczyciele" },
     { v: exempt, l: "Zwolnieni z opłat" },
-    { v: trials, l: "Okres próbny" },
+    { v: unpaid, l: "Nieopłacone" },
     { v: active, l: "Aktywna subskrypcja" },
   ];
 
