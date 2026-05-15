@@ -71,9 +71,9 @@ serve(async (req) => {
     return new Response(JSON.stringify({ events: Array.isArray(events) ? events : [] }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e) {
-    console.error("extract-events error:", e);
-    return new Response(JSON.stringify({ error: "Operacja nie powiodła się — spróbuj ponownie" }), {
+  } catch (e: any) {
+    console.error("extract-events error:", e?.message, e?.stack);
+    return new Response(JSON.stringify({ error: e?.message || "Operacja nie powiodła się — spróbuj ponownie" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
