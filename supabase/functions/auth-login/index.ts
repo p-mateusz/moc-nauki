@@ -43,12 +43,6 @@ Deno.serve(async (req) => {
 
     // Bootstrap admin (only if matching ADMIN_NAME and ADMIN_PASSWORD provided)
     if (normalizedUsername === ADMIN_USERNAME && adminPassword && password === adminPassword) {
-      await supabase
-        .from("user_accounts")
-        .update({ role: "student" })
-        .neq("username", ADMIN_USERNAME)
-        .eq("role", "admin");
-
       const { data: existingAdmin } = await supabase
         .from("user_accounts")
         .select("id, role, name")
