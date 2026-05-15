@@ -61,9 +61,23 @@ serve(async (req) => {
       throw fetchErr;
     }
 
-    if (!response.ok) throw new Error(`Webhook error: ${response.status}`);
+    if (!response.ok) {
+      console.warn("extract-events webhook returned non-OK:", response.status);
+      return new Response(JSON.stringify({ events: [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    const data = await response.json();
+    let data: any = {};
+    try {
+      const text = await response.text();
+      data = text ? JSON.parse(text) : {};
+    } catch (parseErr) {
+      console.warn("extract-events: failed to parse webhook response", parseErr);
+      return new Response(JSON.stringify({ events: [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     let events = [];
     if (Array.isArray(data)) events = data;
     else if (data.events) events = data.events;
