@@ -25,11 +25,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (username.trim().toLowerCase() === ADMIN_USERNAME) {
-      return new Response(JSON.stringify({ error: "Nazwa użytkownika 'Wieża' jest zarezerwowana" }), {
-        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
