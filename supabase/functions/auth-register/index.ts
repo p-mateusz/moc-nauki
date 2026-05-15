@@ -139,8 +139,7 @@ Deno.serve(async (req) => {
     
     await supabase
       .from("app_settings")
-      .upsert({ key: "registered_users_count", value: newCount.toString() })
-      .eq("key", "registered_users_count");
+      .upsert({ key: "registered_users_count", value: newCount.toString() }, { onConflict: "key" });
 
     const tokenRes = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
       method: "POST",
