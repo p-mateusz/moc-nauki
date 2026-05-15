@@ -451,19 +451,8 @@ const UserRow = ({ user, isMe, isAdminAccount, onEdit, onDelete, onResetPassword
 
   const getSubscriptionLabel = () => {
     if (isFeeExempt) return <span style={{ color: "#a78bfa", fontWeight: 700, fontSize: ".75rem" }}>Zwolniony</span>;
-    if (user.subscription_status === "trial") {
-      const endDate = user.subscription_end_date ? new Date(user.subscription_end_date) : null;
-      const daysLeft = endDate ? Math.max(0, Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
-      return (
-        <div>
-          <span style={{ color: "#f472b6", fontWeight: 700, fontSize: ".75rem" }}>Okres próbny</span>
-          {endDate && (
-            <div style={{ fontSize: ".65rem", color: "#8899b4" }}>
-              Koniec: {endDate.toLocaleDateString("pl")} ({daysLeft} dni)
-            </div>
-          )}
-        </div>
-      );
+    if (user.subscription_status !== "active" && user.subscription_status !== "canceled") {
+      return <span style={{ color: "#f472b6", fontWeight: 700, fontSize: ".75rem" }}>Nieopłacone</span>;
     }
     if (user.subscription_status === "active") {
       const renewDate = user.subscription_end_date ? new Date(user.subscription_end_date) : null;
