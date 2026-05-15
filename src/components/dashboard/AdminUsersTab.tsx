@@ -1340,7 +1340,7 @@ const NewUserModal = ({ onClose, onSave, allRoleNames, customRoles }: { onClose:
         </div>
         <div className="admin-fg2">
           <div className="admin-fg">
-            <label>Login (@) * <span style={{ fontSize: ".65rem", opacity: 0.6 }}>nie może być "Wieża"</span></label>
+            <label>Login (@) * </label>
             <input value={username} onChange={e => setUsername(e.target.value)} maxLength={25} placeholder="np. jan_k" />
           </div>
           <div className="admin-fg">
