@@ -354,7 +354,8 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     setViewMode("browse");
   };
 
-  const selectPage = (pageId: string) => {
+  const selectPage = async (pageId: string) => {
+    await flushSavePage();
     setActivePageId(pageId);
     if (activeNb) {
       for (const sec of activeNb.sections) {
