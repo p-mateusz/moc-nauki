@@ -454,31 +454,41 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
 
   // ── CRUD ──
   const saveEventToDB = async (ev: CalendarEvent, isEdit: boolean) => {
+    // All these columns are NOT NULL in DB (with '' defaults) — coerce
+    // undefined/null to '' so inserts never fail with NOT NULL violations.
     const row: any = {
       user_id: userId,
       name: ev.title,
-      date: ev.start,
-      time: ev.startTime,
-      end_date: ev.end,
-      end_time: ev.endTime,
-      all_day: ev.allDay,
-      location: ev.location,
-      description: ev.desc,
-      repeat_type: ev.repeat,
-      repeat_end: ev.repeatEnd,
+      date: ev.start || "",
+      time: ev.startTime || "",
+      end_date: ev.end || ev.start || "",
+      end_time: ev.endTime || "",
+      all_day: !!ev.allDay,
+      location: ev.location || "",
+      description: ev.desc || "",
+      repeat_type: ev.repeat || "none",
+      repeat_end: ev.repeatEnd || "",
       calendar_id: ev.calId || null,
       auto_added: false,
       type: "inne",
       subject: "",
-      note: ev.desc,
+      note: ev.desc || "",
     };
     if (isEdit) {
       const { error } = await supabase.from("calendar_events").update(row).eq("id", ev.id);
-      if (error) { toast.error("Błąd zapisu"); return null; }
+      if (error) {
+        console.error("calendar_events update error:", error);
+        toast.error(`Błąd zapisu wydarzenia: ${error.message}`);
+        return null;
+      }
       return ev;
     } else {
       const { data, error } = await supabase.from("calendar_events").insert(row).select().single();
-      if (error || !data) { toast.error("Błąd zapisu"); return null; }
+      if (error || !data) {
+        console.error("calendar_events insert error:", error);
+        toast.error(`Błąd zapisu wydarzenia: ${error?.message || "nieznany błąd"}`);
+        return null;
+      }
       return { ...ev, id: data.id };
     }
   };
