@@ -144,10 +144,18 @@ export async function deleteSolution(testId: string, solutionId: string) {
   await supabase.from("tests").update({ solutions } as any).eq("id", testId);
 }
 
-export async function uploadTestImage(file: File, testId: string): Promise<string | null> {
-  const ext = file.name.split(".").pop() || "jpg";
-  const path = `tests/${testId}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from("avatars").upload(path, file);
+export async function uploadTestImage(file: File, testId: string, userId?: string): Promise<string | null> {
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  // Try authenticated user folder first (matches avatars bucket RLS which
+  // typically requires the first path segment to equal auth.uid()).
+  let uid = userId;
+  if (!uid) {
+    const { data: { user } } = await supabase.auth.getUser();
+    uid = user?.id;
+  }
+  if (!uid) { console.error("uploadTestImage: no auth user"); return null; }
+  const path = `${uid}/tests/${testId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: false, contentType: file.type || undefined });
   if (error) { console.error("uploadTestImage error:", error); return null; }
   const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
   return pub.publicUrl;
