@@ -55,39 +55,21 @@ export const useRoles = () => {
   const fetchRoles = useCallback(async () => {
     try {
       setLoading(true);
-      // Try with is_builtin sorting first
-      let query = supabase.from("custom_roles").select("*");
-      
-      try {
-        const { data, error: err } = await query
-          .order("is_builtin", { ascending: false })
-          .order("created_at", { ascending: true });
-        
-        if (err && (err.code === "42703" || err.message?.includes("is_builtin"))) {
-          // Column doesn't exist, fetch without sorting by is_builtin
-          const fallback = await supabase
-            .from("custom_roles")
-            .select("*")
-            .order("created_at", { ascending: true });
-          
-          if (fallback.error) throw fallback.error;
-          const processedData = (fallback.data || []).map(role => ({
-            ...role,
-            is_builtin: ["uczeń", "admin", "nauczyciel"].includes(role.name),
-          })) as Role[];
-          // Filter out old 'teacher' role if it exists (normalize to nauczyciel)
-          const filtered = processedData.filter(r => r.name !== 'teacher');
-          setRoles(mergeWithBuiltInRoles(filtered));
-        } else {
-          if (err) throw err;
-          // Filter out old 'teacher' role if it exists (normalize to nauczyciel)
-          const filtered = (data as Role[] || []).filter(r => r.name !== 'teacher');
-          setRoles(mergeWithBuiltInRoles(filtered));
-        }
-        setError(null);
-      } catch (innerErr) {
-        throw innerErr;
-      }
+      const { data, error: err } = await supabase
+        .from("custom_roles")
+        .select("id, name, color, created_at")
+        .order("created_at", { ascending: true });
+
+      if (err) throw err;
+
+      const processedData = (data || []).map(role => ({
+        ...role,
+        label: BUILT_IN_ROLE_DEFAULTS[role.name]?.label || role.name,
+        is_builtin: ["uczeń", "admin", "nauczyciel"].includes(role.name),
+      })) as Role[];
+      const filtered = processedData.filter(r => r.name !== 'teacher');
+      setRoles(mergeWithBuiltInRoles(filtered));
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch roles");
       console.error("Error fetching roles:", err);
