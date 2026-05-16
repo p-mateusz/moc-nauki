@@ -186,8 +186,15 @@ const TestsTab = ({ userName, guestMode }: Props) => {
     if (!test) { toast.error("Błąd tworzenia testu"); setPublishing(false); return; }
     if (ntImgFiles.length > 0) {
       const urls: string[] = [];
-      for (const file of ntImgFiles) { const url = await uploadTestImage(file, test.id); if (url) urls.push(url); }
-      if (urls.length > 0) await supabase.from("tests").update({ images: urls }).eq("id", test.id);
+      for (const file of ntImgFiles) {
+        const url = await uploadTestImage(file, test.id, userId);
+        if (url) urls.push(url);
+        else toast.error(`Nie udało się zapisać zdjęcia: ${file.name}`);
+      }
+      if (urls.length > 0) {
+        const { error } = await supabase.from("tests").update({ images: urls }).eq("id", test.id);
+        if (error) toast.error(`Błąd zapisu zdjęć: ${error.message}`);
+      }
     }
     setShowCreate(false);
     setNtTitle(""); setNtSubject(""); setNtKlasa(""); setNtScope("");
