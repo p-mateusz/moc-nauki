@@ -230,7 +230,12 @@ const TestsTab = ({ userName, guestMode }: Props) => {
   const submitSolutionPhoto = async (testId: string) => {
     if (!solImgFiles.length) { toast.warning("Dodaj przynajmniej jedno zdjęcie!"); return; }
     const urls: string[] = [];
-    for (const file of solImgFiles) { const url = await uploadTestImage(file, testId); if (url) urls.push(url); }
+    for (const file of solImgFiles) {
+      const url = await uploadTestImage(file, testId, userId);
+      if (url) urls.push(url);
+      else toast.error(`Nie udało się zapisać zdjęcia: ${file.name}`);
+    }
+    if (!urls.length) { toast.error("Żadne zdjęcie nie zostało zapisane."); return; }
     await addSolution(testId, { author_id: userId, author_name: userName, content: "", images: urls });
     setSolImgs([]); setSolImgFiles([]);
     toast.success("✅ Rozwiązanie dodane!");
