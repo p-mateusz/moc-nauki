@@ -354,7 +354,8 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     setViewMode("browse");
   };
 
-  const selectPage = (pageId: string) => {
+  const selectPage = async (pageId: string) => {
+    await flushSavePage();
     setActivePageId(pageId);
     if (activeNb) {
       for (const sec of activeNb.sections) {
@@ -367,13 +368,14 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     setViewMode("page");
   };
 
-  const goBackToBrowse = () => {
+  const goBackToBrowse = async () => {
+    // Flush any pending edits to DB before leaving the page view
+    await flushSavePage();
     // Before going back, check if current page has no title and no content — if so, delete it
     if (activePage && editorRef.current && titleRef.current) {
       const title = titleRef.current.value.trim();
       const content = editorRef.current.innerText.trim();
       if (!title && !content) {
-        // Delete empty page
         supabase.from("notebook_pages").delete().eq("id", activePage.id).then(() => {
           if (activeNb) {
             for (const sec of activeNb.sections) {
@@ -384,17 +386,42 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
           setNotebooks([...notebooks]);
         });
         toast.info("Pusta notatka usunięta.");
+      } else {
+        // Refresh list so the new title/content show in browse view
+        setNotebooks([...notebooks]);
       }
     }
     setActivePageId(null);
     setViewMode("browse");
   };
 
+  // Only re-initialize the editor when the actual page changes — NOT when
+  // its title/content change, otherwise innerHTML gets reset mid-typing and
+  // the user's just-typed characters (and cursor) are wiped.
   useEffect(() => {
     if (viewMode !== "page" || !activePage) return;
     if (titleRef.current) titleRef.current.value = activePage.title;
     if (editorRef.current) editorRef.current.innerHTML = DOMPurify.sanitize(activePage.content || "");
-  }, [viewMode, activePage?.id, activePage?.title, activePage?.content]);
+  }, [viewMode, activePage?.id]);
+
+  const flushSavePage = async () => {
+    clearTimeout(saveTimeout.current);
+    if (!activePage || !editorRef.current || !titleRef.current) return;
+    const newTitle = titleRef.current.value || "Bez tytułu";
+    const newContent = DOMPurify.sanitize(editorRef.current.innerHTML);
+    activePage.title = newTitle;
+    activePage.content = newContent;
+    activePage.modified = now();
+    const { error } = await supabase.from("notebook_pages").update({
+      title: newTitle,
+      content: newContent,
+      modified_at: new Date().toISOString(),
+    }).eq("id", activePage.id);
+    if (error) {
+      console.error("notebook_pages update error:", error);
+      toast.error(`Błąd zapisu notatki: ${error.message}`);
+    }
+  };
 
   const saveCurrentPage = () => {
     clearTimeout(saveTimeout.current);
@@ -406,13 +433,17 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
       activePage.title = newTitle;
       activePage.content = newContent;
       activePage.modified = now();
-      setNotebooks([...notebooks]);
 
-      await supabase.from("notebook_pages").update({
+      const { error } = await supabase.from("notebook_pages").update({
         title: newTitle,
         content: newContent,
         modified_at: new Date().toISOString(),
       }).eq("id", activePage.id);
+      if (error) {
+        console.error("notebook_pages update error:", error);
+        toast.error(`Błąd zapisu notatki: ${error.message}`);
+        return;
+      }
 
       // Auto-extract calendar events
       if (newContent.length > 100 && onEventsExtracted) {
