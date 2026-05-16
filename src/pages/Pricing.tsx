@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { logoutUser } from "@/lib/authCleanup";
+import { useAccessGuard } from "@/hooks/use-access-guard";
 
 const features = [
   "Zautomatyzowane notatki AI z lekcji",
@@ -18,6 +19,13 @@ export default function Pricing() {
   const navigate = useNavigate();
   const [isYearly, setIsYearly] = useState(false);
   const [loading, setLoading] = useState(false);
+  const access = useAccessGuard();
+
+  useEffect(() => {
+    if (!access.loading && access.hasAccess) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [access.loading, access.hasAccess, navigate]);
 
   const plan = isYearly
     ? { price: "89", period: "90 dni", saving: "Bez podpinania karty", key: "90" as const }
