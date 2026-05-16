@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 export interface AccessState {
   loading: boolean;
   hasAccess: boolean;
-  reason: "loading" | "admin" | "teacher" | "exempt" | "subscription" | "one_time" | "none";
+  reason: "loading" | "admin" | "teacher" | "exempt" | "subscription" | "one_time" | "none" | "error";
   account: {
     role: string | null;
     fee_exempt: boolean;
@@ -34,13 +34,18 @@ export function useAccessGuard(): AccessState {
         if (active) setState({ loading: false, hasAccess: false, reason: "none", account: null });
         return;
       }
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("user_accounts")
         .select("role, fee_exempt, subscription_status, subscription_expires_at, subscription_plan, cancel_at_period_end")
         .eq("id", uid)
         .maybeSingle();
 
       if (!active) return;
+      if (error) {
+        console.error("Unable to verify account access:", error);
+        setState({ loading: false, hasAccess: false, reason: "error", account: null });
+        return;
+      }
       if (!data) {
         setState({ loading: false, hasAccess: false, reason: "none", account: null });
         return;
