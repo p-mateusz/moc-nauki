@@ -367,13 +367,14 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     setViewMode("page");
   };
 
-  const goBackToBrowse = () => {
+  const goBackToBrowse = async () => {
+    // Flush any pending edits to DB before leaving the page view
+    await flushSavePage();
     // Before going back, check if current page has no title and no content — if so, delete it
     if (activePage && editorRef.current && titleRef.current) {
       const title = titleRef.current.value.trim();
       const content = editorRef.current.innerText.trim();
       if (!title && !content) {
-        // Delete empty page
         supabase.from("notebook_pages").delete().eq("id", activePage.id).then(() => {
           if (activeNb) {
             for (const sec of activeNb.sections) {
@@ -384,6 +385,9 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
           setNotebooks([...notebooks]);
         });
         toast.info("Pusta notatka usunięta.");
+      } else {
+        // Refresh list so the new title/content show in browse view
+        setNotebooks([...notebooks]);
       }
     }
     setActivePageId(null);
