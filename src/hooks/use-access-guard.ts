@@ -27,7 +27,12 @@ export function useAccessGuard(): AccessState {
 
   useEffect(() => {
     let active = true;
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
     const load = async () => {
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+        retryTimeout = null;
+      }
       if (active) {
         setState((prev) => ({ ...prev, loading: true, reason: prev.reason === "loading" ? "loading" : prev.reason }));
       }
@@ -52,6 +57,9 @@ export function useAccessGuard(): AccessState {
           reason: prev.hasAccess ? prev.reason : "error",
           account: prev.account,
         }));
+        retryTimeout = setTimeout(() => {
+          if (active) load();
+        }, 3000);
         return;
       }
       if (!data) {
@@ -103,7 +111,11 @@ export function useAccessGuard(): AccessState {
 
     load();
     const { data: sub } = supabase.auth.onAuthStateChange(() => load());
-    return () => { active = false; sub.subscription.unsubscribe(); };
+    return () => {
+      active = false;
+      if (retryTimeout) clearTimeout(retryTimeout);
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   return state;
