@@ -177,27 +177,46 @@ const MocDashboard = () => {
       navigate("/login");
       return;
     }
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setAuthReady(true);
-        supabase.from("user_profiles").select("avatar_url").eq("user_id", userId).maybeSingle().then(({ data }) => {
-          const url = data?.avatar_url || null;
-          setAvatarUrl(url);
-          if (avatarCacheKey) {
-            if (url) localStorage.setItem(avatarCacheKey, url);
-            else localStorage.removeItem(avatarCacheKey);
-          }
-        });
-      } else {
-        localStorage.removeItem("userId");
-        localStorage.removeItem("userName");
-        localStorage.removeItem("userUsername");
-        localStorage.removeItem("userRole");
-        localStorage.removeItem("guestMode");
-        localStorage.removeItem("guestListId");
-        navigate("/login");
-      }
-    });
+
+    // Optimistically render the dashboard — if we have a stored userId,
+    // we don't need to block on a network round-trip to Supabase.
+    setAuthReady(true);
+
+    // Verify session in the background with a hard timeout so a slow/failing
+    // backend never keeps the user stuck on a "Ładowanie..." splash.
+    const sessionPromise = supabase.auth.getSession();
+    const timeout = new Promise<{ data: { session: null }; timedOut: true }>((resolve) =>
+      setTimeout(() => resolve({ data: { session: null }, timedOut: true }), 4000),
+    );
+
+    Promise.race([sessionPromise, timeout])
+      .then((result: any) => {
+        if (result?.timedOut) return;
+        const session = result?.data?.session;
+        if (session) {
+          supabase.from("user_profiles").select("avatar_url").eq("user_id", userId).maybeSingle().then(({ data }) => {
+            const url = data?.avatar_url || null;
+            setAvatarUrl(url);
+            if (avatarCacheKey) {
+              try {
+                if (url) localStorage.setItem(avatarCacheKey, url);
+                else localStorage.removeItem(avatarCacheKey);
+              } catch {}
+            }
+          });
+        } else {
+          try {
+            localStorage.removeItem("userId");
+            localStorage.removeItem("userName");
+            localStorage.removeItem("userUsername");
+            localStorage.removeItem("userRole");
+            localStorage.removeItem("guestMode");
+            localStorage.removeItem("guestListId");
+          } catch {}
+          navigate("/login");
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Paywall — admin/nauczyciel zawsze, uczeń tylko z aktywnym dostępem
