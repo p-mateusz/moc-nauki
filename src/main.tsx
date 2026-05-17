@@ -3,6 +3,32 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
+const setupSafeLocalStorage = () => {
+  try {
+    if (window.localStorage) {
+      const testKey = "__mn_storage_test__";
+      window.localStorage.setItem(testKey, "1");
+      window.localStorage.removeItem(testKey);
+      return;
+    }
+  } catch {}
+
+  const memory = new Map<string, string>();
+  const fallbackStorage: Storage = {
+    get length() { return memory.size; },
+    clear: () => memory.clear(),
+    getItem: (key: string) => memory.get(key) ?? null,
+    key: (index: number) => Array.from(memory.keys())[index] ?? null,
+    removeItem: (key: string) => { memory.delete(key); },
+    setItem: (key: string, value: string) => { memory.set(key, String(value)); },
+  };
+
+  Object.defineProperty(window, "localStorage", {
+    value: fallbackStorage,
+    configurable: true,
+  });
+};
+
 const setupViewportHeight = () => {
   const vh = window.innerHeight * 0.01;
   document.documentElement.style.setProperty("--vh", `${vh}px`);
@@ -59,6 +85,7 @@ if (!rootElement) {
 }
 
 if (typeof window !== "undefined") {
+  setupSafeLocalStorage();
   setupViewportHeight();
   window.addEventListener("resize", setupViewportHeight);
   window.addEventListener("orientationchange", () => {
