@@ -50,25 +50,41 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!existingAdmin) {
-        const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+        // Try to find existing auth user by email first
+        let authUserId: string | null = null;
+        const { data: created, error: authError } = await supabase.auth.admin.createUser({
           email: adminEmail,
           password: adminPassword,
           email_confirm: true,
           user_metadata: { name: adminName, username: ADMIN_USERNAME },
         });
-        if (authError) throw authError;
+        if (authError) {
+          const code = (authError as any)?.code;
+          if (code === "email_exists" || (authError.message || "").toLowerCase().includes("already been registered")) {
+            // Look up existing auth user by email
+            const { data: list } = await supabase.auth.admin.listUsers();
+            const found = list?.users?.find((u: any) => (u.email || "").toLowerCase() === adminEmail.toLowerCase());
+            if (found) authUserId = found.id;
+          } else {
+            throw authError;
+          }
+        } else {
+          authUserId = created.user.id;
+        }
 
-        await supabase.from("user_accounts").insert({
-          id: authUser.user.id,
-          email: adminEmail,
-          name: adminName,
-          username: ADMIN_USERNAME,
-          role: "admin",
-          fee_exempt: true,
-          subscription_status: "exempt",
-        });
+        if (authUserId) {
+          await supabase.from("user_accounts").upsert({
+            id: authUserId,
+            email: adminEmail,
+            name: adminName,
+            username: ADMIN_USERNAME,
+            role: "admin",
+            fee_exempt: true,
+            subscription_status: "exempt",
+          }, { onConflict: "id" });
 
-        await supabase.from("users").insert({ id: authUser.user.id, name: adminName });
+          await supabase.from("users").upsert({ id: authUserId, name: adminName }, { onConflict: "id" });
+        }
       } else {
         const updates: any = {};
         if (existingAdmin.role !== "admin") updates.role = "admin";
