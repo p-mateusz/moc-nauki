@@ -189,34 +189,34 @@ const MocDashboard = () => {
       setTimeout(() => resolve({ data: { session: null }, timedOut: true }), 4000),
     );
 
-    Promise.race([sessionPromise, timeout]).then((result: any) => {
-      if (result?.timedOut) return; // network too slow, keep user in app
-      const session = result?.data?.session;
-      if (session) {
-        supabase.from("user_profiles").select("avatar_url").eq("user_id", userId).maybeSingle().then(({ data }) => {
-          const url = data?.avatar_url || null;
-          setAvatarUrl(url);
-          if (avatarCacheKey) {
-            try {
-              if (url) localStorage.setItem(avatarCacheKey, url);
-              else localStorage.removeItem(avatarCacheKey);
-            } catch {}
-          }
-        }).catch(() => {});
-      } else {
-        try {
-          localStorage.removeItem("userId");
-          localStorage.removeItem("userName");
-          localStorage.removeItem("userUsername");
-          localStorage.removeItem("userRole");
-          localStorage.removeItem("guestMode");
-          localStorage.removeItem("guestListId");
-        } catch {}
-        navigate("/login");
-      }
-    }).catch(() => {
-      // ignore — user already sees the UI
-    });
+    Promise.race([sessionPromise, timeout])
+      .then((result: any) => {
+        if (result?.timedOut) return;
+        const session = result?.data?.session;
+        if (session) {
+          supabase.from("user_profiles").select("avatar_url").eq("user_id", userId).maybeSingle().then(({ data }) => {
+            const url = data?.avatar_url || null;
+            setAvatarUrl(url);
+            if (avatarCacheKey) {
+              try {
+                if (url) localStorage.setItem(avatarCacheKey, url);
+                else localStorage.removeItem(avatarCacheKey);
+              } catch {}
+            }
+          });
+        } else {
+          try {
+            localStorage.removeItem("userId");
+            localStorage.removeItem("userName");
+            localStorage.removeItem("userUsername");
+            localStorage.removeItem("userRole");
+            localStorage.removeItem("guestMode");
+            localStorage.removeItem("guestListId");
+          } catch {}
+          navigate("/login");
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Paywall — admin/nauczyciel zawsze, uczeń tylko z aktywnym dostępem
