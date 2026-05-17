@@ -28,6 +28,9 @@ export function useAccessGuard(): AccessState {
   useEffect(() => {
     let active = true;
     const load = async () => {
+      if (active) {
+        setState((prev) => ({ ...prev, loading: true, reason: prev.reason === "loading" ? "loading" : prev.reason }));
+      }
       const { data: sess } = await supabase.auth.getSession();
       const uid = sess.session?.user?.id;
       if (!uid) {
@@ -43,7 +46,12 @@ export function useAccessGuard(): AccessState {
       if (!active) return;
       if (error) {
         console.error("Unable to verify account access:", error);
-        setState({ loading: false, hasAccess: false, reason: "error", account: null });
+        setState((prev) => ({
+          loading: false,
+          hasAccess: prev.hasAccess,
+          reason: prev.hasAccess ? prev.reason : "error",
+          account: prev.account,
+        }));
         return;
       }
       if (!data) {
