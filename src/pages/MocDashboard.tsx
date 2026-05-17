@@ -206,7 +206,7 @@ const MocDashboard = () => {
     if (guestMode) return;
     if (access.loading) return;
     if (access.reason === "error") {
-      toast.error("Nie udało się sprawdzić dostępu. Odśwież stronę za chwilę.");
+      toast.warning("Nie udało się sprawdzić dostępu. Zostajesz w aplikacji — spróbuję ponownie za chwilę.");
       return;
     }
     if (!access.hasAccess) navigate("/pricing", { replace: true });
