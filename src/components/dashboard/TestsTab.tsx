@@ -11,7 +11,7 @@ import {
 
 interface Props { userName: string; guestMode?: boolean }
 type Subtab = "all" | "mine" | "saved";
-type Filters = { subject: string; klasa: string; scope: string; teacher: string };
+type Filters = { subject: string; klasa: string; scope: string; teacher: string; school: string };
 
 const s = {
   wrap: { fontFamily: "'Segoe UI', system-ui, sans-serif", color: "#f1f5f9", padding: "8px 18px 16px", maxWidth: "100%", boxSizing: "border-box" } as React.CSSProperties,
