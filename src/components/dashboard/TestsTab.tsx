@@ -360,8 +360,16 @@ const TestsTab = ({ userName, guestMode }: Props) => {
                   </div>
                 </div>
               )}
+              {allSchools.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={s.label}>Szkoła</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {allSchools.map(v => <Chip key={v} active={filters.school === v} onClick={() => setFilters(f => ({ ...f, school: f.school === v ? "" : v }))}>{v}</Chip>)}
+                  </div>
+                </div>
+              )}
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                {hasActiveFilters && <button style={s.btnDanger} onClick={() => setFilters({ subject: "", klasa: "", scope: "", teacher: "" })}><X size={13} /> Wyczyść</button>}
+                {hasActiveFilters && <button style={s.btnDanger} onClick={() => setFilters({ subject: "", klasa: "", scope: "", teacher: "", school: "" })}><X size={13} /> Wyczyść</button>}
                 <button style={s.btnGhost} onClick={() => setFilterOpen(false)}>Zamknij</button>
               </div>
             </div>
