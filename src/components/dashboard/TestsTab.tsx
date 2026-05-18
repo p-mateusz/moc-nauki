@@ -132,6 +132,7 @@ const TestsTab = ({ userName, guestMode }: Props) => {
     if (filters.klasa) tests = tests.filter(t => t.klasa === filters.klasa);
     if (filters.scope) tests = tests.filter(t => t.scope === filters.scope);
     if (filters.teacher) tests = tests.filter(t => t.teacher === filters.teacher);
+    if (filters.school) tests = tests.filter(t => t.school_name === filters.school);
   }
   const q = search.toLowerCase();
   if (q) tests = tests.filter(t => (t.title + t.subject + t.teacher + t.school_name + t.description).toLowerCase().includes(q));
