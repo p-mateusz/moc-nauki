@@ -14,7 +14,7 @@ type Subtab = "all" | "mine" | "saved";
 type Filters = { subject: string; klasa: string; scope: string; teacher: string };
 
 const s = {
-  wrap: { fontFamily: "'Segoe UI', system-ui, sans-serif", color: "#f1f5f9" } as React.CSSProperties,
+  wrap: { fontFamily: "'Segoe UI', system-ui, sans-serif", color: "#f1f5f9", padding: "8px 18px 16px", maxWidth: "100%", boxSizing: "border-box" } as React.CSSProperties,
   input: {
     width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
     color: "#f1f5f9", borderRadius: 10, padding: "10px 14px", fontSize: ".9rem",
