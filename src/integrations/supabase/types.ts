@@ -1018,6 +1018,15 @@ export type Database = {
       }
     }
     Functions: {
+      add_test_solution: {
+        Args: {
+          p_author_name: string
+          p_content: string
+          p_images: string[]
+          p_test_id: string
+        }
+        Returns: undefined
+      }
       create_default_calendars: {
         Args: { p_user_id: string }
         Returns: undefined
@@ -1030,7 +1039,13 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      delete_test_solution: {
+        Args: { p_solution_id: string; p_test_id: string }
+        Returns: undefined
+      }
       get_user_role: { Args: { uid: string }; Returns: string }
+      increment_test_uses: { Args: { p_test_id: string }; Returns: undefined }
+      toggle_test_like: { Args: { p_test_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

@@ -98,16 +98,9 @@ export async function deleteTest(id: string) {
   await supabase.from("tests").delete().eq("id", id);
 }
 
-export async function toggleLike(testId: string, userId: string, _userName: string, currentlyLiked: boolean) {
-  const { data: test } = await supabase.from("tests").select("likes").eq("id", testId).single();
-  if (!test) return;
-  let likes: string[] = test.likes || [];
-  if (currentlyLiked) {
-    likes = likes.filter((l: string) => l !== userId);
-  } else {
-    likes = [...likes, userId];
-  }
-  await supabase.from("tests").update({ likes } as any).eq("id", testId);
+export async function toggleLike(testId: string, _userId: string, _userName: string, _currentlyLiked: boolean) {
+  const { error } = await supabase.rpc("toggle_test_like" as any, { p_test_id: testId });
+  if (error) console.error("toggleLike error:", error);
 }
 
 export async function toggleSave(testId: string, userId: string, currentlySaved: boolean) {
@@ -119,29 +112,23 @@ export async function toggleSave(testId: string, userId: string, currentlySaved:
 }
 
 export async function incrementUses(testId: string) {
-  const { data: test } = await supabase.from("tests").select("uses").eq("id", testId).single();
-  if (!test) return;
-  await supabase.from("tests").update({ uses: (test.uses || 0) + 1 } as any).eq("id", testId);
+  const { error } = await supabase.rpc("increment_test_uses" as any, { p_test_id: testId });
+  if (error) console.error("incrementUses error:", error);
 }
 
 export async function addSolution(testId: string, solution: { author_id: string; author_name: string; content: string; images: string[] }) {
-  const { data: test } = await supabase.from("tests").select("solutions").eq("id", testId).single();
-  if (!test) return;
-  const solutions = [...(test.solutions as any[] || []), {
-    id: crypto.randomUUID(),
-    ...solution,
-    confirmed: false,
-    created_at: new Date().toISOString(),
-    ts: Date.now(),
-  }];
-  await supabase.from("tests").update({ solutions } as any).eq("id", testId);
+  const { error } = await supabase.rpc("add_test_solution" as any, {
+    p_test_id: testId,
+    p_author_name: solution.author_name,
+    p_content: solution.content,
+    p_images: solution.images,
+  });
+  if (error) console.error("addSolution error:", error);
 }
 
 export async function deleteSolution(testId: string, solutionId: string) {
-  const { data: test } = await supabase.from("tests").select("solutions").eq("id", testId).single();
-  if (!test) return;
-  const solutions = ((test.solutions as any[]) || []).filter((s: any) => s.id !== solutionId);
-  await supabase.from("tests").update({ solutions } as any).eq("id", testId);
+  const { error } = await supabase.rpc("delete_test_solution" as any, { p_test_id: testId, p_solution_id: solutionId });
+  if (error) console.error("deleteSolution error:", error);
 }
 
 export async function uploadTestImage(file: File, testId: string, userId?: string): Promise<string | null> {

@@ -11,10 +11,10 @@ import {
 
 interface Props { userName: string; guestMode?: boolean }
 type Subtab = "all" | "mine" | "saved";
-type Filters = { subject: string; klasa: string; scope: string; teacher: string };
+type Filters = { subject: string; klasa: string; scope: string; teacher: string; school: string };
 
 const s = {
-  wrap: { fontFamily: "'Segoe UI', system-ui, sans-serif", color: "#f1f5f9" } as React.CSSProperties,
+  wrap: { fontFamily: "'Segoe UI', system-ui, sans-serif", color: "#f1f5f9", padding: "8px 18px 16px", maxWidth: "100%", boxSizing: "border-box" } as React.CSSProperties,
   input: {
     width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
     color: "#f1f5f9", borderRadius: 10, padding: "10px 14px", fontSize: ".9rem",
@@ -69,7 +69,7 @@ const TestsTab = ({ userName, guestMode }: Props) => {
   const [loading, setLoading] = useState(true);
   const [subtab, setSubtab] = useState<Subtab>("all");
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<Filters>({ subject: "", klasa: "", scope: "", teacher: "" });
+  const [filters, setFilters] = useState<Filters>({ subject: "", klasa: "", scope: "", teacher: "", school: "" });
   const [filterOpen, setFilterOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [viewTestId, setViewTestId] = useState<string | null>(null);
@@ -132,6 +132,7 @@ const TestsTab = ({ userName, guestMode }: Props) => {
     if (filters.klasa) tests = tests.filter(t => t.klasa === filters.klasa);
     if (filters.scope) tests = tests.filter(t => t.scope === filters.scope);
     if (filters.teacher) tests = tests.filter(t => t.teacher === filters.teacher);
+    if (filters.school) tests = tests.filter(t => t.school_name === filters.school);
   }
   const q = search.toLowerCase();
   if (q) tests = tests.filter(t => (t.title + t.subject + t.teacher + t.school_name + t.description).toLowerCase().includes(q));
@@ -253,6 +254,7 @@ const TestsTab = ({ userName, guestMode }: Props) => {
   const allSubjects = [...new Set(allTests.map(t => t.subject).filter(Boolean))].sort();
   const allKlasy = [...new Set(allTests.map(t => t.klasa).filter(Boolean))].sort((a, b) => Number(a) - Number(b));
   const allTeachers = [...new Set(allTests.map(t => t.teacher).filter(Boolean))].sort();
+  const allSchools = [...new Set(allTests.map(t => t.school_name).filter(Boolean))].sort();
   const viewTest = viewTestId ? allTests.find(t => t.id === viewTestId) : null;
 
   const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
@@ -358,8 +360,16 @@ const TestsTab = ({ userName, guestMode }: Props) => {
                   </div>
                 </div>
               )}
+              {allSchools.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={s.label}>Szkoła</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {allSchools.map(v => <Chip key={v} active={filters.school === v} onClick={() => setFilters(f => ({ ...f, school: f.school === v ? "" : v }))}>{v}</Chip>)}
+                  </div>
+                </div>
+              )}
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                {hasActiveFilters && <button style={s.btnDanger} onClick={() => setFilters({ subject: "", klasa: "", scope: "", teacher: "" })}><X size={13} /> Wyczyść</button>}
+                {hasActiveFilters && <button style={s.btnDanger} onClick={() => setFilters({ subject: "", klasa: "", scope: "", teacher: "", school: "" })}><X size={13} /> Wyczyść</button>}
                 <button style={s.btnGhost} onClick={() => setFilterOpen(false)}>Zamknij</button>
               </div>
             </div>
