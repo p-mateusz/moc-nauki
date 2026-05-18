@@ -69,7 +69,7 @@ const TestsTab = ({ userName, guestMode }: Props) => {
   const [loading, setLoading] = useState(true);
   const [subtab, setSubtab] = useState<Subtab>("all");
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<Filters>({ subject: "", klasa: "", scope: "", teacher: "" });
+  const [filters, setFilters] = useState<Filters>({ subject: "", klasa: "", scope: "", teacher: "", school: "" });
   const [filterOpen, setFilterOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [viewTestId, setViewTestId] = useState<string | null>(null);
