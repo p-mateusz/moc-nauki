@@ -1341,9 +1341,8 @@ const OverviewTab = ({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(100px, 1fr))",
-            gap: 12,
+            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+            gap: 8,
             marginBottom: 18,
           }}
         >
@@ -1369,46 +1368,119 @@ const OverviewTab = ({
           />
         </div>
 
-        <div
-          style={{
-            overflowX: "auto",
-            paddingBottom: 8,
-          }}
-        >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateRows: "repeat(7, 12px)",
-              gridAutoFlow: "column",
-              gap: 3,
-              width: "max-content",
-            }}
-          >
-            {heatmapCells.map((c, i) => (
+        {(() => {
+          const activeSet = new Set(activityDays || []);
+          const last14 = heatmapCells
+            .filter((c) => !c.future)
+            .slice(-14);
+          const dowLabels = ["N", "P", "W", "Ś", "C", "P", "S"];
+          const goal = Math.max(7, streak.best || 7);
+          const pct = Math.min(
+            100,
+            Math.round((streak.current / goal) * 100),
+          );
+          return (
+            <div>
               <div
-                key={i}
-                title={`${c.iso}${c.active ? " ✓" : ""}`}
                 style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: 2,
-                  background: c.future
-                    ? "transparent"
-                    : c.active
-                    ? c.isToday
-                      ? "rgba(59,130,246,0.9)"
-                      : "rgba(59,130,246,0.55)"
-                    : "rgba(255,255,255,0.05)",
-                  outline:
-                    c.isToday && !c.future
-                      ? "1.5px solid rgba(99,102,241,0.7)"
-                      : "none",
-                  opacity: c.future ? 0 : 1,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  marginBottom: 8,
+                  fontSize: ".68rem",
+                  color: "#8899b4",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: ".8px",
                 }}
-              />
-            ))}
-          </div>
-        </div>
+              >
+                <span>Ostatnie 14 dni</span>
+                <span style={{ textTransform: "none", letterSpacing: 0 }}>
+                  {streak.current}/{goal} dni do rekordu
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(14, minmax(0,1fr))",
+                  gap: 4,
+                  marginBottom: 12,
+                }}
+              >
+                {last14.map((c, i) => {
+                  const d = new Date(c.iso);
+                  const label = dowLabels[d.getDay()];
+                  const active = activeSet.has(c.iso);
+                  return (
+                    <div
+                      key={i}
+                      title={c.iso + (active ? " ✓" : "")}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "100%",
+                          aspectRatio: "1 / 1",
+                          maxHeight: 28,
+                          borderRadius: 8,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: ".75rem",
+                          background: active
+                            ? "linear-gradient(135deg,#f59e0b,#ef4444)"
+                            : "rgba(255,255,255,0.05)",
+                          border: c.isToday
+                            ? "1.5px solid rgba(99,102,241,0.85)"
+                            : "1px solid rgba(255,255,255,0.06)",
+                          boxShadow: active
+                            ? "0 4px 12px -4px rgba(239,68,68,0.45)"
+                            : "none",
+                        }}
+                      >
+                        {active ? "🔥" : ""}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: ".55rem",
+                          color: c.isToday ? "#a5b4fc" : "#6b7a96",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {label}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div
+                style={{
+                  height: 8,
+                  borderRadius: 999,
+                  background: "rgba(255,255,255,0.05)",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    width: `${pct}%`,
+                    height: "100%",
+                    background:
+                      "linear-gradient(90deg,#f59e0b,#ef4444,#a78bfa)",
+                    transition: "width .4s ease",
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
@@ -1660,14 +1732,15 @@ const StreakStatCard = ({
       background: "rgba(255,255,255,0.03)",
       border: "1px solid rgba(255,255,255,0.08)",
       borderRadius: 11,
-      padding: "14px 12px",
+      padding: "10px 6px",
       textAlign: "center",
+      minWidth: 0,
     }}
   >
     <div
       style={{
-        fontSize: ".9rem",
-        marginBottom: 4,
+        fontSize: ".85rem",
+        marginBottom: 2,
       }}
     >
       {icon}
@@ -1675,7 +1748,7 @@ const StreakStatCard = ({
 
     <div
       style={{
-        fontSize: "1.3rem",
+        fontSize: "1.15rem",
         fontWeight: 900,
         lineHeight: 1,
         marginBottom: 4,
@@ -1689,9 +1762,12 @@ const StreakStatCard = ({
 
     <div
       style={{
-        fontSize: ".65rem",
+        fontSize: ".6rem",
         color: "#8899b4",
         fontWeight: 600,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
       }}
     >
       {label}
