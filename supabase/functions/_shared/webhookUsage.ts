@@ -13,10 +13,27 @@ export function webhookLimitResponse(result: LimitBlocked, corsHeaders: Record<s
   });
 }
 
+const NO_ACCESS_MESSAGE = "Twoje konto nie posiada aktywnej subskrypcji wymaganej do korzystania z tej funkcji.";
+
+function hasActiveAccess(account: any): boolean {
+  if (!account) return false;
+  const role = (account.role || "").toLowerCase();
+  if (role === "admin" || role === "nauczyciel" || role === "teacher") return true;
+  if (account.fee_exempt) return true;
+  const now = Date.now();
+  const expires = account.subscription_expires_at ? new Date(account.subscription_expires_at).getTime() : null;
+  const status = account.subscription_status;
+  const plan = account.subscription_plan;
+  if (status === "active" && plan === "30d" && (!expires || expires > now)) return true;
+  if (status === "canceled" && expires && expires > now) return true;
+  if (plan === "90d" && expires && expires > now) return true;
+  return false;
+}
+
 export async function reserveWebhookCall(adminSb: any, userId: string): Promise<WebhookLimitResult> {
   const { data: account, error: accountError } = await adminSb
     .from("user_accounts")
-    .select("webhook_suspended_at, role")
+    .select("webhook_suspended_at, role, fee_exempt, subscription_status, subscription_expires_at, subscription_plan")
     .eq("id", userId)
     .maybeSingle();
 
@@ -28,6 +45,10 @@ export async function reserveWebhookCall(adminSb: any, userId: string): Promise<
 
   if (account?.webhook_suspended_at) {
     return { allowed: false, status: 403, error: SUSPENSION_MESSAGE, suspended: true };
+  }
+
+  if (!hasActiveAccess(account)) {
+    return { allowed: false, status: 402, error: NO_ACCESS_MESSAGE, suspended: false };
   }
 
   const today = new Date().toISOString().slice(0, 10);
