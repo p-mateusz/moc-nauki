@@ -947,9 +947,9 @@ const SettingsTab = ({
       {/* AVATAR CROP MODAL */}
       {cropFile && (
         <AvatarCropModal
-          file={cropFile}
-          onClose={() => setCropFile(null)}
-          onSave={handleCroppedUpload}
+          imageFile={cropFile}
+          onCancel={() => setCropFile(null)}
+          onCropped={handleCroppedUpload}
         />
       )}
 
