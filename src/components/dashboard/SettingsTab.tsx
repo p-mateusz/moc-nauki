@@ -944,8 +944,293 @@ const SettingsTab = ({
         </div>
       </div>
 
-      {/* RESZTA MODALI ZOSTAJE BEZ ZMIAN */}
-      
+      {/* AVATAR CROP MODAL */}
+      {cropFile && (
+        <AvatarCropModal
+          file={cropFile}
+          onClose={() => setCropFile(null)}
+          onSave={handleCroppedUpload}
+        />
+      )}
+
+      {/* EDIT PROFILE MODAL */}
+      {editing && (
+        <div
+          onClick={() => setEditing(false)}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 1000, padding: 16, backdropFilter: "blur(8px)",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#0f172a", borderRadius: 20, padding: 24,
+              maxWidth: 500, width: "100%", maxHeight: "90vh", overflowY: "auto",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 900, marginBottom: 18 }}>
+              ✏️ Edytuj profil
+            </h3>
+
+            <label style={{ fontSize: ".78rem", color: "#94a3b8", fontWeight: 700 }}>Bio</label>
+            <textarea
+              value={editBio}
+              onChange={(e) => setEditBio(e.target.value)}
+              rows={3}
+              style={{
+                width: "100%", marginTop: 6, marginBottom: 14, padding: 12,
+                borderRadius: 12, background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)", color: "#fff",
+                fontSize: ".9rem", resize: "vertical",
+              }}
+            />
+
+            <label style={{ fontSize: ".78rem", color: "#94a3b8", fontWeight: 700 }}>Lokalizacja</label>
+            <input
+              value={editLocation}
+              onChange={(e) => setEditLocation(e.target.value)}
+              style={{
+                width: "100%", marginTop: 6, marginBottom: 14, padding: 12,
+                borderRadius: 12, background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)", color: "#fff",
+                fontSize: ".9rem",
+              }}
+            />
+
+            <label style={{ fontSize: ".78rem", color: "#94a3b8", fontWeight: 700 }}>
+              Zainteresowania (oddziel przecinkami)
+            </label>
+            <input
+              value={editInterests}
+              onChange={(e) => setEditInterests(e.target.value)}
+              style={{
+                width: "100%", marginTop: 6, marginBottom: 14, padding: 12,
+                borderRadius: 12, background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)", color: "#fff",
+                fontSize: ".9rem",
+              }}
+            />
+
+            <label style={{ fontSize: ".78rem", color: "#94a3b8", fontWeight: 700, display: "block", marginBottom: 8 }}>
+              Kolor banera
+            </label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
+              {Object.keys(bannerColors).map((k) => (
+                <div
+                  key={k}
+                  onClick={() => setEditBannerColor(k)}
+                  style={{
+                    width: 56, height: 36, borderRadius: 10, cursor: "pointer",
+                    background: bannerColors[k],
+                    border: editBannerColor === k ? "2px solid #3b82f6" : "2px solid transparent",
+                  }}
+                />
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setEditing(false)}
+                style={{
+                  padding: "10px 18px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)",
+                  background: "transparent", color: "#fff", cursor: "pointer", fontWeight: 700,
+                }}
+              >Anuluj</button>
+              <button
+                onClick={saveEdit}
+                style={{
+                  padding: "10px 18px", borderRadius: 12, border: "none",
+                  background: "linear-gradient(135deg,#3b82f6,#6366f1)", color: "#fff",
+                  cursor: "pointer", fontWeight: 800,
+                }}
+              >Zapisz</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT AVATAR MODAL */}
+      {editingAvatar && (
+        <div
+          onClick={() => setEditingAvatar(false)}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 1000, padding: 16, backdropFilter: "blur(8px)",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#0f172a", borderRadius: 20, padding: 24,
+              maxWidth: 420, width: "100%",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            <h3 style={{ fontSize: "1.1rem", fontWeight: 900, marginBottom: 16 }}>
+              📷 Zdjęcie profilowe
+            </h3>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                style={{
+                  padding: "12px 16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(59,130,246,0.15)", color: "#fff",
+                  cursor: uploading ? "wait" : "pointer", fontWeight: 700,
+                }}
+              >{uploading ? "Przesyłanie…" : "📤 Wgraj zdjęcie"}</button>
+
+              {profile.avatar_url && (
+                <button
+                  onClick={removeAvatar}
+                  style={{
+                    padding: "12px 16px", borderRadius: 12, border: "1px solid rgba(239,68,68,0.22)",
+                    background: "rgba(239,68,68,0.1)", color: "#fca5a5",
+                    cursor: "pointer", fontWeight: 700,
+                  }}
+                >🗑️ Usuń zdjęcie</button>
+              )}
+            </div>
+
+            <label style={{ fontSize: ".78rem", color: "#94a3b8", fontWeight: 700, display: "block", marginBottom: 8 }}>
+              …lub wybierz kolor tła
+            </label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
+              {Object.keys(avColorStyles).map((k) => (
+                <div
+                  key={k}
+                  onClick={() => setEditAvColor(k)}
+                  style={{
+                    width: 48, height: 48, borderRadius: "50%", cursor: "pointer",
+                    background: avColorStyles[k],
+                    border: editAvColor === k ? "3px solid #3b82f6" : "3px solid transparent",
+                  }}
+                />
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setEditingAvatar(false)}
+                style={{
+                  padding: "10px 18px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)",
+                  background: "transparent", color: "#fff", cursor: "pointer", fontWeight: 700,
+                }}
+              >Anuluj</button>
+              <button
+                onClick={saveAvatarColor}
+                style={{
+                  padding: "10px 18px", borderRadius: 12, border: "none",
+                  background: "linear-gradient(135deg,#3b82f6,#6366f1)", color: "#fff",
+                  cursor: "pointer", fontWeight: 800,
+                }}
+              >Zapisz kolor</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CHANGE PASSWORD MODAL */}
+      {changePasswordDialogOpen && (
+        <div
+          onClick={() => setChangePasswordDialogOpen(false)}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 1000, padding: 16, backdropFilter: "blur(8px)",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#0f172a", borderRadius: 20, padding: 24,
+              maxWidth: 420, width: "100%",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            <h3 style={{ fontSize: "1.1rem", fontWeight: 900, marginBottom: 16 }}>
+              🔐 Zmień hasło
+            </h3>
+
+            <label style={{ fontSize: ".78rem", color: "#94a3b8", fontWeight: 700 }}>
+              Nowe hasło (min. 6 znaków)
+            </label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="••••••"
+              style={{
+                width: "100%", marginTop: 6, marginBottom: 18, padding: 12,
+                borderRadius: 12, background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)", color: "#fff",
+                fontSize: ".9rem",
+              }}
+            />
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => { setChangePasswordDialogOpen(false); setNewPassword(""); }}
+                style={{
+                  padding: "10px 18px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)",
+                  background: "transparent", color: "#fff", cursor: "pointer", fontWeight: 700,
+                }}
+              >Anuluj</button>
+              <button
+                onClick={async () => {
+                  if (newPassword.length < 6) {
+                    toast.error("Hasło musi mieć co najmniej 6 znaków");
+                    return;
+                  }
+                  const { error } = await supabase.auth.updateUser({ password: newPassword });
+                  if (error) {
+                    toast.error("Błąd zmiany hasła: " + error.message);
+                  } else {
+                    toast.success("Hasło zostało zmienione");
+                    setChangePasswordDialogOpen(false);
+                    setNewPassword("");
+                  }
+                }}
+                style={{
+                  padding: "10px 18px", borderRadius: 12, border: "none",
+                  background: "linear-gradient(135deg,#3b82f6,#6366f1)", color: "#fff",
+                  cursor: "pointer", fontWeight: 800,
+                }}
+              >Zmień hasło</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE ACCOUNT CONFIRMATION */}
+      <AlertDialog
+        open={deleteAccountDialogOpen}
+        onOpenChange={setDeleteAccountDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usunąć konto na zawsze?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ta operacja jest nieodwracalna. Twój profil i powiązane dane zostaną trwale usunięte.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              style={{ background: "#ef4444", color: "#fff" }}
+            >
+              Tak, usuń konto
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 };
