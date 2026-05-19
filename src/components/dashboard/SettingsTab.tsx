@@ -802,15 +802,6 @@ const SettingsTab = ({
                 ),
             },
 
-            {
-              icon: "💾",
-              title: "Eksport danych",
-              sub: "Pobierz dane swojego konta",
-              action: () =>
-                toast.info(
-                  "Eksport danych będzie dostępny wkrótce"
-                ),
-            },
           ].map((item, i) => (
             <button
               key={i}
