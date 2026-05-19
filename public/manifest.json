@@ -10,7 +10,7 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/fav.png?v=1",
+      "src": "/fav.png",
       "sizes": "256x256",
       "type": "image/x-icon",
       "purpose": "any"
