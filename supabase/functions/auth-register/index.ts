@@ -156,8 +156,7 @@ Deno.serve(async (req) => {
     });
   } catch (e: unknown) {
     console.error("auth-register fatal:", e);
-    const msg = e instanceof Error ? e.message : String(e);
-    return new Response(JSON.stringify({ error: `Wystąpił błąd serwera: ${msg}` }), {
+    return new Response(JSON.stringify({ error: "Wystąpił błąd serwera — spróbuj ponownie" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
