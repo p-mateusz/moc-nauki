@@ -1732,14 +1732,15 @@ const StreakStatCard = ({
       background: "rgba(255,255,255,0.03)",
       border: "1px solid rgba(255,255,255,0.08)",
       borderRadius: 11,
-      padding: "14px 12px",
+      padding: "10px 6px",
       textAlign: "center",
+      minWidth: 0,
     }}
   >
     <div
       style={{
-        fontSize: ".9rem",
-        marginBottom: 4,
+        fontSize: ".85rem",
+        marginBottom: 2,
       }}
     >
       {icon}
@@ -1747,7 +1748,7 @@ const StreakStatCard = ({
 
     <div
       style={{
-        fontSize: "1.3rem",
+        fontSize: "1.15rem",
         fontWeight: 900,
         lineHeight: 1,
         marginBottom: 4,
@@ -1761,9 +1762,12 @@ const StreakStatCard = ({
 
     <div
       style={{
-        fontSize: ".65rem",
+        fontSize: ".6rem",
         color: "#8899b4",
         fontWeight: 600,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
       }}
     >
       {label}
