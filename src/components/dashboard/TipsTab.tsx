@@ -15,6 +15,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
+import { LoadingInline } from "@/components/ui/loading-state";
 
 interface Tip {
   id: string;
