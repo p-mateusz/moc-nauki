@@ -495,15 +495,7 @@ const ListDetail = () => {
           }}
         >
           {loading ? (
-            <div
-              style={{
-                textAlign: "center",
-                color: "#94a3b8",
-                paddingTop: 60,
-              }}
-            >
-              Ładowanie...
-            </div>
+            <LoadingInline minHeight={240} />
           ) : (
             <div
               style={{

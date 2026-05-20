@@ -242,18 +242,7 @@ const TeacherStudentsTab = ({
   );
 
   if (loading) {
-    return (
-      <div
-        className="md-content"
-        style={{
-          color: "#8899b4",
-          textAlign: "center",
-          padding: 40,
-        }}
-      >
-        Ładowanie…
-      </div>
-    );
+    return <div className="md-content"><LoadingInline minHeight={240} /></div>;
   }
 
   return (

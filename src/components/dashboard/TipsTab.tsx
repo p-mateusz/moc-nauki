@@ -706,15 +706,7 @@ const TipsTab = ({ userId, isAdmin, guestMode }: TipsTabProps) => {
 
       {/* LIST */}
       {loading ? (
-        <div
-          style={{
-            padding: 50,
-            textAlign: "center",
-            color: "#8899b4",
-          }}
-        >
-          Ładowanie porad...
-        </div>
+        <LoadingInline label="Ładowanie porad…" minHeight={220} />
       ) : filteredTips.length === 0 ? (
         <div
           style={{
