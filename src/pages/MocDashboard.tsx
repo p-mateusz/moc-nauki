@@ -331,11 +331,7 @@ const MocDashboard = () => {
   }, [userId, avatarCacheKey]);
 
   if (!authReady || (!userId && !guestMode)) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#060d1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "#8899b4", fontSize: "1rem" }}>Ładowanie...</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   const handleLogout = async () => {
