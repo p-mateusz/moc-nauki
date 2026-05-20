@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { resetQueryCache } from "@/lib/queryClient";
 
 export const LOGOUT_TIMEOUT_MS = 2000;
 
@@ -31,7 +32,11 @@ export function clearAuthStorageExcept(exceptKeys: string[] = []) {
 }
 
 export async function logoutUser() {
-  // Czyść localStorage natychmiast — nie czekaj na serwer
+  // 1. Wyczyść cały cache React Query — zapobiega wyciekowi danych
+  //    poprzedniego użytkownika do nowo zalogowanego konta na tym urządzeniu.
+  try { resetQueryCache(); } catch (e) { console.warn("resetQueryCache failed", e); }
+
+  // 2. Czyść localStorage natychmiast — nie czekaj na serwer
   clearAuthStorage();
 
   // Wyloguj z Supabase w tle z krótkim timeout

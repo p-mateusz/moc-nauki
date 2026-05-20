@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import UserProfileModal from "./UserProfileModal";
+import { LoadingInline } from "@/components/ui/loading-state";
 
 type FriendSubTab = "friends" | "requests" | "sent";
 
@@ -667,15 +668,7 @@ const FriendsTab = ({ guestMode }: { guestMode?: boolean }) => {
       </div>
 
       {loading ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: 60,
-            color: "#94a3b8",
-          }}
-        >
-          Ładowanie...
-        </div>
+        <LoadingInline minHeight={220} />
       ) : (
         renderContent()
       )}

@@ -5,6 +5,7 @@ import {
   BADGES, getEarnedFromTests, ptsFromTests, calcStreak, avInitials,
 } from "@/lib/testsStore";
 import UserProfileModal from "./UserProfileModal";
+import { LoadingInline } from "@/components/ui/loading-state";
 
 interface Props { userName: string; guestMode?: boolean }
 
@@ -246,8 +247,8 @@ const RankingTab = ({ userName, guestMode }: Props) => {
 
   if (loading) {
     return (
-      <div className="tt-content" style={{ padding: "24px 28px", color: "var(--gray)" }}>
-        Ładowanie rankingu...
+      <div className="tt-content" style={{ padding: "24px 28px" }}>
+        <LoadingInline label="Ładowanie rankingu…" minHeight={240} />
       </div>
     );
   }

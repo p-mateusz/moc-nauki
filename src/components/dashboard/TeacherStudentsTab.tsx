@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Send, Search } from "lucide-react";
 import { useRoles } from "@/hooks/use-roles";
 import UserProfileModal from "./UserProfileModal";
+import { LoadingInline } from "@/components/ui/loading-state";
 
 function avInitials(name: string) {
   const parts = name.trim().split(" ");
@@ -241,18 +242,7 @@ const TeacherStudentsTab = ({
   );
 
   if (loading) {
-    return (
-      <div
-        className="md-content"
-        style={{
-          color: "#8899b4",
-          textAlign: "center",
-          padding: 40,
-        }}
-      >
-        Ładowanie…
-      </div>
-    );
+    return <div className="md-content"><LoadingInline minHeight={240} /></div>;
   }
 
   return (

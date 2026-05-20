@@ -6,6 +6,7 @@ import { useRoles } from "@/hooks/use-roles";
 import { logoutUser } from "@/lib/authCleanup";
 import AvatarCropModal from "./AvatarCropModal";
 import { setAvatarCache } from "@/lib/avatarCache";
+import { LoadingInline } from "@/components/ui/loading-state";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -332,18 +333,7 @@ const SettingsTab = ({
   };
 
   if (loading) {
-    return (
-      <div
-        className="md-content"
-        style={{
-          color: "#8899b4",
-          textAlign: "center",
-          padding: 40,
-        }}
-      >
-        Ładowanie profilu…
-      </div>
-    );
+    return <div className="md-content"><LoadingInline label="Ładowanie profilu…" minHeight={240} /></div>;
   }
 
   return (

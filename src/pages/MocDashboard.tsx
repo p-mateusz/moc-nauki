@@ -19,6 +19,7 @@ import TestsTab from "@/components/dashboard/TestsTab";
 import RankingTab from "@/components/dashboard/RankingTab";
 import AdminUsersTab from "@/components/dashboard/AdminUsersTab";
 import TipsTab from "@/components/dashboard/TipsTab";
+import { LoadingScreen } from "@/components/ui/loading-state";
 import "./MocDashboard.css";
 type Tab =
   | "overview"
@@ -331,11 +332,7 @@ const MocDashboard = () => {
   }, [userId, avatarCacheKey]);
 
   if (!authReady || (!userId && !guestMode)) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#060d1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "#8899b4", fontSize: "1rem" }}>Ładowanie...</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   const handleLogout = async () => {

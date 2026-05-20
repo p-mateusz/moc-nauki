@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { LoadingInline } from "@/components/ui/loading-state";
 import {
   ArrowLeft,
   Pencil,
@@ -494,15 +495,7 @@ const ListDetail = () => {
           }}
         >
           {loading ? (
-            <div
-              style={{
-                textAlign: "center",
-                color: "#94a3b8",
-                paddingTop: 60,
-              }}
-            >
-              Ładowanie...
-            </div>
+            <LoadingInline minHeight={240} />
           ) : (
             <div
               style={{
