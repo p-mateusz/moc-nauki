@@ -8,6 +8,7 @@ import {
   toggleLike, toggleSave, incrementUses, addSolution, deleteSolution as deleteSolApi,
   uploadTestImage, Test, SUBJECTS, SCOPE_LABEL, SYMS, avInitials, ago,
 } from "@/lib/testsStore";
+import { LoadingInline } from "@/components/ui/loading-state";
 
 interface Props { userName: string; guestMode?: boolean }
 type Subtab = "all" | "mine" | "saved";
@@ -268,12 +269,7 @@ const TestsTab = ({ userName, guestMode }: Props) => {
   );
 
   if (loading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 240, color: "#8899b4", gap: 10 }}>
-        <div style={{ width: 20, height: 20, border: "2px solid rgba(99,102,241,0.3)", borderTopColor: "#6366f1", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        Ładowanie testów...
-      </div>
-    );
+    return <LoadingInline label="Ładowanie testów…" minHeight={240} />;
   }
 
   return (

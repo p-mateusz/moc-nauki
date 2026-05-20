@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRoles } from "@/hooks/use-roles";
+import { LoadingInline } from "@/components/ui/loading-state";
 
 const bannerColors: Record<string, string> = {
   "banner-c1": "linear-gradient(135deg,#1e3a8a,#312e81,#4c1d95)",
@@ -176,7 +177,7 @@ const UserProfileModal = ({ userId, onClose }: UserProfileModalProps) => {
         <button className="md-modal-close" onClick={onClose} style={{ zIndex: 5 }}>✕</button>
 
         {loading ? (
-          <div style={{ padding: 60, textAlign: "center", color: "#8899b4" }}>Ładowanie...</div>
+          <LoadingInline minHeight={220} />
         ) : (
           <>
             {/* Banner */}

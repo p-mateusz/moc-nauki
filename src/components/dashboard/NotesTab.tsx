@@ -4,6 +4,7 @@ import DOMPurify from "dompurify";
 import { supabase } from "@/lib/supabase";
 import { MoreVertical, GripVertical, Trash2, AlertTriangle } from "lucide-react";
 import { SYMS } from "@/lib/testsStore";
+import { LoadingInline } from "@/components/ui/loading-state";
 
 type Page = {
   id: string;
@@ -867,7 +868,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     setDragOverSecId(null);
   };
 
-  if (loading) return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#8899b4" }}>Ładowanie notatek…</div>;
+  if (loading) return <LoadingInline label="Ładowanie notatek…" minHeight={300} />;
 
   // === PAGE VIEW ===
   if (viewMode === "page" && activePage && activeSec && activeNb) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { LoadingInline } from "@/components/ui/loading-state";
 
 type ReminderList = {
   id: string;
@@ -283,19 +284,7 @@ const RemindersView = ({ userId }: Props) => {
   );
 
   if (loading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100%",
-          color: "#8899b4",
-        }}
-      >
-        Ładowanie przypomnień…
-      </div>
-    );
+    return <LoadingInline label="Ładowanie przypomnień…" minHeight={260} />;
   }
 
   // ─────────────────────────────

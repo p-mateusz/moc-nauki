@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useRoles } from "@/hooks/use-roles";
 import AvatarCropModal from "./AvatarCropModal";
 import { setAvatarCache } from "@/lib/avatarCache";
+import { LoadingInline } from "@/components/ui/loading-state";
 
 const bannerColors: Record<string, string> = {
   "banner-c1": "linear-gradient(135deg,#1e3a8a,#312e81,#4c1d95)",
@@ -279,7 +280,7 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
   const streak = calcStreak(activityDays);
   const heatmapCells = buildHeatmapCells(activityDays);
 
-  if (loading) return <div className="md-content" style={{ color: "#8899b4", textAlign: "center", padding: 40 }}>Ładowanie profilu…</div>;
+  if (loading) return <div className="md-content"><LoadingInline label="Ładowanie profilu…" minHeight={240} /></div>;
 
   return (
     <div className="md-content">
