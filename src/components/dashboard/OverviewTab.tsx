@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { LoadingInline } from "@/components/ui/loading-state";
 
 // ── Reminder Types ──
 type ReminderList = {
@@ -637,14 +638,8 @@ const OverviewTab = ({
   if (loading) {
     return (
       <div
-        className="md-content"
-        style={{
-          color: "#8899b4",
-          textAlign: "center",
-          padding: 40,
-        }}
-      >
-        Ładowanie…
+      <div className="md-content">
+        <LoadingInline minHeight={260} />
       </div>
     );
   }
