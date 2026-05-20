@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { Menu } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { LoadingInline } from "@/components/ui/loading-state";
 
 // ── Interaction types ──
 type GhostEvent = {
@@ -1103,7 +1104,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     );
   };
 
-  if (loading) return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#8899b4" }}>Ładowanie kalendarza…</div>;
+  if (loading) return <LoadingInline label="Ładowanie kalendarza…" minHeight={300} />;
 
   return (
     <div className="cal-app">

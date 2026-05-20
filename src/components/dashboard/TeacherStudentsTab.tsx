@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Send, Search } from "lucide-react";
 import { useRoles } from "@/hooks/use-roles";
 import UserProfileModal from "./UserProfileModal";
+import { LoadingInline } from "@/components/ui/loading-state";
 
 function avInitials(name: string) {
   const parts = name.trim().split(" ");
