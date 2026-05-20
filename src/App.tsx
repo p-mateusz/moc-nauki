@@ -1,7 +1,10 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient, resetQueryCache } from "@/lib/queryClient";
+import { supabase } from "@/lib/supabase";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import About from "./pages/About";
@@ -20,9 +23,22 @@ import ShareImport from "./pages/ShareImport";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
 
-const App = () => (
+
+const App = () => {
+  // Globalny strażnik: jeśli Supabase wyemituje SIGNED_OUT (np. wygaśnięcie
+  // sesji, wylogowanie z innej karty), wyczyść cache React Query, żeby
+  // żadne stare dane nie wyciekły do kolejnego użytkownika.
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        resetQueryCache();
+      }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -50,6 +66,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
