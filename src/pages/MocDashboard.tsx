@@ -19,6 +19,7 @@ import TestsTab from "@/components/dashboard/TestsTab";
 import RankingTab from "@/components/dashboard/RankingTab";
 import AdminUsersTab from "@/components/dashboard/AdminUsersTab";
 import TipsTab from "@/components/dashboard/TipsTab";
+import { LoadingScreen } from "@/components/ui/loading-state";
 import "./MocDashboard.css";
 type Tab =
   | "overview"
