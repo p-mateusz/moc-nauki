@@ -637,7 +637,6 @@ const OverviewTab = ({
 
   if (loading) {
     return (
-      <div
       <div className="md-content">
         <LoadingInline minHeight={260} />
       </div>
