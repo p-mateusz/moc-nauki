@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Menu, X as XIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/lib/supabase";
 import { getSessionSafe } from "@/lib/authSession";
 import "./LandingPage.css";
 import Hero from "@/components/Hero";
