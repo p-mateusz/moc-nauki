@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getUserIdSafe } from "@/lib/authSession";
 
 /**
  * Returns the authenticated user's role as stored in `user_accounts`.
@@ -13,8 +14,7 @@ export function useUserRole() {
     let active = true;
 
     const load = async () => {
-      const { data: sess } = await supabase.auth.getSession();
-      const uid = sess.session?.user?.id;
+      const uid = await getUserIdSafe();
       if (!uid) {
         if (active) {
           setRole(null);
@@ -41,7 +41,7 @@ export function useUserRole() {
     load();
 
     const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      load();
+      window.setTimeout(load, 0);
     });
 
     return () => {
