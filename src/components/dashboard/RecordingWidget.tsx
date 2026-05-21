@@ -469,16 +469,34 @@ const RecordingWidget = ({
 
         const {
           data: sessionData,
-        } =
-          await supabase.auth.getSession();
+        } = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<{ data: { session: null } }>((resolve) =>
+            setTimeout(() => resolve({ data: { session: null } }), 3000)
+          ),
+        ]);
 
-        const accessToken =
+        let accessToken =
           sessionData?.session
             ?.access_token;
 
+        // Sesja zamrożona po powrocie z tła — spróbuj odświeżyć.
+        if (!accessToken) {
+          try {
+            const { data: refreshed } = await Promise.race([
+              supabase.auth.refreshSession(),
+              new Promise<{ data: { session: null } }>((resolve) =>
+                setTimeout(() => resolve({ data: { session: null } }), 4000)
+              ),
+            ]);
+            accessToken = (refreshed as any)?.session?.access_token
+              || (refreshed as any)?.data?.session?.access_token;
+          } catch {}
+        }
+
         if (!accessToken) {
           throw new Error(
-            "Musisz być zalogowany."
+            "Sesja wygasła — odśwież stronę i zaloguj się ponownie."
           );
         }
 
