@@ -35,7 +35,36 @@ const App = () => {
         resetQueryCache();
       }
     });
-    return () => sub.subscription.unsubscribe();
+
+    // Gdy karta wraca z tła: sesja Supabase bywa "zamrożona" (token
+    // przeterminowany, auto-refresh nie pyknął w tle), przez co kolejne
+    // zapytania zawisają. Wymuszamy odświeżenie sesji i refetch danych.
+    let reviving = false;
+    const reviveSession = async () => {
+      if (document.visibilityState !== "visible" || reviving) return;
+      reviving = true;
+      try {
+        await Promise.race([
+          supabase.auth.refreshSession(),
+          new Promise((resolve) => setTimeout(resolve, 4000)),
+        ]);
+      } catch (err) {
+        console.warn("Session revive failed", err);
+      } finally {
+        // Niezależnie od wyniku — odśwież dane, żeby UI nie wisiał.
+        queryClient.invalidateQueries();
+        reviving = false;
+      }
+    };
+
+    document.addEventListener("visibilitychange", reviveSession);
+    window.addEventListener("focus", reviveSession);
+
+    return () => {
+      sub.subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", reviveSession);
+      window.removeEventListener("focus", reviveSession);
+    };
   }, []);
 
   return (
