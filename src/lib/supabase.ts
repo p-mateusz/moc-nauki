@@ -5,13 +5,13 @@
 import { createClient, type Session, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
-const SUPABASE_URL = "https://yjlelwsmmrqvlsfcnxru.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_mH3athQr7dWGK_m_f4KKEA_0SePhAEY";
-const STORAGE_KEY = "sb-yjlelwsmmrqvlsfcnxru-auth-token";
+export const SUPABASE_URL = "https://yjlelwsmmrqvlsfcnxru.supabase.co";
+export const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_mH3athQr7dWGK_m_f4KKEA_0SePhAEY";
+export const SUPABASE_AUTH_STORAGE_KEY = "sb-yjlelwsmmrqvlsfcnxru-auth-token";
 
 const readStoredAccessToken = () => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(SUPABASE_AUTH_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Session | { currentSession?: Session };
     return ("access_token" in parsed ? parsed.access_token : parsed.currentSession?.access_token) ?? null;
