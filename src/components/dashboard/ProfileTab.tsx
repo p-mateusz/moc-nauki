@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { getUserIdSafe } from "@/lib/authSession";
 import { toast } from "sonner";
 import { useRoles } from "@/hooks/use-roles";
 import AvatarCropModal from "./AvatarCropModal";
@@ -569,8 +570,7 @@ const SubscriptionCard = () => {
 
   useEffect(() => {
     (async () => {
-      const { data: sess } = await supabase.auth.getSession();
-      const uid = sess.session?.user?.id;
+      const uid = await getUserIdSafe();
       if (!uid) { setLoading(false); return; }
       const { data } = await supabase
         .from("user_accounts")

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import { getSessionSafe } from "@/lib/authSession";
 import { toast } from "sonner";
 
 const Login = () => {
@@ -13,7 +14,7 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getSessionSafe(2500).then((session) => {
       const storedUserId = localStorage.getItem("userId");
       if (session && storedUserId && storedUserId !== "guest") {
         navigate("/dashboard", { replace: true });

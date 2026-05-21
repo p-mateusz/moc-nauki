@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { logoutUser } from "@/lib/authCleanup";
 import { useAccessGuard } from "@/hooks/use-access-guard";
+import { getSessionSafe } from "@/lib/authSession";
 
 const features = [
   "Zautomatyzowane notatki AI z lekcji",
@@ -34,8 +35,8 @@ export default function Pricing() {
   const handleCheckout = async () => {
     setLoading(true);
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      if (!sess.session) {
+      const session = await getSessionSafe(2500);
+      if (!session) {
         navigate("/login");
         return;
       }

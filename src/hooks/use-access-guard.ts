@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getUserIdSafe } from "@/lib/authSession";
 
 export interface AccessState {
   loading: boolean;
@@ -36,8 +37,7 @@ export function useAccessGuard(): AccessState {
       if (active) {
         setState((prev) => ({ ...prev, loading: true, reason: prev.reason === "loading" ? "loading" : prev.reason }));
       }
-      const { data: sess } = await supabase.auth.getSession();
-      const uid = sess.session?.user?.id;
+      const uid = await getUserIdSafe();
       if (!uid) {
         if (active) setState({ loading: false, hasAccess: false, reason: "none", account: null });
         return;
@@ -110,7 +110,7 @@ export function useAccessGuard(): AccessState {
     };
 
     load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+    const { data: sub } = supabase.auth.onAuthStateChange(() => window.setTimeout(load, 0));
     return () => {
       active = false;
       if (retryTimeout) clearTimeout(retryTimeout);

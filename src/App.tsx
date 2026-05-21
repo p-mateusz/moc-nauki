@@ -36,25 +36,15 @@ const App = () => {
       }
     });
 
-    // Gdy karta wraca z tła: sesja Supabase bywa "zamrożona" (token
-    // przeterminowany, auto-refresh nie pyknął w tle), przez co kolejne
-    // zapytania zawisają. Wymuszamy odświeżenie sesji i refetch danych.
-    let reviving = false;
-    const reviveSession = async () => {
-      if (document.visibilityState !== "visible" || reviving) return;
-      reviving = true;
-      try {
-        await Promise.race([
-          supabase.auth.refreshSession(),
-          new Promise((resolve) => setTimeout(resolve, 4000)),
-        ]);
-      } catch (err) {
-        console.warn("Session revive failed", err);
-      } finally {
-        // Niezależnie od wyniku — odśwież dane, żeby UI nie wisiał.
-        queryClient.invalidateQueries();
-        reviving = false;
-      }
+    // Po powrocie z tła nie dotykamy metod Auth synchronicznie — w niektórych
+    // wersjach klienta potrafią zawiesić wewnętrzny lock. Wystarczy wznowić
+    // zapytania i pozwolić klientowi samemu odświeżyć token przy requestach.
+    const reviveSession = () => {
+      if (document.visibilityState !== "visible") return;
+      window.setTimeout(() => {
+        queryClient.resumePausedMutations().catch(() => {});
+        queryClient.invalidateQueries({ refetchType: "active" });
+      }, 0);
     };
 
     document.addEventListener("visibilitychange", reviveSession);

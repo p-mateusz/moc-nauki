@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Menu, X as XIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/lib/supabase";
+import { getSessionSafe } from "@/lib/authSession";
 import "./LandingPage.css";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
@@ -20,7 +20,7 @@ const Index = () => {
   const openTermsDocument = (docType: DocumentType) => setTermsDocument(docType);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getSessionSafe(2500).then((session) => {
       if (session && localStorage.getItem("userId")) {
         navigate("/dashboard", { replace: true });
       }

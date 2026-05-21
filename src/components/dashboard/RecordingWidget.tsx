@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { getSessionSafe } from "@/lib/authSession";
 
 const MAX_RETRIES = 3;
 
@@ -467,32 +468,8 @@ const RecordingWidget = ({
           import.meta.env
             .VITE_SUPABASE_URL;
 
-        const {
-          data: sessionData,
-        } = await Promise.race([
-          supabase.auth.getSession(),
-          new Promise<{ data: { session: null } }>((resolve) =>
-            setTimeout(() => resolve({ data: { session: null } }), 3000)
-          ),
-        ]);
-
-        let accessToken =
-          sessionData?.session
-            ?.access_token;
-
-        // Sesja zamrożona po powrocie z tła — spróbuj odświeżyć.
-        if (!accessToken) {
-          try {
-            const { data: refreshed } = await Promise.race([
-              supabase.auth.refreshSession(),
-              new Promise<{ data: { session: null } }>((resolve) =>
-                setTimeout(() => resolve({ data: { session: null } }), 4000)
-              ),
-            ]);
-            accessToken = (refreshed as any)?.session?.access_token
-              || (refreshed as any)?.data?.session?.access_token;
-          } catch {}
-        }
+        const session = await getSessionSafe(2500);
+        const accessToken = session?.access_token;
 
         if (!accessToken) {
           throw new Error(

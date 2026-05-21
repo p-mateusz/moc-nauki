@@ -7,6 +7,7 @@ import { useRoles } from "@/hooks/use-roles";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useAccessGuard } from "@/hooks/use-access-guard";
 import { clearAuthStorage, logoutUser } from "@/lib/authCleanup";
+import { getSessionSafe } from "@/lib/authSession";
 import LanguagesTab from "@/components/dashboard/LanguagesTab";
 import NotesTab from "@/components/dashboard/NotesTab";
 import CalendarTab, { type CalEvent } from "@/components/dashboard/CalendarTab";
@@ -184,16 +185,9 @@ const MocDashboard = () => {
     setAuthReady(true);
 
     // Verify session in the background with a hard timeout so a slow/failing
-    // backend never keeps the user stuck on a "Ładowanie..." splash.
-    const sessionPromise = supabase.auth.getSession();
-    const timeout = new Promise<{ data: { session: null }; timedOut: true }>((resolve) =>
-      setTimeout(() => resolve({ data: { session: null }, timedOut: true }), 4000),
-    );
-
-    Promise.race([sessionPromise, timeout])
-      .then((result: any) => {
-        if (result?.timedOut) return;
-        const session = result?.data?.session;
+    // Auth restore never keeps the user stuck on a splash after returning to tab.
+    getSessionSafe(2500)
+      .then((session) => {
         if (session) {
           supabase.from("user_profiles").select("avatar_url").eq("user_id", userId).maybeSingle().then(({ data }) => {
             const url = data?.avatar_url || null;
@@ -205,16 +199,6 @@ const MocDashboard = () => {
               } catch {}
             }
           });
-        } else {
-          try {
-            localStorage.removeItem("userId");
-            localStorage.removeItem("userName");
-            localStorage.removeItem("userUsername");
-            localStorage.removeItem("userRole");
-            localStorage.removeItem("guestMode");
-            localStorage.removeItem("guestListId");
-          } catch {}
-          navigate("/login");
         }
       })
       .catch(() => {});
