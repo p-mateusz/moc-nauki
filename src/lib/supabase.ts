@@ -9,7 +9,7 @@ export const SUPABASE_URL = "https://yjlelwsmmrqvlsfcnxru.supabase.co";
 export const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_mH3athQr7dWGK_m_f4KKEA_0SePhAEY";
 export const SUPABASE_AUTH_STORAGE_KEY = "sb-yjlelwsmmrqvlsfcnxru-auth-token";
 
-const readStoredAccessToken = () => {
+export const getStoredAccessToken = () => {
   try {
     const raw = localStorage.getItem(SUPABASE_AUTH_STORAGE_KEY);
     if (!raw) return null;
@@ -38,7 +38,7 @@ const authClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
 });
 
 const dataClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  accessToken: async () => readStoredAccessToken(),
+  accessToken: async () => getStoredAccessToken(),
   auth: {
     persistSession: false,
     autoRefreshToken: false,
