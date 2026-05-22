@@ -12,6 +12,10 @@ export async function getUserIdFromRequest(req: Request): Promise<string | null>
   const sb = createClient(sbUrl, anonKey);
 
   try {
+    const { data, error } = await sb.auth.getClaims(token);
+    if (!error && data?.claims?.sub) return data.claims.sub as string;
+  } catch {}
+  try {
     const { data, error } = await sb.auth.getUser(token);
     if (error || !data?.user) return null;
     return data.user.id;
