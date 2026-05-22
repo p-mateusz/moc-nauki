@@ -19,8 +19,8 @@ serve(async (req) => {
   }
 
   try {
-    const sbUrl = Deno.env.get("SUPABASE_URL")!;
-    const sbKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const sbUrl = Deno.env.get("CUSTOM_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
+    const sbKey = Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminSb = createClient(sbUrl, sbKey);
 
     const limit = await reserveWebhookCall(adminSb, userId);
