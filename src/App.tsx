@@ -35,7 +35,26 @@ const App = () => {
         resetQueryCache();
       }
     });
-    return () => sub.subscription.unsubscribe();
+
+    // Po powrocie z tła nie dotykamy metod Auth synchronicznie — w niektórych
+    // wersjach klienta potrafią zawiesić wewnętrzny lock. Wystarczy wznowić
+    // zapytania i pozwolić klientowi samemu odświeżyć token przy requestach.
+    const reviveSession = () => {
+      if (document.visibilityState !== "visible") return;
+      window.setTimeout(() => {
+        queryClient.resumePausedMutations().catch(() => {});
+        queryClient.invalidateQueries({ refetchType: "active" });
+      }, 0);
+    };
+
+    document.addEventListener("visibilitychange", reviveSession);
+    window.addEventListener("focus", reviveSession);
+
+    return () => {
+      sub.subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", reviveSession);
+      window.removeEventListener("focus", reviveSession);
+    };
   }, []);
 
   return (

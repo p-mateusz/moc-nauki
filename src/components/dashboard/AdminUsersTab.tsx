@@ -844,23 +844,18 @@ const RolesView = ({ users, onRefresh, customRoles, allRoleNames }: {
     const roleLabel = newRoleName.trim();
 
     try {
-      // Try with full columns first (with is_builtin)
-      let { error } = await supabase.from("custom_roles").insert({
+      const { error } = await supabase.from("custom_roles").insert({
         name,
-        label: roleLabel,
         color: newRoleColor || "#60a5fa",
         is_builtin: false,
       });
 
-      // If error about missing columns, try a schema-compatible insert
-      if (error && (error.code === "42703" || error.message?.includes("is_builtin") || error.message?.includes("label"))) {
-        const missingLabel = error.message?.includes("label");
+      if (error && (error.code === "42703" || error.message?.includes("is_builtin"))) {
         const missingIsBuiltin = error.message?.includes("is_builtin");
         const fallbackInsert: Record<string, any> = {
           name,
           color: newRoleColor || "#60a5fa",
         };
-        if (!missingLabel) fallbackInsert.label = roleLabel;
         if (!missingIsBuiltin) fallbackInsert.is_builtin = false;
 
         const fallback = await supabase.from("custom_roles").insert([fallbackInsert as any]);
@@ -902,23 +897,18 @@ const RolesView = ({ users, onRefresh, customRoles, allRoleNames }: {
     const isBuiltIn = ["admin", "uczeń", "nauczyciel"].includes(roleName);
     
     try {
-      // Try to insert/update with all columns first
-      let { error: insertError } = await supabase.from("custom_roles").upsert({ 
+      const { error: insertError } = await supabase.from("custom_roles").upsert({ 
         name: roleName,
-        label: editedRoleLabel.trim(), 
         color: editedRoleColor,
         is_builtin: isBuiltIn
       }, { onConflict: "name" });
 
-      // If error about missing columns, try a schema-compatible upsert
-      if (insertError && (insertError.code === "42703" || insertError.message?.includes("is_builtin") || insertError.message?.includes("label"))) {
-        const missingLabel = insertError.message?.includes("label");
+      if (insertError && (insertError.code === "42703" || insertError.message?.includes("is_builtin"))) {
         const missingIsBuiltin = insertError.message?.includes("is_builtin");
         const fallbackUpsert: Record<string, any> = {
           name: roleName,
           color: editedRoleColor,
         };
-        if (!missingLabel) fallbackUpsert.label = editedRoleLabel.trim();
         if (!missingIsBuiltin) fallbackUpsert.is_builtin = isBuiltIn;
 
         const { error: fallbackError } = await supabase.from("custom_roles").upsert([fallbackUpsert as any], { onConflict: "name" });

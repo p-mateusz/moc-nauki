@@ -51,17 +51,13 @@ const Hero: React.FC<HeroProps> = ({ heroRef, featRef, priceRef, scrollTo, navig
               Od uczniów, dla uczniów
             </motion.div>
 
-            <motion.h1
-              className="hero-h"
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9 }}
-            >
+            <h1 className="hero-h">
               Ucz się<br />
               <span>szybciej.</span>
               <br />Wypadaj<br />
               <span>lepiej.</span>
-            </motion.h1>
+            </h1>
+
 
             <motion.p
               className="hero-p"
@@ -161,7 +157,7 @@ const Hero: React.FC<HeroProps> = ({ heroRef, featRef, priceRef, scrollTo, navig
                 <span style={{ borderBottom: "2px solid #6366f1", color: "#a5b4fc", fontStyle: "italic" }}>eloquence</span>
                 {" "}that the room fell silent.
               </div>
-              <div style={{ fontSize: ".68rem", color: "#6366f1", fontWeight: 600, marginBottom: 8 }}>
+              <div style={{ fontSize: ".68rem", color: "#a5b4fc", fontWeight: 600, marginBottom: 8 }}>
                 💡 elokwencja — dar wymowy
               </div>
               <div className="hv-line">

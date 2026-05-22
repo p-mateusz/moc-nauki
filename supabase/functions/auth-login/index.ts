@@ -86,11 +86,10 @@ Deno.serve(async (req) => {
           await supabase.from("users").upsert({ id: authUserId, name: adminName }, { onConflict: "id" });
         }
       } else {
-        const updates: any = {};
-        if (existingAdmin.role !== "admin") updates.role = "admin";
-        if (existingAdmin.name !== adminName) updates.name = adminName;
-        if (Object.keys(updates).length > 0) {
-          await supabase.from("user_accounts").update(updates).eq("id", existingAdmin.id);
+        // Only ensure the role is admin. Do NOT overwrite name — admins can
+        // edit their display name and it must persist across logins.
+        if (existingAdmin.role !== "admin") {
+          await supabase.from("user_accounts").update({ role: "admin" }).eq("id", existingAdmin.id);
         }
       }
     }

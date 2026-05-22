@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { getSessionSafe } from "@/lib/authSession";
 
 const MAX_RETRIES = 3;
 
@@ -467,18 +468,12 @@ const RecordingWidget = ({
           import.meta.env
             .VITE_SUPABASE_URL;
 
-        const {
-          data: sessionData,
-        } =
-          await supabase.auth.getSession();
-
-        const accessToken =
-          sessionData?.session
-            ?.access_token;
+        const session = await getSessionSafe(2500);
+        const accessToken = session?.access_token;
 
         if (!accessToken) {
           throw new Error(
-            "Musisz być zalogowany."
+            "Sesja wygasła — odśwież stronę i zaloguj się ponownie."
           );
         }
 
