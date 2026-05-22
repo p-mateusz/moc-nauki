@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
           status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      return new Response(JSON.stringify({ error: `Błąd tworzenia konta: ${msg}` }), {
+      return new Response(JSON.stringify({ error: "Nie udało się utworzyć konta — spróbuj ponownie" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
