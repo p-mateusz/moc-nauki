@@ -161,7 +161,7 @@ const Hero: React.FC<HeroProps> = ({ heroRef, featRef, priceRef, scrollTo, navig
                 <span style={{ borderBottom: "2px solid #6366f1", color: "#a5b4fc", fontStyle: "italic" }}>eloquence</span>
                 {" "}that the room fell silent.
               </div>
-              <div style={{ fontSize: ".68rem", color: "#6366f1", fontWeight: 600, marginBottom: 8 }}>
+              <div style={{ fontSize: ".68rem", color: "#a5b4fc", fontWeight: 600, marginBottom: 8 }}>
                 💡 elokwencja — dar wymowy
               </div>
               <div className="hv-line">
