@@ -87,7 +87,7 @@ serve(async (req) => {
     });
   } catch (e: any) {
     console.error("extract-events error:", e?.message, e?.stack);
-    return new Response(JSON.stringify({ error: e?.message || "Operacja nie powiodła się — spróbuj ponownie" }), {
+    return new Response(JSON.stringify({ error: "Operacja nie powiodła się — spróbuj ponownie" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
