@@ -150,18 +150,24 @@ export type Database = {
           color: string
           created_at: string
           id: string
+          is_builtin: boolean
+          label: string | null
           name: string
         }
         Insert: {
           color?: string
           created_at?: string
           id?: string
+          is_builtin?: boolean
+          label?: string | null
           name: string
         }
         Update: {
           color?: string
           created_at?: string
           id?: string
+          is_builtin?: boolean
+          label?: string | null
           name?: string
         }
         Relationships: []
