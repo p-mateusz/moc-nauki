@@ -1,5 +1,10 @@
 // Shared JWT verification helper for edge functions.
 // Returns the authenticated user id, or null if invalid/missing.
+//
+// IMPORTANT: This app uses a separate "custom" Supabase project for auth
+// (yjlelwsmmrqvlsfcnxru), while edge functions run on the Lovable Cloud
+// project. Tokens must be verified against the auth project, so we prefer
+// CUSTOM_SUPABASE_URL / CUSTOM_SUPABASE_ANON_KEY when present.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export async function getUserIdFromRequest(req: Request): Promise<string | null> {
@@ -7,8 +12,8 @@ export async function getUserIdFromRequest(req: Request): Promise<string | null>
   if (!authHeader?.startsWith("Bearer ")) return null;
   const token = authHeader.replace("Bearer ", "");
 
-  const sbUrl = Deno.env.get("SUPABASE_URL")!;
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const sbUrl = Deno.env.get("CUSTOM_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
+  const anonKey = Deno.env.get("CUSTOM_SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_ANON_KEY")!;
   const sb = createClient(sbUrl, anonKey);
 
   try {
