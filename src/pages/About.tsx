@@ -439,7 +439,7 @@ const About = () => {
                     {person.avatar ? (
                       <img
                         src={person.avatar}
-                        alt={person.name}
+                        alt={`${person.name} — ${person.role}`}
                         style={{
                           width: 64,
                           height: 64,
