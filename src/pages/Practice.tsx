@@ -179,7 +179,16 @@ const Practice = () => {
         clearTimeout(autoNextTimeout.current);
       }
     };
-  }, []);
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && feedback === "wrong") {
+        e.preventDefault();
+        goToNextQuestion(currentIndex + 1);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [feedback, currentIndex]);
 
   const loadPractice = async () => {
     const { data: list } = await supabase
