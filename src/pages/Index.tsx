@@ -9,6 +9,7 @@ import Features from "@/components/Features";
 import TestimonialCarousel from "@/components/TestimonialCarousel";
 import ValueProposition from "@/components/ValueProposition";
 import TermsModal, { DocumentType } from "@/components/TermsModal";
+import { Seo } from "@/components/Seo";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -109,6 +110,7 @@ const Index = () => {
 
   return (
     <div className="landing-root" id="top">
+      <Seo title="Moc Nauki — Inteligentna platforma edukacyjna AI" description="Automatyczne notatki, inteligentny kalendarz, nauczyciel 24/7, nauka języków z pomocą AI i baza aktualnych testów. Od uczniów, dla uczniów." path="/" />
       {/* NAV */}
       <nav
         className="lp-nav"

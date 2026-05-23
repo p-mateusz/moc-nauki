@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { getSessionSafe } from "@/lib/authSession";
 import { toast } from "sonner";
+import { Seo } from "@/components/Seo";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -74,6 +75,8 @@ const Login = () => {
   const ready = username.trim() && password.trim() && !loading;
 
   return (
+    <>
+    <Seo title="Zaloguj się do Moc Nauki" description="Zaloguj się do platformy Moc Nauki i wróć do nauki — notatki AI, fiszki, quizy i kalendarz." path="/login" />
     <div style={{
       minHeight: "100vh",
       background: "#060d1a",

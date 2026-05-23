@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import TermsContent from "@/components/TermsContent";
+import { Seo } from "@/components/Seo";
 import "./LandingPage.css";
 
 const Terms = () => {
@@ -30,6 +31,7 @@ const Terms = () => {
 
   return (
     <div className="landing-root" style={{ minHeight: "100vh" }}>
+      <Seo title="Regulamin i polityka prywatności — Moc Nauki" description="Regulamin korzystania z Moc Nauki oraz polityka prywatności i zasady przetwarzania danych." path="/terms" />
       <nav className="lp-nav">
         <div className="logo">Moc Nauki</div>
         <div className="nav-right nav-right-desktop">

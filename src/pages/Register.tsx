@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import TermsModal, { DocumentType } from "@/components/TermsModal";
+import { Seo } from "@/components/Seo";
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -96,6 +97,8 @@ const Register = () => {
   };
 
   return (
+    <>
+    <Seo title="Załóż konto w Moc Nauki" description="Utwórz konto w Moc Nauki i odblokuj notatki AI, fiszki, quizy oraz inteligentny kalendarz nauki." path="/register/account" />
     <div style={{
       minHeight: "100vh",
       background: "#060d1a",

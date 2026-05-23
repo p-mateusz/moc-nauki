@@ -5,6 +5,7 @@ import { Menu, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import TermsModal, { DocumentType } from "@/components/TermsModal";
+import { Seo } from "@/components/Seo";
 import "./LandingPage.css";
 
 const About = () => {
@@ -162,6 +163,8 @@ const About = () => {
 
   return (
     <div className="landing-root" id="top">
+      <Seo title="O platformie Moc Nauki — Nasza misja i zespół" description="Poznaj zespół Moc Nauki i naszą misję — platformę edukacyjną stworzoną przez uczniów dla uczniów." path="/about" />
+      <h1 className="sr-only">O platformie Moc Nauki — Nasza misja i zespół</h1>
       {/* NAV */}
       <nav
         className="lp-nav"
