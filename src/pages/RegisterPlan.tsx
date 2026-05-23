@@ -324,5 +324,6 @@ export default function RegisterPlan() {
         )}
       </motion.div>
     </div>
+    </>
   );
 }

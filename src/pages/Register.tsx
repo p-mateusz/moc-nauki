@@ -340,6 +340,7 @@ const Register = () => {
         <TermsModal onClose={() => setTermsDocument(null)} initialDoc={termsDocument} />
       )}
     </div>
+    </>
   );
 };
 
