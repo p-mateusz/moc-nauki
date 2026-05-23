@@ -181,16 +181,37 @@ const Practice = () => {
     };
   }, []);
 
+  // Wymagaj puszczenia Entera po oznaczeniu odpowiedzi jako błędnej,
+  // żeby kolejne naciśnięcie świadomie przeskakiwało do następnego pytania.
+  const enterArmedRef = useRef(true);
+  useEffect(() => {
+    if (feedback === "wrong") {
+      enterArmedRef.current = false;
+    } else {
+      enterArmedRef.current = true;
+    }
+  }, [feedback]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && feedback === "wrong") {
+      if (e.key === "Enter" && feedback === "wrong" && enterArmedRef.current) {
         e.preventDefault();
         goToNextQuestion(currentIndex + 1);
       }
     };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        enterArmedRef.current = true;
+      }
+    };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
   }, [feedback, currentIndex]);
+
 
   const loadPractice = async () => {
     const { data: list } = await supabase
