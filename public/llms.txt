@@ -1,0 +1,15 @@
+# Moc Nauki
+
+> Inteligentna platforma edukacyjna AI dla uczniów — automatyczne notatki, kalendarz nauki, nauczyciel 24/7, fiszki, quizy i baza testów. Slogan: „Od uczniów, dla uczniów".
+
+## Pages
+
+- [Strona główna](/): Wprowadzenie do platformy Moc Nauki i jej funkcji.
+- [O nas](/about): Misja, zespół i historia projektu.
+- [Cennik](/pricing): Plany 30-dniowe i roczne.
+- [Regulamin](/terms): Regulamin korzystania i polityka prywatności.
+
+## Optional
+
+- [Logowanie](/login)
+- [Rejestracja](/register)
