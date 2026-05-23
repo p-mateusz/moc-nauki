@@ -117,7 +117,7 @@ const Login = () => {
             fontSize: "clamp(1.6rem, 4vw, 2rem)", fontWeight: 900,
             color: "#fff", margin: 0, lineHeight: 1.2,
           }}>
-            Witaj z powrotem.
+            Zaloguj się do Moc Nauki
           </h1>
           <p style={{ color: "#8899b4", fontSize: ".87rem", marginTop: 8 }}>
             Zaloguj się i wróć do nauki
@@ -149,6 +149,7 @@ const Login = () => {
               </div>
               <input
                 type="text"
+                aria-label="Nazwa użytkownika"
                 placeholder="np. jan_kowalski"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -176,6 +177,7 @@ const Login = () => {
               <div style={{ position: "relative" }}>
                 <input
                   type={showPassword ? "text" : "password"}
+                  aria-label="Hasło"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -193,6 +195,8 @@ const Login = () => {
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? "Ukryj hasło" : "Pokaż hasło"}
+                  aria-pressed={showPassword}
                   onMouseDown={() => setShowPassword(true)}
                   onMouseUp={() => setShowPassword(false)}
                   onMouseLeave={() => setShowPassword(false)}
