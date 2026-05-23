@@ -181,6 +181,17 @@ const Practice = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && feedback === "wrong") {
+        e.preventDefault();
+        goToNextQuestion(currentIndex + 1);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [feedback, currentIndex]);
+
   const loadPractice = async () => {
     const { data: list } = await supabase
       .from("word_lists")
