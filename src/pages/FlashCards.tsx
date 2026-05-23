@@ -147,10 +147,24 @@ const FlashCards = () => {
 
     if (list) setListName(list.name);
 
-    const { data: words } = await supabase
-      .from("words")
-      .select("id, word, definition")
-      .eq("list_id", listId!);
+    let words: { id: string; word: string; definition: string | null }[] | null = null;
+    let wordsError: unknown = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const res = await supabase
+        .from("words")
+        .select("id, word, definition")
+        .eq("list_id", listId!);
+      if (!res.error) { words = res.data; wordsError = null; break; }
+      wordsError = res.error;
+      await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+    }
+
+    if (wordsError) {
+      console.error("FlashCards: failed to load words", wordsError);
+      toast.error("Błąd połączenia — spróbuj ponownie");
+      navigate("/dashboard");
+      return;
+    }
 
     if (!words || words.length === 0) {
       toast.error(t("noWordsInList", lang));
