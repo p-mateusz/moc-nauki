@@ -537,7 +537,7 @@ const TestsTab = ({ userName, guestMode }: Props) => {
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 8 }}>
                       {ntImgPreviews.map((src, i) => (
                         <div key={i} style={{ position: "relative", aspectRatio: "1", borderRadius: 10, overflow: "hidden" }}>
-                          <img src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <img alt="" src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                           <div style={{ position: "absolute", top: 4, left: 4, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: ".6rem", fontWeight: 800, padding: "2px 6px", borderRadius: 4 }}>{i + 1}</div>
                           <button onClick={() => { setNtImgPreviews(prev => prev.filter((_, j) => j !== i)); setNtImgFiles(prev => prev.filter((_, j) => j !== i)); }} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", width: 20, height: 20, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             <X size={11} />
@@ -615,7 +615,7 @@ const TestsTab = ({ userName, guestMode }: Props) => {
                   viewTest.images?.length ? (
                     viewTest.images.map((src, i) => (
                       <div key={i} style={{ position: "relative", marginBottom: 10 }}>
-                        <img src={src} style={{ width: "100%", borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)", display: "block" }} />
+                        <img alt="" src={src} style={{ width: "100%", borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)", display: "block" }} />
                         <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(0,0,0,0.7)", color: "#fff", fontSize: ".65rem", fontWeight: 800, padding: "3px 8px", borderRadius: 6 }}>{i + 1}/{viewTest.images.length}</div>
                       </div>
                     ))
@@ -670,7 +670,7 @@ const TestsTab = ({ userName, guestMode }: Props) => {
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))", gap: 8 }}>
                               {solImgs.map((src, i) => (
                                 <div key={i} style={{ position: "relative", aspectRatio: "1", borderRadius: 8, overflow: "hidden" }}>
-                                  <img src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                  <img alt="" src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                   <button onClick={() => { setSolImgs(prev => prev.filter((_, j) => j !== i)); setSolImgFiles(prev => prev.filter((_, j) => j !== i)); }} style={{ position: "absolute", top: 3, right: 3, background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", width: 18, height: 18, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                     <X size={10} />
                                   </button>
@@ -710,7 +710,7 @@ const TestsTab = ({ userName, guestMode }: Props) => {
                             </div>
                             {sol.images?.length ? (
                               <div style={{ padding: "10px 12px" }}>
-                                {sol.images.map((src, i) => <img key={i} src={src} style={{ width: "100%", borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)", display: "block", marginBottom: 8 }} />)}
+                                {sol.images.map((src, i) => <img alt="" key={i} src={src} style={{ width: "100%", borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)", display: "block", marginBottom: 8 }} />)}
                               </div>
                             ) : (
                               <div style={{ padding: "12px 14px", fontSize: ".88rem", color: "#c8d8f0", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{sol.content || <span style={{ color: "#334155" }}>Brak treści</span>}</div>
