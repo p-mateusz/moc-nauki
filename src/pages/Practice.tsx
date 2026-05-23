@@ -179,6 +179,8 @@ const Practice = () => {
         clearTimeout(autoNextTimeout.current);
       }
     };
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter" && feedback === "wrong") {
