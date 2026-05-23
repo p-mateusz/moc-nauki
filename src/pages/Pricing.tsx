@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { logoutUser } from "@/lib/authCleanup";
 import { useAccessGuard } from "@/hooks/use-access-guard";
 import { getSessionSafe } from "@/lib/authSession";
+import { Seo } from "@/components/Seo";
 
 const features = [
   "Zautomatyzowane notatki AI z lekcji",
@@ -57,6 +58,8 @@ export default function Pricing() {
   };
 
   return (
+    <>
+    <Seo title="Cennik — Moc Nauki" description="Plany 30-dniowe i roczne — wybierz dostęp do Moc Nauki i kontynuuj naukę." path="/pricing" />
     <div style={{
       position: "fixed", inset: 0, zIndex: 1, background: "#060d1a",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -151,5 +154,6 @@ export default function Pricing() {
         </div>
       </motion.div>
     </div>
+    </>
   );
 }

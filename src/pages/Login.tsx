@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { getSessionSafe } from "@/lib/authSession";
 import { toast } from "sonner";
+import { Seo } from "@/components/Seo";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -74,6 +75,8 @@ const Login = () => {
   const ready = username.trim() && password.trim() && !loading;
 
   return (
+    <>
+    <Seo title="Zaloguj się do Moc Nauki" description="Zaloguj się do platformy Moc Nauki i wróć do nauki — notatki AI, fiszki, quizy i kalendarz." path="/login" />
     <div style={{
       minHeight: "100vh",
       background: "#060d1a",
@@ -114,7 +117,7 @@ const Login = () => {
             fontSize: "clamp(1.6rem, 4vw, 2rem)", fontWeight: 900,
             color: "#fff", margin: 0, lineHeight: 1.2,
           }}>
-            Witaj z powrotem.
+            Zaloguj się do Moc Nauki
           </h1>
           <p style={{ color: "#8899b4", fontSize: ".87rem", marginTop: 8 }}>
             Zaloguj się i wróć do nauki
@@ -146,6 +149,7 @@ const Login = () => {
               </div>
               <input
                 type="text"
+                aria-label="Nazwa użytkownika"
                 placeholder="np. jan_kowalski"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -173,6 +177,7 @@ const Login = () => {
               <div style={{ position: "relative" }}>
                 <input
                   type={showPassword ? "text" : "password"}
+                  aria-label="Hasło"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -190,6 +195,8 @@ const Login = () => {
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? "Ukryj hasło" : "Pokaż hasło"}
+                  aria-pressed={showPassword}
                   onMouseDown={() => setShowPassword(true)}
                   onMouseUp={() => setShowPassword(false)}
                   onMouseLeave={() => setShowPassword(false)}
@@ -251,6 +258,7 @@ const Login = () => {
         </div>
       </motion.div>
     </div>
+    </>
   );
 };
 

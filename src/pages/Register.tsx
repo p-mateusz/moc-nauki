@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import TermsModal, { DocumentType } from "@/components/TermsModal";
+import { Seo } from "@/components/Seo";
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -96,6 +97,8 @@ const Register = () => {
   };
 
   return (
+    <>
+    <Seo title="Załóż konto w Moc Nauki" description="Utwórz konto w Moc Nauki i odblokuj notatki AI, fiszki, quizy oraz inteligentny kalendarz nauki." path="/register/account" />
     <div style={{
       minHeight: "100vh",
       background: "#060d1a",
@@ -139,7 +142,7 @@ const Register = () => {
             fontSize: "clamp(1.6rem, 4vw, 2rem)", fontWeight: 900,
             color: "#fff", margin: 0, lineHeight: 1.2,
           }}>
-            Utwórz konto.
+            Załóż konto w Moc Nauki
           </h1>
           <p style={{ color: "#8899b4", fontSize: ".87rem", marginTop: 8 }}>
             Dołącz i zacznij naukę już dziś
@@ -166,6 +169,7 @@ const Register = () => {
               <div style={labelStyle}>EMAIL</div>
               <input
                 type="email"
+                aria-label="Email"
                 placeholder="np. jan@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -177,6 +181,7 @@ const Register = () => {
               <div style={labelStyle}>IMIĘ</div>
               <input
                 type="text"
+                aria-label="Imię"
                 placeholder="np. Jan"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -188,6 +193,7 @@ const Register = () => {
               <div style={labelStyle}>NAZWA UŻYTKOWNIKA</div>
               <input
                 type="text"
+                aria-label="Nazwa użytkownika"
                 placeholder="np. jan_kowalski"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -200,6 +206,7 @@ const Register = () => {
               <div style={{ position: "relative" }}>
                 <input
                   type={showPassword ? "text" : "password"}
+                  aria-label="Hasło"
                   placeholder="min. 6 znaków"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -208,6 +215,8 @@ const Register = () => {
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? "Ukryj hasło" : "Pokaż hasło"}
+                  aria-pressed={showPassword}
                   onMouseDown={() => setShowPassword(true)}
                   onMouseUp={() => setShowPassword(false)}
                   onMouseLeave={() => setShowPassword(false)}
@@ -337,6 +346,7 @@ const Register = () => {
         <TermsModal onClose={() => setTermsDocument(null)} initialDoc={termsDocument} />
       )}
     </div>
+    </>
   );
 };
 

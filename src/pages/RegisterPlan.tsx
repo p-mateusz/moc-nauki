@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import { Seo } from "@/components/Seo";
 
 const STRIPE_LINK_30_DNI = "https://buy.stripe.com/5kQ4gy4Qy3321DB24Bco000";
 const STRIPE_LINK_90_DNI = "https://buy.stripe.com/bJe8wO3MufPOeqncJfco001";
@@ -50,6 +51,8 @@ export default function RegisterPlan() {
   };
 
   return (
+    <>
+    <Seo title="Wybierz plan — Moc Nauki" description="Wybierz plan dostępu do Moc Nauki i zacznij naukę z AI." path="/register" />
     <div style={{
       minHeight: "100vh",
       background: "#060d1a",
@@ -321,5 +324,6 @@ export default function RegisterPlan() {
         )}
       </motion.div>
     </div>
+    </>
   );
 }
