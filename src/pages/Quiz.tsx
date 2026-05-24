@@ -24,6 +24,7 @@ const Quiz = () => {
   const { listId } = useParams<{ listId: string }>();
   const navigate = useNavigate();
   const lang = getLang();
+  const userId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
 
   const [listName, setListName] = useState("");
   const [allCards, setAllCards] = useState<QuizCard[]>([]);
@@ -40,6 +41,11 @@ const Quiz = () => {
   const [currentQuestion, setCurrentQuestion] = useState<QuizQuestion | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
+
+  const [showResumeGate, setShowResumeGate] = useState(false);
+  const pendingResumeRef = useRef<any>(null);
+
+  const sessionKey = userId && listId ? `quiz-session:${userId}:${listId}` : null;
 
   useEffect(() => {
     if (!listId) return;
