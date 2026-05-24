@@ -391,6 +391,36 @@ const Practice = () => {
       setFeedback("correct");
       setRoundCorrect((c) => c + 1);
 
+      // Zapisz mastered w bazie (fire-and-forget)
+      const wid = current.wordId;
+      (async () => {
+        if (!userId || !listId) return;
+        try {
+          const { data: existing } = await supabase
+            .from("practice_progress")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("word_id", wid)
+            .maybeSingle();
+          if (existing) {
+            await supabase
+              .from("practice_progress")
+              .update({ mastered: true, updated_at: new Date().toISOString() })
+              .eq("id", existing.id);
+          } else {
+            await supabase.from("practice_progress").insert({
+              user_id: userId,
+              word_id: wid,
+              list_id: listId,
+              mastered: true,
+              attempts: 1,
+            });
+          }
+        } catch (e) {
+          console.warn("mark mastered failed", e);
+        }
+      })();
+
       // AUTO NEXT tylko przy dobrej odpowiedzi
       autoNextTimeout.current = setTimeout(() => {
         goToNextQuestion(currentIndex + 1);
@@ -403,7 +433,81 @@ const Practice = () => {
     }
 
     setChecking(false);
-  }, [current, answer, checking, feedback, currentIndex]);
+  }, [current, answer, checking, feedback, currentIndex, userId, listId]);
+
+  // Zapis sesji do localStorage
+  useEffect(() => {
+    if (!sessionKey || loading || showResumeGate || finished || roundEnded) return;
+    if (queue.length === 0) return;
+    try {
+      localStorage.setItem(
+        sessionKey,
+        JSON.stringify({
+          queueIds: queue.map((q) => q.wordId),
+          currentIndex,
+          roundCorrect,
+          roundWrong,
+          roundNumber,
+          wrongIds: wrongThisRound.map((w) => w.wordId),
+        })
+      );
+    } catch {}
+  }, [queue, currentIndex, roundCorrect, roundWrong, roundNumber, wrongThisRound, loading, showResumeGate, finished, roundEnded, sessionKey]);
+
+  // Wyczyść sesję po ukończeniu
+  useEffect(() => {
+    if (finished && sessionKey) {
+      try { localStorage.removeItem(sessionKey); } catch {}
+    }
+  }, [finished, sessionKey]);
+
+  const handleResumeSession = () => {
+    const payload = pendingResumeRef.current;
+    if (!payload) {
+      setShowResumeGate(false);
+      return;
+    }
+    const { saved, allItems: items } = payload;
+    const byId = new Map(items.map((i: SentenceItem) => [i.wordId, i]));
+    const resolvedQueue = (saved.queueIds as string[])
+      .map((id) => byId.get(id))
+      .filter(Boolean) as SentenceItem[];
+    const resolvedWrong = ((saved.wrongIds as string[]) || [])
+      .map((id) => byId.get(id))
+      .filter(Boolean) as SentenceItem[];
+
+    if (resolvedQueue.length === 0) {
+      setQueue(items);
+      setShowResumeGate(false);
+      pendingResumeRef.current = null;
+      return;
+    }
+
+    setQueue(resolvedQueue);
+    setWrongThisRound(resolvedWrong);
+    setCurrentIndex(Math.min(saved.currentIndex || 0, resolvedQueue.length - 1));
+    setRoundCorrect(saved.roundCorrect || 0);
+    setRoundWrong(saved.roundWrong || 0);
+    setRoundNumber(saved.roundNumber || 1);
+    setShowResumeGate(false);
+    pendingResumeRef.current = null;
+  };
+
+  const handleRestartFresh = () => {
+    if (sessionKey) {
+      try { localStorage.removeItem(sessionKey); } catch {}
+    }
+    const items = pendingResumeRef.current?.allItems || allItems;
+    const shuffled = [...items].sort(() => Math.random() - 0.5);
+    setQueue(shuffled);
+    setWrongThisRound([]);
+    setCurrentIndex(0);
+    setRoundCorrect(0);
+    setRoundWrong(0);
+    setRoundNumber(1);
+    setShowResumeGate(false);
+    pendingResumeRef.current = null;
+  };
 
   const continueWithWrong = () => {
     if (wrongThisRound.length === 0) {
