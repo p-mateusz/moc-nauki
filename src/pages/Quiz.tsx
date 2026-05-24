@@ -135,7 +135,95 @@ const Quiz = () => {
     }
 
     setAllCards(cards);
+
+    // Detect saved session
+    if (sessionKey) {
+      try {
+        const raw = localStorage.getItem(sessionKey);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (
+            saved &&
+            saved.mode &&
+            Array.isArray(saved.remainingIds) &&
+            saved.remainingIds.length > 0
+          ) {
+            pendingResumeRef.current = { saved, cards };
+            setShowResumeGate(true);
+          }
+        }
+      } catch {}
+    }
+
     setLoading(false);
+  };
+
+  // Save session on changes
+  useEffect(() => {
+    if (!sessionKey || !mode || finished || roundEnded || showResumeGate) return;
+    if (remaining.length === 0) return;
+    try {
+      localStorage.setItem(
+        sessionKey,
+        JSON.stringify({
+          mode,
+          remainingIds: remaining.map((c) => c.id),
+          wrongIds: wrongThisRound.map((c) => c.id),
+          roundCorrect,
+          roundWrong,
+          roundNumber,
+        })
+      );
+    } catch {}
+  }, [remaining, wrongThisRound, roundCorrect, roundWrong, roundNumber, mode, finished, roundEnded, showResumeGate, sessionKey]);
+
+  // Clear on finish
+  useEffect(() => {
+    if (finished && sessionKey) {
+      try { localStorage.removeItem(sessionKey); } catch {}
+    }
+  }, [finished, sessionKey]);
+
+  const handleResumeSession = () => {
+    const payload = pendingResumeRef.current;
+    if (!payload) { setShowResumeGate(false); return; }
+    const { saved, cards } = payload;
+    const byId = new Map(cards.map((c: QuizCard) => [c.id, c]));
+    const resolvedRemaining = (saved.remainingIds as string[])
+      .map((id) => byId.get(id))
+      .filter(Boolean) as QuizCard[];
+    const resolvedWrong = ((saved.wrongIds as string[]) || [])
+      .map((id) => byId.get(id))
+      .filter(Boolean) as QuizCard[];
+
+    if (resolvedRemaining.length === 0) {
+      setShowResumeGate(false);
+      pendingResumeRef.current = null;
+      return;
+    }
+
+    const m = saved.mode as QuizMode;
+    setMode(m);
+    setRemaining(resolvedRemaining);
+    setWrongThisRound(resolvedWrong);
+    setRoundCorrect(saved.roundCorrect || 0);
+    setRoundWrong(saved.roundWrong || 0);
+    setRoundNumber(saved.roundNumber || 1);
+    setSelectedIndex(null);
+    setAnswered(false);
+    setFinished(false);
+    setRoundEnded(false);
+    setCurrentQuestion(generateQuestion(resolvedRemaining[0], cards, m));
+    setShowResumeGate(false);
+    pendingResumeRef.current = null;
+  };
+
+  const handleRestartFresh = () => {
+    if (sessionKey) {
+      try { localStorage.removeItem(sessionKey); } catch {}
+    }
+    pendingResumeRef.current = null;
+    setShowResumeGate(false);
   };
 
   const generateQuestion = useCallback(
