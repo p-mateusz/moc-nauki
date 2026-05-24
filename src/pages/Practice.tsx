@@ -155,8 +155,12 @@ const Practice = () => {
 
   const [finished, setFinished] = useState(false);
   const [roundEnded, setRoundEnded] = useState(false);
+  const [showResumeGate, setShowResumeGate] = useState(false);
+  const pendingResumeRef = useRef<any>(null);
   const autoNextTimeout = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const sessionKey = userId && listId ? `practice-session:${userId}:${listId}` : null;
 
   useEffect(() => {
     if (!userId || !listId) {
@@ -168,10 +172,10 @@ const Practice = () => {
   }, [userId, listId]);
 
   useEffect(() => {
-    if (!feedback) {
+    if (!loading && !feedback && !showResumeGate) {
       inputRef.current?.focus();
     }
-  }, [currentIndex, feedback]);
+  }, [currentIndex, feedback, loading, showResumeGate]);
 
   useEffect(() => {
     return () => {
@@ -297,7 +301,30 @@ const Practice = () => {
           const shuffled = [...sentences].sort(() => Math.random() - 0.5);
 
           setAllItems(shuffled);
-          setQueue(shuffled);
+
+          // Sprawdź zapisaną sesję
+          let resumed = false;
+          if (sessionKey) {
+            try {
+              const raw = localStorage.getItem(sessionKey);
+              if (raw) {
+                const saved = JSON.parse(raw);
+                if (
+                  saved &&
+                  Array.isArray(saved.queueIds) &&
+                  saved.queueIds.length > 0
+                ) {
+                  pendingResumeRef.current = { saved, allItems: shuffled };
+                  setShowResumeGate(true);
+                  resumed = true;
+                }
+              }
+            } catch {}
+          }
+
+          if (!resumed) {
+            setQueue(shuffled);
+          }
           setLoading(false);
           return;
         }
@@ -364,6 +391,36 @@ const Practice = () => {
       setFeedback("correct");
       setRoundCorrect((c) => c + 1);
 
+      // Zapisz mastered w bazie (fire-and-forget)
+      const wid = current.wordId;
+      (async () => {
+        if (!userId || !listId) return;
+        try {
+          const { data: existing } = await supabase
+            .from("practice_progress")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("word_id", wid)
+            .maybeSingle();
+          if (existing) {
+            await supabase
+              .from("practice_progress")
+              .update({ mastered: true, updated_at: new Date().toISOString() })
+              .eq("id", existing.id);
+          } else {
+            await supabase.from("practice_progress").insert({
+              user_id: userId,
+              word_id: wid,
+              list_id: listId,
+              mastered: true,
+              attempts: 1,
+            });
+          }
+        } catch (e) {
+          console.warn("mark mastered failed", e);
+        }
+      })();
+
       // AUTO NEXT tylko przy dobrej odpowiedzi
       autoNextTimeout.current = setTimeout(() => {
         goToNextQuestion(currentIndex + 1);
@@ -376,7 +433,81 @@ const Practice = () => {
     }
 
     setChecking(false);
-  }, [current, answer, checking, feedback, currentIndex]);
+  }, [current, answer, checking, feedback, currentIndex, userId, listId]);
+
+  // Zapis sesji do localStorage
+  useEffect(() => {
+    if (!sessionKey || loading || showResumeGate || finished || roundEnded) return;
+    if (queue.length === 0) return;
+    try {
+      localStorage.setItem(
+        sessionKey,
+        JSON.stringify({
+          queueIds: queue.map((q) => q.wordId),
+          currentIndex,
+          roundCorrect,
+          roundWrong,
+          roundNumber,
+          wrongIds: wrongThisRound.map((w) => w.wordId),
+        })
+      );
+    } catch {}
+  }, [queue, currentIndex, roundCorrect, roundWrong, roundNumber, wrongThisRound, loading, showResumeGate, finished, roundEnded, sessionKey]);
+
+  // Wyczyść sesję po ukończeniu
+  useEffect(() => {
+    if (finished && sessionKey) {
+      try { localStorage.removeItem(sessionKey); } catch {}
+    }
+  }, [finished, sessionKey]);
+
+  const handleResumeSession = () => {
+    const payload = pendingResumeRef.current;
+    if (!payload) {
+      setShowResumeGate(false);
+      return;
+    }
+    const { saved, allItems: items } = payload;
+    const byId = new Map(items.map((i: SentenceItem) => [i.wordId, i]));
+    const resolvedQueue = (saved.queueIds as string[])
+      .map((id) => byId.get(id))
+      .filter(Boolean) as SentenceItem[];
+    const resolvedWrong = ((saved.wrongIds as string[]) || [])
+      .map((id) => byId.get(id))
+      .filter(Boolean) as SentenceItem[];
+
+    if (resolvedQueue.length === 0) {
+      setQueue(items);
+      setShowResumeGate(false);
+      pendingResumeRef.current = null;
+      return;
+    }
+
+    setQueue(resolvedQueue);
+    setWrongThisRound(resolvedWrong);
+    setCurrentIndex(Math.min(saved.currentIndex || 0, resolvedQueue.length - 1));
+    setRoundCorrect(saved.roundCorrect || 0);
+    setRoundWrong(saved.roundWrong || 0);
+    setRoundNumber(saved.roundNumber || 1);
+    setShowResumeGate(false);
+    pendingResumeRef.current = null;
+  };
+
+  const handleRestartFresh = () => {
+    if (sessionKey) {
+      try { localStorage.removeItem(sessionKey); } catch {}
+    }
+    const items = pendingResumeRef.current?.allItems || allItems;
+    const shuffled = [...items].sort(() => Math.random() - 0.5);
+    setQueue(shuffled);
+    setWrongThisRound([]);
+    setCurrentIndex(0);
+    setRoundCorrect(0);
+    setRoundWrong(0);
+    setRoundNumber(1);
+    setShowResumeGate(false);
+    pendingResumeRef.current = null;
+  };
 
   const continueWithWrong = () => {
     if (wrongThisRound.length === 0) {
@@ -455,6 +586,54 @@ const Practice = () => {
       </div>
     );
   }
+
+  if (showResumeGate) {
+    return (
+      <div style={{ ...pageStyle, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+        <div style={blob1Style} />
+        <div style={blob2Style} />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{ width: "100%", maxWidth: 430, textAlign: "center", position: "relative", zIndex: 1 }}
+        >
+          <div style={{ ...cardStyle, border: "1px solid rgba(99,102,241,0.25)" }}>
+            <div style={{ fontSize: "3rem", marginBottom: 12 }}>📝</div>
+            <h2 style={{ fontSize: "1.6rem", fontWeight: 900, marginBottom: 10 }}>
+              {listName}
+            </h2>
+            <p style={{ color: "#94a3b8", marginBottom: 28, lineHeight: 1.6 }}>
+              Masz niezakończoną sesję nauki. Co chcesz zrobić?
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={primaryBtnStyle}
+                onClick={handleResumeSession}
+              >
+                <ArrowRight size={16} />
+                Kontynuuj naukę
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={secondaryBtnStyle}
+                onClick={handleRestartFresh}
+              >
+                <RotateCcw size={16} />
+                Zacznij od początku
+              </motion.button>
+              <button style={ghostBtnStyle} onClick={() => navigate("/dashboard")}>
+                {t("backToHome", lang)}
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
 
   if (finished) {
     return (
@@ -1009,6 +1188,7 @@ const Practice = () => {
                   >
                     <input
                       ref={inputRef}
+                      autoFocus
                       placeholder={t("typeWord", lang)}
                       value={answer}
                       disabled={feedback !== null}

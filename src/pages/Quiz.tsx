@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, RotateCcw, Check, X, Loader2, ArrowRight } from "lucide-react";
@@ -24,6 +24,7 @@ const Quiz = () => {
   const { listId } = useParams<{ listId: string }>();
   const navigate = useNavigate();
   const lang = getLang();
+  const userId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
 
   const [listName, setListName] = useState("");
   const [allCards, setAllCards] = useState<QuizCard[]>([]);
@@ -40,6 +41,11 @@ const Quiz = () => {
   const [currentQuestion, setCurrentQuestion] = useState<QuizQuestion | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
+
+  const [showResumeGate, setShowResumeGate] = useState(false);
+  const pendingResumeRef = useRef<any>(null);
+
+  const sessionKey = userId && listId ? `quiz-session:${userId}:${listId}` : null;
 
   useEffect(() => {
     if (!listId) return;
@@ -129,7 +135,95 @@ const Quiz = () => {
     }
 
     setAllCards(cards);
+
+    // Detect saved session
+    if (sessionKey) {
+      try {
+        const raw = localStorage.getItem(sessionKey);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (
+            saved &&
+            saved.mode &&
+            Array.isArray(saved.remainingIds) &&
+            saved.remainingIds.length > 0
+          ) {
+            pendingResumeRef.current = { saved, cards };
+            setShowResumeGate(true);
+          }
+        }
+      } catch {}
+    }
+
     setLoading(false);
+  };
+
+  // Save session on changes
+  useEffect(() => {
+    if (!sessionKey || !mode || finished || roundEnded || showResumeGate) return;
+    if (remaining.length === 0) return;
+    try {
+      localStorage.setItem(
+        sessionKey,
+        JSON.stringify({
+          mode,
+          remainingIds: remaining.map((c) => c.id),
+          wrongIds: wrongThisRound.map((c) => c.id),
+          roundCorrect,
+          roundWrong,
+          roundNumber,
+        })
+      );
+    } catch {}
+  }, [remaining, wrongThisRound, roundCorrect, roundWrong, roundNumber, mode, finished, roundEnded, showResumeGate, sessionKey]);
+
+  // Clear on finish
+  useEffect(() => {
+    if (finished && sessionKey) {
+      try { localStorage.removeItem(sessionKey); } catch {}
+    }
+  }, [finished, sessionKey]);
+
+  const handleResumeSession = () => {
+    const payload = pendingResumeRef.current;
+    if (!payload) { setShowResumeGate(false); return; }
+    const { saved, cards } = payload;
+    const byId = new Map(cards.map((c: QuizCard) => [c.id, c]));
+    const resolvedRemaining = (saved.remainingIds as string[])
+      .map((id) => byId.get(id))
+      .filter(Boolean) as QuizCard[];
+    const resolvedWrong = ((saved.wrongIds as string[]) || [])
+      .map((id) => byId.get(id))
+      .filter(Boolean) as QuizCard[];
+
+    if (resolvedRemaining.length === 0) {
+      setShowResumeGate(false);
+      pendingResumeRef.current = null;
+      return;
+    }
+
+    const m = saved.mode as QuizMode;
+    setMode(m);
+    setRemaining(resolvedRemaining);
+    setWrongThisRound(resolvedWrong);
+    setRoundCorrect(saved.roundCorrect || 0);
+    setRoundWrong(saved.roundWrong || 0);
+    setRoundNumber(saved.roundNumber || 1);
+    setSelectedIndex(null);
+    setAnswered(false);
+    setFinished(false);
+    setRoundEnded(false);
+    setCurrentQuestion(generateQuestion(resolvedRemaining[0], cards, m));
+    setShowResumeGate(false);
+    pendingResumeRef.current = null;
+  };
+
+  const handleRestartFresh = () => {
+    if (sessionKey) {
+      try { localStorage.removeItem(sessionKey); } catch {}
+    }
+    pendingResumeRef.current = null;
+    setShowResumeGate(false);
   };
 
   const generateQuestion = useCallback(
@@ -371,6 +465,45 @@ const Quiz = () => {
       </div>
     );
   }
+
+  if (showResumeGate) {
+    return (
+      <div style={pageStyle}>
+        <div style={blob1Style} />
+        <div style={blob2Style} />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <header style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(6,13,26,0.8)", backdropFilter: "blur(12px)", padding: "0 20px" }}>
+            <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", alignItems: "center", gap: 12, padding: "16px 0" }}>
+              <button style={backBtnStyle} onClick={() => navigate("/dashboard")}>
+                <ArrowLeft size={18} />
+              </button>
+              <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#fff", margin: 0 }}>{listName}</h1>
+            </div>
+          </header>
+          <main style={{ maxWidth: 420, margin: "0 auto", padding: "70px 20px", textAlign: "center" }}>
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
+              <div style={{ fontSize: "3.5rem", marginBottom: 18 }}>🎯</div>
+              <h2 style={{ fontSize: "1.7rem", fontWeight: 900, color: "#fff", marginBottom: 10 }}>
+                Niezakończony quiz
+              </h2>
+              <p style={{ color: "#8899b4", marginBottom: 32 }}>
+                Masz zapisaną sesję. Co chcesz zrobić?
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <motion.button style={btnPrimaryStyle} onClick={handleResumeSession} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  Kontynuuj naukę
+                </motion.button>
+                <motion.button style={btnSecondaryStyle} onClick={handleRestartFresh} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  Zacznij od początku
+                </motion.button>
+              </div>
+            </motion.div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
 
   if (!mode) {
     return (
