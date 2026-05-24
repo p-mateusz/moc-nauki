@@ -446,39 +446,10 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
         return;
       }
 
-      // Auto-extract calendar events
-      if (newContent.length > 100 && onEventsExtracted) {
-        try {
-          const tmp = document.createElement("div");
-          tmp.innerHTML = newContent;
-          const text = tmp.textContent || "";
-          if (text.length < 30) return;
-          const { data, error } = await supabase.functions.invoke("extract-events", {
-            body: {
-              pageTitle: newTitle,
-              content: text.substring(0, 3000),
-              noteDate: activePage.created || todayStr(),
-              subject: activeNb?.subject || "",
-            },
-          });
-          if (!error && data?.events?.length > 0) {
-            const newEvents: CalEvent[] = data.events.map((ev: any) => ({
-              id: crypto.randomUUID(),
-              name: ev.name,
-              type: ev.type || "inne",
-              subject: ev.subject || activeNb?.subject || "Ogólne",
-              date: ev.date,
-              time: "",
-              note: ev.note || "",
-              source: "note",
-              sourceTitle: newTitle,
-              autoAdded: true,
-            }));
-            onEventsExtracted(newEvents);
-            toast.success(`📅 Wykryto ${newEvents.length} termin(y) – dodano do kalendarza!`);
-          }
-        } catch {}
-      }
+      // NOTE: Auto-extract of calendar events via n8n webhook is intentionally disabled here.
+      // The notes webhook must be triggered ONLY when saving a recorded lesson via the
+      // "Słuchaj lekcji" widget — never during manual note editing.
+
     }, 800);
   };
 
