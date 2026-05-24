@@ -301,7 +301,30 @@ const Practice = () => {
           const shuffled = [...sentences].sort(() => Math.random() - 0.5);
 
           setAllItems(shuffled);
-          setQueue(shuffled);
+
+          // Sprawdź zapisaną sesję
+          let resumed = false;
+          if (sessionKey) {
+            try {
+              const raw = localStorage.getItem(sessionKey);
+              if (raw) {
+                const saved = JSON.parse(raw);
+                if (
+                  saved &&
+                  Array.isArray(saved.queueIds) &&
+                  saved.queueIds.length > 0
+                ) {
+                  pendingResumeRef.current = { saved, allItems: shuffled };
+                  setShowResumeGate(true);
+                  resumed = true;
+                }
+              }
+            } catch {}
+          }
+
+          if (!resumed) {
+            setQueue(shuffled);
+          }
           setLoading(false);
           return;
         }
