@@ -587,6 +587,54 @@ const Practice = () => {
     );
   }
 
+  if (showResumeGate) {
+    return (
+      <div style={{ ...pageStyle, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+        <div style={blob1Style} />
+        <div style={blob2Style} />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{ width: "100%", maxWidth: 430, textAlign: "center", position: "relative", zIndex: 1 }}
+        >
+          <div style={{ ...cardStyle, border: "1px solid rgba(99,102,241,0.25)" }}>
+            <div style={{ fontSize: "3rem", marginBottom: 12 }}>📝</div>
+            <h2 style={{ fontSize: "1.6rem", fontWeight: 900, marginBottom: 10 }}>
+              {listName}
+            </h2>
+            <p style={{ color: "#94a3b8", marginBottom: 28, lineHeight: 1.6 }}>
+              Masz niezakończoną sesję nauki. Co chcesz zrobić?
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={primaryBtnStyle}
+                onClick={handleResumeSession}
+              >
+                <ArrowRight size={16} />
+                Kontynuuj naukę
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={secondaryBtnStyle}
+                onClick={handleRestartFresh}
+              >
+                <RotateCcw size={16} />
+                Zacznij od początku
+              </motion.button>
+              <button style={ghostBtnStyle} onClick={() => navigate("/dashboard")}>
+                {t("backToHome", lang)}
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+
   if (finished) {
     return (
       <div
