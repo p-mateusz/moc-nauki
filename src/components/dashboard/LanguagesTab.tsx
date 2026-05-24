@@ -605,7 +605,16 @@ const LanguagesTab = ({ userId }: LanguagesTabProps) => {
               </div>
 
               <div className="md-progress-bar">
-                <div className="md-progress-fill" style={{ width: `${pct}%` }} />
+                <div
+                  className="md-progress-fill"
+                  style={{
+                    width: `${pct}%`,
+                    background:
+                      pct >= 100 && list.wordCount > 0
+                        ? "linear-gradient(90deg, #10b981, #34d399)"
+                        : undefined,
+                  }}
+                />
               </div>
 
               <div style={{ display: "flex", gap: 8, marginTop: 12 }}>

@@ -1009,6 +1009,7 @@ const Practice = () => {
                   >
                     <input
                       ref={inputRef}
+                      autoFocus
                       placeholder={t("typeWord", lang)}
                       value={answer}
                       disabled={feedback !== null}
