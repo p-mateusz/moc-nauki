@@ -155,8 +155,12 @@ const Practice = () => {
 
   const [finished, setFinished] = useState(false);
   const [roundEnded, setRoundEnded] = useState(false);
+  const [showResumeGate, setShowResumeGate] = useState(false);
+  const pendingResumeRef = useRef<any>(null);
   const autoNextTimeout = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const sessionKey = userId && listId ? `practice-session:${userId}:${listId}` : null;
 
   useEffect(() => {
     if (!userId || !listId) {
@@ -168,10 +172,10 @@ const Practice = () => {
   }, [userId, listId]);
 
   useEffect(() => {
-    if (!feedback) {
+    if (!loading && !feedback && !showResumeGate) {
       inputRef.current?.focus();
     }
-  }, [currentIndex, feedback]);
+  }, [currentIndex, feedback, loading, showResumeGate]);
 
   useEffect(() => {
     return () => {
