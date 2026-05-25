@@ -662,6 +662,54 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     saveCurrentPage();
   };
 
+  const uploadPastedImage = async (file: File) => {
+    if (!userId) { toast.error("Musisz być zalogowany aby dodać zdjęcie"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("Zdjęcie jest za duże (max 10MB)"); return; }
+    const ext = (file.name.split(".").pop() || file.type.split("/")[1] || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+    const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("note-images").upload(path, file, {
+      contentType: file.type || "image/png",
+      upsert: false,
+    });
+    if (error) { toast.error("Nie udało się przesłać zdjęcia"); return; }
+    const { data } = supabase.storage.from("note-images").getPublicUrl(path);
+    const url = data.publicUrl;
+    editorRef.current?.focus();
+    const html = `<img src="${url}" alt="" style="max-width:100%;height:auto;display:block;margin:8px 0;border-radius:8px" />`;
+    document.execCommand("insertHTML", false, html);
+    saveCurrentPage();
+  };
+
+  const handleEditorPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const cd = e.clipboardData;
+    if (!cd) return;
+    // Handle image paste (from clipboard or files)
+    const items = Array.from(cd.items || []);
+    const imageItem = items.find(it => it.kind === "file" && it.type.startsWith("image/"));
+    if (imageItem) {
+      const file = imageItem.getAsFile();
+      if (file) {
+        e.preventDefault();
+        void uploadPastedImage(file);
+        return;
+      }
+    }
+    if (cd.files && cd.files.length > 0) {
+      const file = Array.from(cd.files).find(f => f.type.startsWith("image/"));
+      if (file) {
+        e.preventDefault();
+        void uploadPastedImage(file);
+        return;
+      }
+    }
+    // Plain text only — strip all formatting
+    e.preventDefault();
+    const text = cd.getData("text/plain");
+    if (text) {
+      document.execCommand("insertText", false, text);
+    }
+  };
+
   // === Notebook management ===
   const deleteNotebook = async (nbId: string) => {
     if (!confirm("Usunąć notes i wszystkie jego sekcje i strony?")) return;
@@ -962,6 +1010,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               suppressContentEditableWarning
               data-placeholder="Zacznij pisać notatkę..."
               onInput={saveCurrentPage}
+              onPaste={handleEditorPaste}
             />
           </div>
           <div className="editor-meta">
