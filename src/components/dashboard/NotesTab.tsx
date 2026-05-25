@@ -1209,10 +1209,12 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                     {(() => {
                       const tmp = document.createElement("div");
                       tmp.innerHTML = p.content;
-                      return tmp.textContent?.substring(0, 80) || "Pusta strona";
+                      const txt = (tmp.textContent || "").trim();
+                      if (!txt) return "Pusta strona";
+                      const firstLine = txt.split(/\r?\n/)[0].trim();
+                      return firstLine || "Pusta strona";
                     })()}
                   </div>
-                  <div className="pages-col-item-date">{p.modified}</div>
                 </div>
               ))}
             </div>
