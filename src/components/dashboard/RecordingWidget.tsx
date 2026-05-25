@@ -183,7 +183,7 @@ const RecordingWidget = ({ activeTab, onRecordingStateChange }: RecordingWidgetP
          if (json.title && json.title.trim()) title = cleanTitle(json.title);
          if (json.content) content = json.content;
        } catch {}
-       const finalHtml = content + `<br><hr style="border-color:rgba(255,255,255,0.1)"><p style="font-size:.78em;color:#8899b4;font-style:italic">Wygenerowano z nagrania · ${duration} · ${nowStr()}</p>`;
+       const finalHtml = content;
        const addNote = (window as any).__notesTab_addNote;
        if (addNote) await addNote(title, finalHtml);
        else await persistNoteDirectly(title, finalHtml);
