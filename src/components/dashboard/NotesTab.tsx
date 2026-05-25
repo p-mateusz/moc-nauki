@@ -299,7 +299,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               title: p.title,
               content: p.content,
               modified: new Date(p.modified_at).toLocaleDateString("pl-PL") + " " + new Date(p.modified_at).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }),
-              created: p.created_at?.split("T")[0] || todayStr(),
+              created: p.created_at || new Date().toISOString(),
               section_id: p.section_id,
             })),
         })),
