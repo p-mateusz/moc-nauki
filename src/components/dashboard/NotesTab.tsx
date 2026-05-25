@@ -962,6 +962,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               suppressContentEditableWarning
               data-placeholder="Zacznij pisać notatkę..."
               onInput={saveCurrentPage}
+              onPaste={handleEditorPaste}
             />
           </div>
           <div className="editor-meta">
