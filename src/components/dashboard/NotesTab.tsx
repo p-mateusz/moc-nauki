@@ -906,51 +906,57 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     return (
       <div style={{ display: "flex", flex: 1, minHeight: 0, height: "100%", overflow: "hidden" }}>
         {/* Pages sidebar */}
-        <div className="notes-pages-sidebar">
-          <div className="nps-header">
-            <button className="nps-back" onClick={goBackToBrowse} title="Wróć do notesów">
-              ← Wróć
-            </button>
-            <div className="nps-breadcrumb">
-              <span style={{ color: activeNb.color }}>{activeNb.name}</span>
-              <span style={{ opacity: .4 }}>›</span>
-              <span>{activeSec.name}</span>
-            </div>
-          </div>
-          <div className="nps-pages-list">
-            {activeSec.pages.map(p => (
-              <div
-                key={p.id}
-                className={`nps-page-item ${activePageId === p.id ? "active" : ""}`}
-                onClick={() => selectPage(p.id)}
-              >
-                <div className="nps-page-title">{p.title || "Bez tytułu"}</div>
-                <div className="nps-page-date">{p.modified}</div>
+        {!pagesCollapsed && (
+          <div className="notes-pages-sidebar">
+            <div className="nps-header">
+              <button className="nps-back" onClick={goBackToBrowse} title="Wróć do notesów">
+                ← Wróć
+              </button>
+              <div className="nps-breadcrumb">
+                <span style={{ color: activeNb.color }}>{activeNb.name}</span>
+                <span style={{ opacity: .4 }}>›</span>
+                <span>{activeSec.name}</span>
               </div>
-            ))}
+              <button
+                className="nps-collapse-btn"
+                onClick={() => setPagesCollapsed(true)}
+                title="Zwiń panel stron"
+                aria-label="Zwiń panel stron"
+              >‹</button>
+            </div>
+            <div className="nps-pages-list">
+              {activeSec.pages.map(p => (
+                <div
+                  key={p.id}
+                  className={`nps-page-item ${activePageId === p.id ? "active" : ""}`}
+                  onClick={() => selectPage(p.id)}
+                >
+                  <div className="nps-page-title">{p.title || "Bez tytułu"}</div>
+                </div>
+              ))}
+            </div>
+            <button className="notes-bottom-btn" onClick={() => addPage(activeSec.id)}>
+              ＋ Strona
+            </button>
           </div>
-          <button className="notes-bottom-btn" onClick={() => addPage(activeSec.id)}>
-            ＋ Strona
-          </button>
-        </div>
+        )}
 
         {/* Editor */}
         <div className="note-editor">
-          <div className="editor-toolbar">
+          <div className="editor-format-bar">
             <button
               className="notes-mobile-back editor-mobile-back"
               onClick={goBackToBrowse}
               aria-label="Wróć do stron"
             >‹</button>
-            <input
-              ref={titleRef}
-              className="et-title-full"
-              defaultValue={activePage.title}
-              placeholder="Tytuł strony..."
-              onInput={saveCurrentPage}
-            />
-          </div>
-          <div className="editor-format-bar">
+            {pagesCollapsed && (
+              <button
+                className="et-btn nps-expand-btn"
+                onClick={() => setPagesCollapsed(false)}
+                title="Pokaż panel stron"
+                aria-label="Pokaż panel stron"
+              >☰ Strony</button>
+            )}
             <select
               className="ef-select"
               onChange={(e) => {
@@ -1014,6 +1020,16 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               ))}
             </div>
           )}
+          <div className="editor-title-block">
+            <input
+              ref={titleRef}
+              className="et-title-underlined"
+              defaultValue={activePage.title}
+              placeholder=""
+              onInput={saveCurrentPage}
+            />
+            <div className="et-title-created">{formatCreatedDate(activePage.created)}</div>
+          </div>
           <div className="editor-area">
             <div
               ref={editorRef}
@@ -1022,18 +1038,13 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               suppressContentEditableWarning
               data-placeholder="Zacznij pisać notatkę..."
               onInput={saveCurrentPage}
+              onFocus={() => {
+                if (typeof window !== "undefined" && window.innerWidth >= 900) {
+                  setPagesCollapsed(true);
+                }
+              }}
               onPaste={handleEditorPaste}
             />
-          </div>
-          <div className="editor-meta">
-            <span style={{ color: activeNb.color }}>●</span>
-            <span>{activeNb.name}</span>
-            <span style={{ opacity: .4 }}>›</span>
-            <span>{activeSec.name}</span>
-            <span style={{ opacity: .4 }}>›</span>
-            <span>{activePage.title || "Bez tytułu"}</span>
-            <span className="editor-autosave">● Automatyczny zapis</span>
-            <span style={{ marginLeft: "auto" }}>Zmieniono: {activePage.modified}</span>
           </div>
         </div>
       </div>
