@@ -1375,6 +1375,61 @@
 }
 .et-title-full::placeholder { color: rgba(255, 255, 255, 0.18); }
 
+/* Title block with permanent underline + created date */
+.editor-title-block {
+  padding: 20px 28px 8px;
+  flex-shrink: 0;
+}
+.et-title-underlined {
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 800;
+  font-family: Georgia, "Times New Roman", serif;
+  padding: 6px 0 10px;
+  outline: none;
+  letter-spacing: -0.3px;
+}
+.et-title-underlined::placeholder { color: rgba(255, 255, 255, 0.18); }
+.et-title-created {
+  font-size: .82rem;
+  color: #8899b4;
+  padding: 8px 2px 4px;
+  letter-spacing: 0.2px;
+}
+
+/* Pages sidebar collapse / expand */
+.nps-header { position: relative; }
+.nps-collapse-btn {
+  position: absolute;
+  top: 10px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #c8d8f0;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: .2s;
+}
+.nps-collapse-btn:hover { background: rgba(99, 102, 241, 0.18); color: #fff; }
+.nps-expand-btn {
+  background: rgba(99, 102, 241, 0.12) !important;
+  border: 1px solid rgba(99, 102, 241, 0.3) !important;
+  color: #93c5fd !important;
+  font-weight: 700;
+}
+.nps-expand-btn:hover { background: rgba(99, 102, 241, 0.22) !important; color: #fff !important; }
+
 /* Format bar */
 .editor-format-bar {
   padding: 6px 16px;
