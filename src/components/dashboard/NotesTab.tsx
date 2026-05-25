@@ -88,6 +88,18 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   const editorRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const saveTimeout = useRef<any>(null);
+  const [pagesCollapsed, setPagesCollapsed] = useState(false);
+
+  const formatCreatedDate = (iso: string) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    const dateStr = d.toLocaleDateString("pl-PL", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    const hasTime = iso.includes("T") || iso.includes(":");
+    if (!hasTime) return dateStr;
+    const timeStr = d.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+    return `${dateStr}     ${timeStr}`;
+  };
 
   // Drag state for notebook reorder
   const [dragNbId, setDragNbId] = useState<string | null>(null);
