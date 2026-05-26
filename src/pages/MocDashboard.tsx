@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { Seo } from "@/components/Seo";
 import { Menu, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
