@@ -411,10 +411,40 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   // Only re-initialize the editor when the actual page changes — NOT when
   // its title/content change, otherwise innerHTML gets reset mid-typing and
   // the user's just-typed characters (and cursor) are wiped.
+  const resolveNoteImageSrcs = async (root: HTMLElement) => {
+    const imgs = Array.from(root.querySelectorAll("img"));
+    const paths = new Set<string>();
+    for (const img of imgs) {
+      let p = img.getAttribute("data-note-path");
+      if (!p) {
+        const src = img.getAttribute("src") || "";
+        const m = src.match(/\/storage\/v1\/object\/(?:public|sign)\/note-images\/([^?#]+)/);
+        if (m) {
+          p = decodeURIComponent(m[1]);
+          img.setAttribute("data-note-path", p);
+        }
+      }
+      if (p) paths.add(p);
+    }
+    if (paths.size === 0) return;
+    const pathList = Array.from(paths);
+    const { data, error } = await supabase.storage.from("note-images").createSignedUrls(pathList, 60 * 60 * 8);
+    if (error || !data) return;
+    const map = new Map<string, string>();
+    data.forEach((d, i) => { if (d.signedUrl) map.set(pathList[i], d.signedUrl); });
+    for (const img of imgs) {
+      const p = img.getAttribute("data-note-path");
+      if (p && map.has(p)) img.setAttribute("src", map.get(p)!);
+    }
+  };
+
   useEffect(() => {
     if (viewMode !== "page" || !activePage) return;
     if (titleRef.current) titleRef.current.value = activePage.title;
-    if (editorRef.current) editorRef.current.innerHTML = DOMPurify.sanitize(activePage.content || "");
+    if (editorRef.current) {
+      editorRef.current.innerHTML = DOMPurify.sanitize(activePage.content || "", { ADD_ATTR: ["data-note-path"] });
+      void resolveNoteImageSrcs(editorRef.current);
+    }
   }, [viewMode, activePage?.id]);
 
   const flushSavePage = async () => {
