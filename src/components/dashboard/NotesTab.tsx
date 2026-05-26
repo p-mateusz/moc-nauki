@@ -411,17 +411,47 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   // Only re-initialize the editor when the actual page changes — NOT when
   // its title/content change, otherwise innerHTML gets reset mid-typing and
   // the user's just-typed characters (and cursor) are wiped.
+  const resolveNoteImageSrcs = async (root: HTMLElement) => {
+    const imgs = Array.from(root.querySelectorAll("img"));
+    const paths = new Set<string>();
+    for (const img of imgs) {
+      let p = img.getAttribute("data-note-path");
+      if (!p) {
+        const src = img.getAttribute("src") || "";
+        const m = src.match(/\/storage\/v1\/object\/(?:public|sign)\/note-images\/([^?#]+)/);
+        if (m) {
+          p = decodeURIComponent(m[1]);
+          img.setAttribute("data-note-path", p);
+        }
+      }
+      if (p) paths.add(p);
+    }
+    if (paths.size === 0) return;
+    const pathList = Array.from(paths);
+    const { data, error } = await supabase.storage.from("note-images").createSignedUrls(pathList, 60 * 60 * 8);
+    if (error || !data) return;
+    const map = new Map<string, string>();
+    data.forEach((d, i) => { if (d.signedUrl) map.set(pathList[i], d.signedUrl); });
+    for (const img of imgs) {
+      const p = img.getAttribute("data-note-path");
+      if (p && map.has(p)) img.setAttribute("src", map.get(p)!);
+    }
+  };
+
   useEffect(() => {
     if (viewMode !== "page" || !activePage) return;
     if (titleRef.current) titleRef.current.value = activePage.title;
-    if (editorRef.current) editorRef.current.innerHTML = DOMPurify.sanitize(activePage.content || "");
+    if (editorRef.current) {
+      editorRef.current.innerHTML = DOMPurify.sanitize(activePage.content || "", { ADD_ATTR: ["data-note-path"] });
+      void resolveNoteImageSrcs(editorRef.current);
+    }
   }, [viewMode, activePage?.id]);
 
   const flushSavePage = async () => {
     clearTimeout(saveTimeout.current);
     if (!activePage || !editorRef.current || !titleRef.current) return;
     const newTitle = titleRef.current.value || "Bez tytułu";
-    const newContent = DOMPurify.sanitize(editorRef.current.innerHTML);
+    const newContent = DOMPurify.sanitize(editorRef.current.innerHTML, { ADD_ATTR: ["data-note-path"] });
     activePage.title = newTitle;
     activePage.content = newContent;
     activePage.modified = now();
@@ -441,7 +471,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     saveTimeout.current = setTimeout(async () => {
       if (!activePage || !editorRef.current || !titleRef.current) return;
       const newTitle = titleRef.current.value || "Bez tytułu";
-      const newContent = DOMPurify.sanitize(editorRef.current.innerHTML);
+      const newContent = DOMPurify.sanitize(editorRef.current.innerHTML, { ADD_ATTR: ["data-note-path"] });
 
       activePage.title = newTitle;
       activePage.content = newContent;
@@ -684,10 +714,11 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
       upsert: false,
     });
     if (error) { toast.error("Nie udało się przesłać zdjęcia"); return; }
-    const { data } = supabase.storage.from("note-images").getPublicUrl(path);
-    const url = data.publicUrl;
+    const { data: signed } = await supabase.storage.from("note-images").createSignedUrl(path, 60 * 60 * 8);
+    const url = signed?.signedUrl || "";
     editorRef.current?.focus();
-    const html = `<img src="${url}" alt="" style="max-width:100%;height:auto;display:block;margin:8px 0;border-radius:8px" />`;
+    const safePath = path.replace(/"/g, "&quot;");
+    const html = `<img src="${url}" data-note-path="${safePath}" alt="" style="max-width:100%;height:auto;display:block;margin:8px 0;border-radius:8px" />`;
     document.execCommand("insertHTML", false, html);
     saveCurrentPage();
   };
