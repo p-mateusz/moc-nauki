@@ -451,7 +451,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     clearTimeout(saveTimeout.current);
     if (!activePage || !editorRef.current || !titleRef.current) return;
     const newTitle = titleRef.current.value || "Bez tytułu";
-    const newContent = DOMPurify.sanitize(editorRef.current.innerHTML);
+    const newContent = DOMPurify.sanitize(editorRef.current.innerHTML, { ADD_ATTR: ["data-note-path"] });
     activePage.title = newTitle;
     activePage.content = newContent;
     activePage.modified = now();
@@ -471,7 +471,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     saveTimeout.current = setTimeout(async () => {
       if (!activePage || !editorRef.current || !titleRef.current) return;
       const newTitle = titleRef.current.value || "Bez tytułu";
-      const newContent = DOMPurify.sanitize(editorRef.current.innerHTML);
+      const newContent = DOMPurify.sanitize(editorRef.current.innerHTML, { ADD_ATTR: ["data-note-path"] });
 
       activePage.title = newTitle;
       activePage.content = newContent;
