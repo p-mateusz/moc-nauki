@@ -579,8 +579,8 @@ const ValueProposition: React.FC<VPProps> = ({ priceRef, scrollTo }) => {
             </h3>
           </div>
 
-          <div className="faq-grid">
-            {[
+          {(() => {
+            const faqs = [
               {
                 q: "Dlaczego aplikacja jest płatna?",
                 a: "Korzystamy z zaawansowanych modeli sztucznej inteligencji do generowania notatek, wydarzeń w kalendarzu, zdań, fiszek i wielu innych funkcji. Te usługi mają znaczące koszty, dlatego aplikacja jest płatna.",
@@ -597,38 +597,52 @@ const ValueProposition: React.FC<VPProps> = ({ priceRef, scrollTo }) => {
                 q: "Jak anulować subskrypcję?",
                 a: "Wystarczy jedno kliknięcie w ustawieniach konta.",
               },
-            ].map((faq, i) => (
-              <motion.div
-                key={i}
-                className="faq-item"
-                onClick={(e: React.MouseEvent<HTMLDivElement>) => {
-                  const el = e.currentTarget;
-                  const isOpen = el.classList.contains("open");
-
-                  document
-                    .querySelectorAll(".faq-item")
-                    .forEach((i) => i.classList.remove("open"));
-
-                  if (!isOpen) el.classList.add("open");
-                }}
-                initial={{ opacity: 0, y: 8 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-              >
-                <div className="faq-q">
-                  {faq.q}{" "}
-                  <span className="faq-arrow">▾</span>
+            ];
+            const faqJsonLd = {
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: faqs.map((f) => ({
+                "@type": "Question",
+                name: f.q,
+                acceptedAnswer: { "@type": "Answer", text: f.a },
+              })),
+            };
+            return (
+              <>
+                <script
+                  type="application/ld+json"
+                  dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+                />
+                <div className="faq-grid">
+                  {faqs.map((faq, i) => (
+                    <motion.div
+                      key={i}
+                      className="faq-item"
+                      onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+                        const el = e.currentTarget;
+                        const isOpen = el.classList.contains("open");
+                        document
+                          .querySelectorAll(".faq-item")
+                          .forEach((i) => i.classList.remove("open"));
+                        if (!isOpen) el.classList.add("open");
+                      }}
+                      initial={{ opacity: 0, y: 8 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.08 }}
+                    >
+                      <div className="faq-q">
+                        {faq.q} <span className="faq-arrow">▾</span>
+                      </div>
+                      <div className="faq-a">
+                        <div className="faq-a-inner">{faq.a}</div>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
-
-                <div className="faq-a">
-                  <div className="faq-a-inner">
-                    {faq.a}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+              </>
+            );
+          })()}
         </motion.div>
       </div>
     </motion.section>

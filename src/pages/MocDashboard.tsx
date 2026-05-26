@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { Seo } from "@/components/Seo";
 import { Menu, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -396,6 +397,7 @@ const MocDashboard = () => {
 
   return (
     <div className="moc-dashboard">
+      <Seo title="Panel ucznia — Moc Nauki" description="Twój panel w Moc Nauki: notatki AI, kalendarz, fiszki, języki, testy i komunikacja z nauczycielami w jednym miejscu." path="/dashboard" />
       {sidebarOpen && <div className="md-sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
 
       <aside className={`md-sidebar ${sidebarOpen ? "open" : ""}`}>
