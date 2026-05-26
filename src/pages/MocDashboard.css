@@ -2,6 +2,18 @@
    MOC NAUKI DASHBOARD STYLES
    ═══════════════════════════ */
 
+/* Lock outer scroll when dashboard is mounted so the UI can't be dragged past the viewport edges */
+html:has(.moc-dashboard),
+body:has(.moc-dashboard) {
+  height: 100dvh;
+  overflow: hidden;
+  padding: 0;
+}
+body:has(.moc-dashboard) #root {
+  min-height: 0;
+  height: 100dvh;
+}
+
 .moc-dashboard {
   display: flex;
   height: 100vh;
