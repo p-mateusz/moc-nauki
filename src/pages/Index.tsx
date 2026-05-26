@@ -164,6 +164,7 @@ const Index = () => {
         </motion.div>
       )}
 
+      <main>
       <Hero heroRef={heroRef} featRef={featRef} priceRef={priceRef} scrollTo={scrollTo} navigate={navigate} />
       <Features featRef={featRef} />
       <TestimonialCarousel />
@@ -247,6 +248,8 @@ const Index = () => {
           </div>
         </div>
       </motion.section>
+      </main>
+
 
       {/* FOOTER */}
       <footer className="lp-footer">
