@@ -22,7 +22,7 @@ body:has(.moc-dashboard) #root {
   z-index: 1;
   background: #060d1a;
   color: #fff;
-  overflow: auto;
+  overflow: hidden;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
   box-sizing: border-box;
