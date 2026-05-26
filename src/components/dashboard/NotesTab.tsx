@@ -684,10 +684,11 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
       upsert: false,
     });
     if (error) { toast.error("Nie udało się przesłać zdjęcia"); return; }
-    const { data } = supabase.storage.from("note-images").getPublicUrl(path);
-    const url = data.publicUrl;
+    const { data: signed } = await supabase.storage.from("note-images").createSignedUrl(path, 60 * 60 * 8);
+    const url = signed?.signedUrl || "";
     editorRef.current?.focus();
-    const html = `<img src="${url}" alt="" style="max-width:100%;height:auto;display:block;margin:8px 0;border-radius:8px" />`;
+    const safePath = path.replace(/"/g, "&quot;");
+    const html = `<img src="${url}" data-note-path="${safePath}" alt="" style="max-width:100%;height:auto;display:block;margin:8px 0;border-radius:8px" />`;
     document.execCommand("insertHTML", false, html);
     saveCurrentPage();
   };
