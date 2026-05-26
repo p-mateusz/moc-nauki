@@ -454,7 +454,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
       }).eq("id", activePage.id);
       if (error) {
         console.error("notebook_pages update error:", error);
-        toast.error(`Błąd zapisu notatki: ${error.message}`);
+        toast.error("Nie udało się zapisać notatki — spróbuj ponownie");
         return;
       }
 
