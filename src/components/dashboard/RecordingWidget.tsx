@@ -61,8 +61,9 @@ const RecordingWidget = ({ activeTab, onRecordingStateChange }: RecordingWidgetP
      toast.warning("Najpierw otwórz zakładkę Notatki i wybierz notes oraz sekcję.");
      return;
    }
-   const sel = (window as any).__notesTab_getSelection?.();
-   setTargetInfo(sel ? `${sel.nbName} › ${sel.secName}` : "");
+    const sel = (window as any).__notesTab_getSelection?.();
+    targetSelectionRef.current = sel && sel.nbId && sel.secId ? { nbId: sel.nbId, secId: sel.secId, nbName: sel.nbName, secName: sel.secName } : null;
+    setTargetInfo(sel ? `${sel.nbName} › ${sel.secName}` : "");
    try {
      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
      streamRef.current = stream;
