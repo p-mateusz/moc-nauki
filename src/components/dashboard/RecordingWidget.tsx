@@ -33,10 +33,11 @@ const RecordingWidget = ({ activeTab, onRecordingStateChange }: RecordingWidgetP
  const [collapsed, setCollapsed] = useState(false);
  const [sending, setSending] = useState(false);
  const [targetInfo, setTargetInfo] = useState<string>("");
- const mediaRecorderRef = useRef<MediaRecorder | null>(null);
- const streamRef = useRef<MediaStream | null>(null);
- const chunksRef = useRef<Blob[]>([]);
- const intervalRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const intervalRef = useRef<any>(null);
+  const targetSelectionRef = useRef<{ nbId: string; secId: string; nbName?: string; secName?: string } | null>(null);
  const isActive = state !== "idle";
 
  const isGuest = (() => {
@@ -60,8 +61,9 @@ const RecordingWidget = ({ activeTab, onRecordingStateChange }: RecordingWidgetP
      toast.warning("Najpierw otwórz zakładkę Notatki i wybierz notes oraz sekcję.");
      return;
    }
-   const sel = (window as any).__notesTab_getSelection?.();
-   setTargetInfo(sel ? `${sel.nbName} › ${sel.secName}` : "");
+    const sel = (window as any).__notesTab_getSelection?.();
+    targetSelectionRef.current = sel && sel.nbId && sel.secId ? { nbId: sel.nbId, secId: sel.secId, nbName: sel.nbName, secName: sel.secName } : null;
+    setTargetInfo(sel ? `${sel.nbName} › ${sel.secName}` : "");
    try {
      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
      streamRef.current = stream;
@@ -128,13 +130,15 @@ const RecordingWidget = ({ activeTab, onRecordingStateChange }: RecordingWidgetP
    if (recorder.state !== "inactive") recorder.stop();
  };
 
- const persistNoteDirectly = async (title: string, content: string) => {
-   try {
-     let sel: any = null;
-     try { const raw = localStorage.getItem("notesTab_selection"); if (raw) sel = JSON.parse(raw); } catch {}
-     const userId = localStorage.getItem("userId");
-     if (!userId) { toast.warning("Notatka gotowa — zaloguj się."); return; }
-     let sectionId: string | null = sel?.secId || null;
+  const persistNoteDirectly = async (title: string, content: string) => {
+    try {
+      let sel: any = targetSelectionRef.current;
+      if (!sel) {
+        try { const raw = localStorage.getItem("notesTab_selection"); if (raw) sel = JSON.parse(raw); } catch {}
+      }
+      const userId = localStorage.getItem("userId");
+      if (!userId) { toast.warning("Notatka gotowa — zaloguj się."); return; }
+      let sectionId: string | null = sel?.secId || null;
      if (!sectionId) {
        const { data: nbs } = await supabase.from("notebooks").select("id").eq("user_id", userId).order("sort_order", { ascending: true }).limit(1);
        const nbId = nbs?.[0]?.id;
@@ -184,9 +188,11 @@ const RecordingWidget = ({ activeTab, onRecordingStateChange }: RecordingWidgetP
          if (json.content) content = json.content;
        } catch {}
        const finalHtml = content;
-       const addNote = (window as any).__notesTab_addNote;
-       if (addNote) await addNote(title, finalHtml);
-       else await persistNoteDirectly(title, finalHtml);
+        const addNote = (window as any).__notesTab_addNote;
+        const snap = targetSelectionRef.current;
+        if (addNote) await addNote(title, finalHtml, snap?.nbId, snap?.secId);
+        else await persistNoteDirectly(title, finalHtml);
+        targetSelectionRef.current = null;
        setSending(false);
        toast.success("✓ Notatka gotowa!");
        return;
