@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       } catch (err) {
         console.error("cancel_subscription error:", err);
-        return new Response(JSON.stringify({ error: (err as Error).message || "Błąd anulowania subskrypcji" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: "Błąd anulowania subskrypcji" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
     }
 
