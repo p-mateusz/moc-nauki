@@ -1041,6 +1041,15 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
             <div className="et-sep" />
             <button className="et-btn" onClick={insertTable} title="Wstaw tabelę">▦ Tabela</button>
             <div className="et-sep" />
+            <button className="et-btn" onClick={pickImage} title="Wstaw zdjęcie">🖼 Zdjęcie</button>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={onImagePicked}
+            />
+            <div className="et-sep" />
             <button className={`et-btn ${symOpen ? "active" : ""}`} onClick={() => setSymOpen(p => !p)} title="Symbole matematyczne">🔣</button>
             <div className="et-sep" />
             <button
