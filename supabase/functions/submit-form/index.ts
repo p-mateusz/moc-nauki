@@ -101,8 +101,13 @@ Deno.serve(async (req) => {
       body: JSON.stringify({ name, email, learning, achievements, motivation }),
     });
 
-    const result = await response.text();
-    return new Response(result, {
+    if (!response.ok) {
+      console.error("n8n upstream error:", response.status, await response.text());
+      return new Response(JSON.stringify({ error: "Wystąpił błąd przy wysyłaniu formularza" }), {
+        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
