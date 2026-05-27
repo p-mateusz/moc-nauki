@@ -33,10 +33,11 @@ const RecordingWidget = ({ activeTab, onRecordingStateChange }: RecordingWidgetP
  const [collapsed, setCollapsed] = useState(false);
  const [sending, setSending] = useState(false);
  const [targetInfo, setTargetInfo] = useState<string>("");
- const mediaRecorderRef = useRef<MediaRecorder | null>(null);
- const streamRef = useRef<MediaStream | null>(null);
- const chunksRef = useRef<Blob[]>([]);
- const intervalRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const intervalRef = useRef<any>(null);
+  const targetSelectionRef = useRef<{ nbId: string; secId: string; nbName?: string; secName?: string } | null>(null);
  const isActive = state !== "idle";
 
  const isGuest = (() => {
