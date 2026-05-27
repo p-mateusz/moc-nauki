@@ -1252,7 +1252,7 @@ const OverviewTab = ({
               gap: 12,
             }}
           >
-            {recentNotes.map((note) => (
+            {recentNotes.slice(0, 3).map((note) => (
               <div
                 key={note.id}
                 onClick={() =>
