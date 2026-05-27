@@ -130,13 +130,15 @@ const RecordingWidget = ({ activeTab, onRecordingStateChange }: RecordingWidgetP
    if (recorder.state !== "inactive") recorder.stop();
  };
 
- const persistNoteDirectly = async (title: string, content: string) => {
-   try {
-     let sel: any = null;
-     try { const raw = localStorage.getItem("notesTab_selection"); if (raw) sel = JSON.parse(raw); } catch {}
-     const userId = localStorage.getItem("userId");
-     if (!userId) { toast.warning("Notatka gotowa — zaloguj się."); return; }
-     let sectionId: string | null = sel?.secId || null;
+  const persistNoteDirectly = async (title: string, content: string) => {
+    try {
+      let sel: any = targetSelectionRef.current;
+      if (!sel) {
+        try { const raw = localStorage.getItem("notesTab_selection"); if (raw) sel = JSON.parse(raw); } catch {}
+      }
+      const userId = localStorage.getItem("userId");
+      if (!userId) { toast.warning("Notatka gotowa — zaloguj się."); return; }
+      let sectionId: string | null = sel?.secId || null;
      if (!sectionId) {
        const { data: nbs } = await supabase.from("notebooks").select("id").eq("user_id", userId).order("sort_order", { ascending: true }).limit(1);
        const nbId = nbs?.[0]?.id;
