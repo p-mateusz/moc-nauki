@@ -605,10 +605,25 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     }, 3000);
   };
 
-  const addNoteFromRecording = async (title: string, content: string, targetNbId?: string) => {
-    let nb = notebooks.find(n => n.id === (targetNbId || activeNbId)) || notebooks[0];
+  const addNoteFromRecording = async (title: string, content: string, targetNbId?: string, targetSecId?: string) => {
+    // Snapshot fallback from localStorage in case neither arg nor live state matches
+    let snapNb = targetNbId;
+    let snapSec = targetSecId;
+    if (!snapNb || !snapSec) {
+      try {
+        const raw = localStorage.getItem("notesTab_selection");
+        if (raw) {
+          const s = JSON.parse(raw);
+          snapNb = snapNb || s?.nbId;
+          snapSec = snapSec || s?.secId;
+        }
+      } catch {}
+    }
+    let nb = notebooks.find(n => n.id === (snapNb || activeNbId)) || notebooks[0];
     if (!nb) return;
-    let sec = nb.sections.find(s => s.id === activeSecId) || nb.sections[0];
+    let sec = (snapSec ? nb.sections.find(s => s.id === snapSec) : null)
+      || nb.sections.find(s => s.id === activeSecId)
+      || nb.sections[0];
     if (!sec) {
       const { data: createdSection, error } = await supabase.from("notebook_sections").insert({
         notebook_id: nb.id,
