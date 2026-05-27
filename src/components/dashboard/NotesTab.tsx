@@ -735,7 +735,17 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     const safePath = path.replace(/"/g, "&quot;");
     const html = `<img src="${url}" data-note-path="${safePath}" alt="" style="max-width:100%;height:auto;display:block;margin:8px 0;border-radius:8px" />`;
     document.execCommand("insertHTML", false, html);
-    saveCurrentPage();
+    // Persist immediately so a quick tab refresh doesn't lose the image
+    // (saveCurrentPage is debounced 800ms).
+    await flushSavePage();
+  };
+
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const pickImage = () => imageInputRef.current?.click();
+  const onImagePicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) await uploadPastedImage(file);
   };
 
   const handleEditorPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
@@ -1030,6 +1040,15 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
             <button className="et-btn" onClick={() => execCmd("insertOrderedList")} title="Lista numerowana">1. Lista</button>
             <div className="et-sep" />
             <button className="et-btn" onClick={insertTable} title="Wstaw tabelę">▦ Tabela</button>
+            <div className="et-sep" />
+            <button className="et-btn" onClick={pickImage} title="Wstaw zdjęcie">🖼 Zdjęcie</button>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={onImagePicked}
+            />
             <div className="et-sep" />
             <button className={`et-btn ${symOpen ? "active" : ""}`} onClick={() => setSymOpen(p => !p)} title="Symbole matematyczne">🔣</button>
             <div className="et-sep" />
