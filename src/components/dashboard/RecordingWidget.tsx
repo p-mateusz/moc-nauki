@@ -188,9 +188,11 @@ const RecordingWidget = ({ activeTab, onRecordingStateChange }: RecordingWidgetP
          if (json.content) content = json.content;
        } catch {}
        const finalHtml = content;
-       const addNote = (window as any).__notesTab_addNote;
-       if (addNote) await addNote(title, finalHtml);
-       else await persistNoteDirectly(title, finalHtml);
+        const addNote = (window as any).__notesTab_addNote;
+        const snap = targetSelectionRef.current;
+        if (addNote) await addNote(title, finalHtml, snap?.nbId, snap?.secId);
+        else await persistNoteDirectly(title, finalHtml);
+        targetSelectionRef.current = null;
        setSending(false);
        toast.success("✓ Notatka gotowa!");
        return;
