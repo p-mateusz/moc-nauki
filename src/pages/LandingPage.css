@@ -838,8 +838,27 @@
   .landing-root .contact-grid { grid-template-columns: 1fr; }
   .landing-root .hero-visual { display: none; }
   .landing-root .footer-grid { grid-template-columns: 1fr 1fr; }
-  .landing-root .form-row { grid-template-columns: 1fr; }
-  .pricing-compare-grid { grid-template-columns: 1fr !important; max-width: 460px !important; margin: 0 auto !important; }
+  .pricing-tab-trigger {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--lp-gray);
+    padding: 10px 8px;
+    border-radius: 8px;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .2s;
+    font-family: inherit;
+    text-align: center;
+  }
+  .pricing-tab-trigger:hover { color: #fff; }
+  .pricing-tab-trigger[data-state="active"] {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(59,130,246,0.3);
+  }
+
   .landing-root .hstat-l {
     font-size: .80rem;
     max-width: 92px;
