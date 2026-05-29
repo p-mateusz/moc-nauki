@@ -493,11 +493,36 @@ const Practice = () => {
     pendingResumeRef.current = null;
   };
 
+  // Czyści pasek postępu (mastered) w DB dla bieżącej listy,
+  // chyba że użytkownik już opanował WSZYSTKIE słówka — wtedy
+  // pasek pozostaje permanentnie pełny i zielony.
+  const resetMasteredProgressIfNotComplete = async (totalItems: number) => {
+    if (!userId || !listId || totalItems <= 0) return;
+    try {
+      const { count } = await supabase
+        .from("practice_progress")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("list_id", listId)
+        .eq("mastered", true);
+      const masteredCount = count || 0;
+      if (masteredCount >= totalItems) return; // pełny zielony — nie ruszamy
+      await supabase
+        .from("practice_progress")
+        .delete()
+        .eq("user_id", userId)
+        .eq("list_id", listId);
+    } catch (e) {
+      console.warn("reset mastered progress failed", e);
+    }
+  };
+
   const handleRestartFresh = () => {
     if (sessionKey) {
       try { localStorage.removeItem(sessionKey); } catch {}
     }
     const items = pendingResumeRef.current?.allItems || allItems;
+    void resetMasteredProgressIfNotComplete(items.length);
     const shuffled = [...items].sort(() => Math.random() - 0.5);
     setQueue(shuffled);
     setWrongThisRound([]);
@@ -532,6 +557,7 @@ const Practice = () => {
   };
 
   const restartAll = () => {
+    void resetMasteredProgressIfNotComplete(allItems.length);
     const shuffled = [...allItems].sort(() => Math.random() - 0.5);
 
     setQueue(shuffled);
