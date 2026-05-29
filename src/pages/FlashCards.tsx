@@ -114,7 +114,7 @@ const FlashCards = () => {
   const saveSession = async () => {
     if (!userId || !listId || !mode || remaining.length === 0) return;
 
-    await supabase.from("flashcard_sessions").upsert(
+    const { error } = await supabase.from("flashcard_sessions").upsert(
       {
         user_id: userId,
         list_id: listId,
@@ -126,6 +126,7 @@ const FlashCards = () => {
       },
       { onConflict: "user_id,list_id" }
     );
+    if (error) console.warn("flashcard saveSession failed:", error);
   };
 
   const deleteSession = async () => {
