@@ -513,37 +513,76 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
       if (resizing) { resizing = null; saveCurrentPage(); }
     };
 
-    // Native drag move handling: only allow drag when started from move handle
-    let dragArmed = false;
-    overlay.addEventListener("pointerdown", (e) => {
-      const h = (e.target as HTMLElement).dataset?.handle;
-      if (h === "move") dragArmed = true;
-    });
-    const onEditorDragStart = (e: DragEvent) => {
-      const wrap = (e.target as HTMLElement)?.closest?.(".note-img-wrap") as HTMLElement | null;
-      if (!wrap) return;
-      if (!dragArmed && wrap !== selected) { e.preventDefault(); return; }
-      if (!dragArmed) { e.preventDefault(); return; }
-      e.dataTransfer?.setData("text/plain", "note-img-move");
-      overlay.style.display = "none";
+    // Move: drag the selected wrapper to a new caret position inside the editor
+    let moving = false;
+    let moveCaretMarker: HTMLElement | null = null;
+    const getCaretRange = (x: number, y: number): Range | null => {
+      // @ts-ignore
+      if (document.caretRangeFromPoint) return (document as any).caretRangeFromPoint(x, y);
+      // @ts-ignore
+      if (document.caretPositionFromPoint) {
+        // @ts-ignore
+        const p = document.caretPositionFromPoint(x, y);
+        if (!p) return null;
+        const r = document.createRange();
+        r.setStart(p.offsetNode, p.offset);
+        r.collapse(true);
+        return r;
+      }
+      return null;
     };
-    const onEditorDragEnd = () => { dragArmed = false; setTimeout(positionOverlay, 0); saveCurrentPage(); };
+    const onOverlayMovePointerDown = (e: PointerEvent) => {
+      const h = (e.target as HTMLElement).dataset?.handle;
+      if (h !== "move" || !selected) return;
+      e.preventDefault(); e.stopPropagation();
+      moving = true;
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      overlay.style.opacity = "0.5";
+      if (!moveCaretMarker) {
+        moveCaretMarker = document.createElement("div");
+        moveCaretMarker.style.cssText = "position:fixed;width:2px;background:#3b82f6;pointer-events:none;z-index:9998;display:none;";
+        document.body.appendChild(moveCaretMarker);
+      }
+    };
+    const onOverlayMovePointerMove = (e: PointerEvent) => {
+      if (!moving) return;
+      const r = getCaretRange(e.clientX, e.clientY);
+      if (r && moveCaretMarker && editor.contains(r.startContainer)) {
+        const rect = r.getBoundingClientRect();
+        moveCaretMarker.style.display = "block";
+        moveCaretMarker.style.left = rect.left + "px";
+        moveCaretMarker.style.top = rect.top + "px";
+        moveCaretMarker.style.height = (rect.height || 18) + "px";
+      }
+    };
+    const onOverlayMovePointerUp = (e: PointerEvent) => {
+      if (!moving || !selected) return;
+      moving = false;
+      overlay.style.opacity = "1";
+      if (moveCaretMarker) moveCaretMarker.style.display = "none";
+      const r = getCaretRange(e.clientX, e.clientY);
+      if (r && editor.contains(r.startContainer)) {
+        try { r.insertNode(selected); } catch {}
+        positionOverlay();
+        saveCurrentPage();
+      }
+    };
+    overlay.addEventListener("pointerdown", onOverlayMovePointerDown);
+    overlay.addEventListener("pointermove", onOverlayMovePointerMove);
+    overlay.addEventListener("pointerup", onOverlayMovePointerUp);
 
     overlay.addEventListener("pointerdown", onHandlePointerDown);
     overlay.addEventListener("pointermove", onHandlePointerMove);
     overlay.addEventListener("pointerup", onHandlePointerUp);
     editor.addEventListener("click", onEditorClick);
-    editor.addEventListener("dragstart", onEditorDragStart);
-    editor.addEventListener("dragend", onEditorDragEnd);
     document.addEventListener("pointerdown", onDocPointerDown);
     window.addEventListener("scroll", onScrollOrResize, true);
     window.addEventListener("resize", onScrollOrResize);
 
     return () => {
       overlay.remove();
+      moveCaretMarker?.remove();
       editor.removeEventListener("click", onEditorClick);
-      editor.removeEventListener("dragstart", onEditorDragStart);
-      editor.removeEventListener("dragend", onEditorDragEnd);
       document.removeEventListener("pointerdown", onDocPointerDown);
       window.removeEventListener("scroll", onScrollOrResize, true);
       window.removeEventListener("resize", onScrollOrResize);
