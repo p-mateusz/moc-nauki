@@ -447,6 +447,148 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     }
   }, [viewMode, activePage?.id]);
 
+  // Image selection overlay: corner handles (proportional resize) + center move handle
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    let selected: HTMLElement | null = null;
+    const overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed;pointer-events:none;z-index:9999;display:none;border:2px solid #3b82f6;border-radius:8px;box-sizing:border-box;";
+    overlay.innerHTML = `
+      ${["tl","tr","bl","br"].map(p => `<div data-handle="${p}" style="position:absolute;width:18px;height:18px;background:#fff;border:2px solid #3b82f6;border-radius:50%;pointer-events:auto;cursor:${p==="tl"||p==="br"?"nwse":"nesw"}-resize;${p[0]==="t"?"top:-10px":"bottom:-10px"};${p[1]==="l"?"left:-10px":"right:-10px"};"></div>`).join("")}
+      <div data-handle="move" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:#fff;border:2px solid #3b82f6;border-radius:50%;pointer-events:auto;cursor:move;display:flex;align-items:center;justify-content:center;font-size:22px;color:#3b82f6;user-select:none;">✥</div>
+    `;
+    document.body.appendChild(overlay);
+
+    const positionOverlay = () => {
+      if (!selected) { overlay.style.display = "none"; return; }
+      const r = selected.getBoundingClientRect();
+      overlay.style.display = "block";
+      overlay.style.left = r.left + "px";
+      overlay.style.top = r.top + "px";
+      overlay.style.width = r.width + "px";
+      overlay.style.height = r.height + "px";
+    };
+
+    const select = (el: HTMLElement | null) => { selected = el; positionOverlay(); };
+
+    const onEditorClick = (e: MouseEvent) => {
+      const t = (e.target as HTMLElement)?.closest?.(".note-img-wrap") as HTMLElement | null;
+      if (t) { select(t); }
+    };
+    const onDocPointerDown = (e: PointerEvent) => {
+      const t = e.target as HTMLElement;
+      if (overlay.contains(t)) return;
+      if (t?.closest?.(".note-img-wrap") === selected && selected) return;
+      select(null);
+    };
+    const onScrollOrResize = () => positionOverlay();
+
+    // Resize handles — proportional
+    let resizing: { handle: string; startX: number; startW: number; aspect: number } | null = null;
+    const onHandlePointerDown = (e: PointerEvent) => {
+      const h = (e.target as HTMLElement).dataset?.handle;
+      if (!h || !selected) return;
+      e.preventDefault(); e.stopPropagation();
+      if (h === "move") {
+        // Use native drag (set on wrapper) for in-editor repositioning
+        return;
+      }
+      const img = selected.querySelector("img") as HTMLImageElement | null;
+      const rect = selected.getBoundingClientRect();
+      const aspect = img && img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : rect.width / Math.max(1, rect.height);
+      resizing = { handle: h, startX: e.clientX, startW: rect.width, aspect };
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    };
+    const onHandlePointerMove = (e: PointerEvent) => {
+      if (!resizing || !selected) return;
+      const dir = (resizing.handle === "br" || resizing.handle === "tr") ? 1 : -1;
+      const newW = Math.max(60, Math.min(editor.clientWidth, resizing.startW + dir * (e.clientX - resizing.startX)));
+      selected.style.width = newW + "px";
+      // height auto via img; aspect preserved naturally
+      positionOverlay();
+    };
+    const onHandlePointerUp = () => {
+      if (resizing) { resizing = null; saveCurrentPage(); }
+    };
+
+    // Move: drag the selected wrapper to a new caret position inside the editor
+    let moving = false;
+    let moveCaretMarker: HTMLElement | null = null;
+    const getCaretRange = (x: number, y: number): Range | null => {
+      // @ts-ignore
+      if (document.caretRangeFromPoint) return (document as any).caretRangeFromPoint(x, y);
+      // @ts-ignore
+      if (document.caretPositionFromPoint) {
+        // @ts-ignore
+        const p = document.caretPositionFromPoint(x, y);
+        if (!p) return null;
+        const r = document.createRange();
+        r.setStart(p.offsetNode, p.offset);
+        r.collapse(true);
+        return r;
+      }
+      return null;
+    };
+    const onOverlayMovePointerDown = (e: PointerEvent) => {
+      const h = (e.target as HTMLElement).dataset?.handle;
+      if (h !== "move" || !selected) return;
+      e.preventDefault(); e.stopPropagation();
+      moving = true;
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      overlay.style.opacity = "0.5";
+      if (!moveCaretMarker) {
+        moveCaretMarker = document.createElement("div");
+        moveCaretMarker.style.cssText = "position:fixed;width:2px;background:#3b82f6;pointer-events:none;z-index:9998;display:none;";
+        document.body.appendChild(moveCaretMarker);
+      }
+    };
+    const onOverlayMovePointerMove = (e: PointerEvent) => {
+      if (!moving) return;
+      const r = getCaretRange(e.clientX, e.clientY);
+      if (r && moveCaretMarker && editor.contains(r.startContainer)) {
+        const rect = r.getBoundingClientRect();
+        moveCaretMarker.style.display = "block";
+        moveCaretMarker.style.left = rect.left + "px";
+        moveCaretMarker.style.top = rect.top + "px";
+        moveCaretMarker.style.height = (rect.height || 18) + "px";
+      }
+    };
+    const onOverlayMovePointerUp = (e: PointerEvent) => {
+      if (!moving || !selected) return;
+      moving = false;
+      overlay.style.opacity = "1";
+      if (moveCaretMarker) moveCaretMarker.style.display = "none";
+      const r = getCaretRange(e.clientX, e.clientY);
+      if (r && editor.contains(r.startContainer)) {
+        try { r.insertNode(selected); } catch {}
+        positionOverlay();
+        saveCurrentPage();
+      }
+    };
+    overlay.addEventListener("pointerdown", onOverlayMovePointerDown);
+    overlay.addEventListener("pointermove", onOverlayMovePointerMove);
+    overlay.addEventListener("pointerup", onOverlayMovePointerUp);
+
+    overlay.addEventListener("pointerdown", onHandlePointerDown);
+    overlay.addEventListener("pointermove", onHandlePointerMove);
+    overlay.addEventListener("pointerup", onHandlePointerUp);
+    editor.addEventListener("click", onEditorClick);
+    document.addEventListener("pointerdown", onDocPointerDown);
+    window.addEventListener("scroll", onScrollOrResize, true);
+    window.addEventListener("resize", onScrollOrResize);
+
+    return () => {
+      overlay.remove();
+      moveCaretMarker?.remove();
+      editor.removeEventListener("click", onEditorClick);
+      document.removeEventListener("pointerdown", onDocPointerDown);
+      window.removeEventListener("scroll", onScrollOrResize, true);
+      window.removeEventListener("resize", onScrollOrResize);
+    };
+  }, [viewMode, activePage?.id]);
+
   const flushSavePage = async () => {
     clearTimeout(saveTimeout.current);
     if (!activePage || !editorRef.current || !titleRef.current) return;
@@ -734,7 +876,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     editorRef.current?.focus();
     const safePath = path.replace(/"/g, "&quot;");
     // Wrap in a resizable span so the user can drag the bottom-right corner to resize.
-    const html = `<span class="note-img-wrap" contenteditable="false" style="display:inline-block;position:relative;resize:both;overflow:hidden;max-width:100%;width:320px;margin:8px 0;border-radius:8px;vertical-align:top;"><img src="${url}" data-note-path="${safePath}" alt="" style="width:100%;height:100%;display:block;object-fit:contain;border-radius:8px;pointer-events:none;" /></span>&nbsp;`;
+    const html = `<span class="note-img-wrap" contenteditable="false" style="display:inline-block;position:relative;max-width:100%;width:320px;margin:8px 0;border-radius:8px;vertical-align:top;"><img src="${url}" data-note-path="${safePath}" alt="" style="width:100%;height:auto;display:block;border-radius:8px;pointer-events:none;" /></span>&nbsp;`;
     document.execCommand("insertHTML", false, html);
     // Persist immediately so a quick tab refresh doesn't lose the image
     // (saveCurrentPage is debounced 800ms).
