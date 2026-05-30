@@ -734,7 +734,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     editorRef.current?.focus();
     const safePath = path.replace(/"/g, "&quot;");
     // Wrap in a resizable span so the user can drag the bottom-right corner to resize.
-    const html = `<span class="note-img-wrap" contenteditable="false" style="display:inline-block;position:relative;resize:both;overflow:hidden;max-width:100%;width:320px;margin:8px 0;border-radius:8px;vertical-align:top;"><img src="${url}" data-note-path="${safePath}" alt="" style="width:100%;height:100%;display:block;object-fit:contain;border-radius:8px;pointer-events:none;" /></span>&nbsp;`;
+    const html = `<span class="note-img-wrap" contenteditable="false" draggable="true" style="display:inline-block;position:relative;max-width:100%;width:320px;margin:8px 0;border-radius:8px;vertical-align:top;"><img src="${url}" data-note-path="${safePath}" alt="" style="width:100%;height:auto;display:block;border-radius:8px;pointer-events:none;" /></span>&nbsp;`;
     document.execCommand("insertHTML", false, html);
     // Persist immediately so a quick tab refresh doesn't lose the image
     // (saveCurrentPage is debounced 800ms).
