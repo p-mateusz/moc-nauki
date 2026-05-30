@@ -728,7 +728,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
       contentType: file.type || "image/png",
       upsert: false,
     });
-    if (error) { toast.error("Nie udało się przesłać zdjęcia"); return; }
+    if (error) { console.error("note-images upload failed:", error); toast.error("Nie udało się przesłać zdjęcia"); return; }
     const { data: signed } = await supabase.storage.from("note-images").createSignedUrl(path, 60 * 60 * 8);
     const url = signed?.signedUrl || "";
     editorRef.current?.focus();
