@@ -447,6 +447,109 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     }
   }, [viewMode, activePage?.id]);
 
+  // Image selection overlay: corner handles (proportional resize) + center move handle
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    let selected: HTMLElement | null = null;
+    const overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed;pointer-events:none;z-index:9999;display:none;border:2px solid #3b82f6;border-radius:8px;box-sizing:border-box;";
+    overlay.innerHTML = `
+      ${["tl","tr","bl","br"].map(p => `<div data-handle="${p}" style="position:absolute;width:18px;height:18px;background:#fff;border:2px solid #3b82f6;border-radius:50%;pointer-events:auto;cursor:${p==="tl"||p==="br"?"nwse":"nesw"}-resize;${p[0]==="t"?"top:-10px":"bottom:-10px"};${p[1]==="l"?"left:-10px":"right:-10px"};"></div>`).join("")}
+      <div data-handle="move" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:#fff;border:2px solid #3b82f6;border-radius:50%;pointer-events:auto;cursor:move;display:flex;align-items:center;justify-content:center;font-size:22px;color:#3b82f6;user-select:none;">✥</div>
+    `;
+    document.body.appendChild(overlay);
+
+    const positionOverlay = () => {
+      if (!selected) { overlay.style.display = "none"; return; }
+      const r = selected.getBoundingClientRect();
+      overlay.style.display = "block";
+      overlay.style.left = r.left + "px";
+      overlay.style.top = r.top + "px";
+      overlay.style.width = r.width + "px";
+      overlay.style.height = r.height + "px";
+    };
+
+    const select = (el: HTMLElement | null) => { selected = el; positionOverlay(); };
+
+    const onEditorClick = (e: MouseEvent) => {
+      const t = (e.target as HTMLElement)?.closest?.(".note-img-wrap") as HTMLElement | null;
+      if (t) { select(t); }
+    };
+    const onDocPointerDown = (e: PointerEvent) => {
+      const t = e.target as HTMLElement;
+      if (overlay.contains(t)) return;
+      if (t?.closest?.(".note-img-wrap") === selected && selected) return;
+      select(null);
+    };
+    const onScrollOrResize = () => positionOverlay();
+
+    // Resize handles — proportional
+    let resizing: { handle: string; startX: number; startW: number; aspect: number } | null = null;
+    const onHandlePointerDown = (e: PointerEvent) => {
+      const h = (e.target as HTMLElement).dataset?.handle;
+      if (!h || !selected) return;
+      e.preventDefault(); e.stopPropagation();
+      if (h === "move") {
+        // Use native drag (set on wrapper) for in-editor repositioning
+        return;
+      }
+      const img = selected.querySelector("img") as HTMLImageElement | null;
+      const rect = selected.getBoundingClientRect();
+      const aspect = img && img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : rect.width / Math.max(1, rect.height);
+      resizing = { handle: h, startX: e.clientX, startW: rect.width, aspect };
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    };
+    const onHandlePointerMove = (e: PointerEvent) => {
+      if (!resizing || !selected) return;
+      const dir = (resizing.handle === "br" || resizing.handle === "tr") ? 1 : -1;
+      const newW = Math.max(60, Math.min(editor.clientWidth, resizing.startW + dir * (e.clientX - resizing.startX)));
+      selected.style.width = newW + "px";
+      // height auto via img; aspect preserved naturally
+      positionOverlay();
+    };
+    const onHandlePointerUp = () => {
+      if (resizing) { resizing = null; saveCurrentPage(); }
+    };
+
+    // Native drag move handling: only allow drag when started from move handle
+    let dragArmed = false;
+    overlay.addEventListener("pointerdown", (e) => {
+      const h = (e.target as HTMLElement).dataset?.handle;
+      if (h === "move") dragArmed = true;
+    });
+    const onEditorDragStart = (e: DragEvent) => {
+      const wrap = (e.target as HTMLElement)?.closest?.(".note-img-wrap") as HTMLElement | null;
+      if (!wrap) return;
+      if (!dragArmed && wrap !== selected) { e.preventDefault(); return; }
+      if (!dragArmed) { e.preventDefault(); return; }
+      e.dataTransfer?.setData("text/plain", "note-img-move");
+      overlay.style.display = "none";
+    };
+    const onEditorDragEnd = () => { dragArmed = false; setTimeout(positionOverlay, 0); saveCurrentPage(); };
+
+    overlay.addEventListener("pointerdown", onHandlePointerDown);
+    overlay.addEventListener("pointermove", onHandlePointerMove);
+    overlay.addEventListener("pointerup", onHandlePointerUp);
+    editor.addEventListener("click", onEditorClick);
+    editor.addEventListener("dragstart", onEditorDragStart);
+    editor.addEventListener("dragend", onEditorDragEnd);
+    document.addEventListener("pointerdown", onDocPointerDown);
+    window.addEventListener("scroll", onScrollOrResize, true);
+    window.addEventListener("resize", onScrollOrResize);
+
+    return () => {
+      overlay.remove();
+      editor.removeEventListener("click", onEditorClick);
+      editor.removeEventListener("dragstart", onEditorDragStart);
+      editor.removeEventListener("dragend", onEditorDragEnd);
+      document.removeEventListener("pointerdown", onDocPointerDown);
+      window.removeEventListener("scroll", onScrollOrResize, true);
+      window.removeEventListener("resize", onScrollOrResize);
+    };
+  }, [viewMode, activePage?.id]);
+
   const flushSavePage = async () => {
     clearTimeout(saveTimeout.current);
     if (!activePage || !editorRef.current || !titleRef.current) return;
