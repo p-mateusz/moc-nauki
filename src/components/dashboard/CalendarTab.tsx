@@ -1213,7 +1213,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
           {evs.map(e => {
             const col = calColor_(e);
             return (
-              <div key={e.id} className="agenda-event-row" onClick={(ev) => showDetail(ev, e)}>
+              <div key={e.id} className="agenda-event-row" onClick={(ev) => showDetail(ev, e, ds)}>
                 <div className="agenda-event-time">{e.allDay ? "Cały dzień" : `${e.startTime || ""}${e.endTime ? " – " + e.endTime : ""}`}</div>
                 <div className="agenda-event-dot" style={{ background: col }} />
                 <div className="agenda-event-body">
