@@ -1425,8 +1425,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
                 {detailEvent.title}
               </div>
               <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                <button onClick={() => openEditModal(detailEvent)} style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#8899b4", padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: ".75rem" }}>✏️</button>
-                <button onClick={() => deleteEventFromDB(detailEvent.id)} style={{ background: "rgba(248,113,113,0.1)", border: "none", color: "#f87171", padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: ".75rem" }}>🗑</button>
+                <button onClick={() => openEditModal(detailEvent, detailOccDate)} style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#8899b4", padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: ".75rem" }}>✏️</button>
+                <button onClick={() => deleteEventFromDB(detailEvent.id, detailOccDate)} style={{ background: "rgba(248,113,113,0.1)", border: "none", color: "#f87171", padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: ".75rem" }}>🗑</button>
                 <button onClick={() => setDetailEvent(null)} style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#8899b4", padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: ".75rem" }}>✕</button>
               </div>
             </div>
