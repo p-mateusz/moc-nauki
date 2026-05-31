@@ -503,7 +503,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
         toast.error(`Błąd zapisu wydarzenia: ${error?.message || "nieznany błąd"}`);
         return null;
       }
-      return { ...ev, id: data.id };
+      return { ...ev, id: data.id, seriesId: data.series_id || undefined, exceptionDates: data.exception_dates || [] };
     }
   };
 
