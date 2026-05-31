@@ -451,18 +451,18 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     return "Przypomnienia";
   }, [view, cursor]);
 
-  // ── Scroll to now ──
+  // ── Scroll to 8:00 ──
   useEffect(() => {
     if (view === "week") {
       setTimeout(() => {
         if (weekBodyRef.current) {
-          // Scroll so 7:00 is at the top of the visible area
-          const target7am = (7 * 60) / 1440 * TOTAL_H;
-          weekBodyRef.current.scrollTop = Math.max(0, target7am);
+          // Scroll so 8:00 is at the top of the visible area
+          const target8am = (8 * 60) / 1440 * TOTAL_H;
+          weekBodyRef.current.scrollTop = Math.max(0, target8am);
         }
       }, 100);
     }
-  }, [view, cursor]);
+  }, [view, cursor, loading]);
 
   // ── CRUD ──
   const saveEventToDB = async (ev: CalendarEvent, isEdit: boolean) => {
