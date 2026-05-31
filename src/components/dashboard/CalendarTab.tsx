@@ -1076,9 +1076,30 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       if ((drag.mode === "resize" || drag.mode === "move") && drag.eventId) {
         const ev = events.find(e => e.id === drag.eventId);
         if (ev) {
-          await supabase.from("calendar_events").update({
-            time: ev.startTime, end_time: ev.endTime, date: ev.start, end_date: ev.end || ev.start,
-          }).eq("id", ev.id);
+          // Recurring → revert local change, ask which scope to apply.
+          if (ev.repeat && ev.repeat !== "none") {
+            const origStartTime = drag.origStartMin != null ? minToTime(drag.origStartMin) : ev.startTime;
+            const origEndTime = drag.origEndMin != null ? minToTime(drag.origEndMin) : ev.endTime;
+            const origDate = drag.origDate || ev.start;
+            const newEv: CalendarEvent = {
+              ...ev,
+              start: ev.start,
+              end: ev.end,
+              startTime: ev.startTime,
+              endTime: ev.endTime,
+            };
+            // restore master in state
+            const reverted: CalendarEvent = { ...ev, start: origDate, end: origDate, startTime: origStartTime, endTime: origEndTime };
+            setEvents(prev => prev.map(e => e.id === ev.id ? reverted : e));
+            openScopeDialog("Edytowanie wydarzenia cyklicznego", "Zapisz", async (choice) => {
+              await applyRecurringEdit(reverted, origDate, newEv, choice);
+              toast.success("✅ Zapisano zmiany");
+            });
+          } else {
+            await supabase.from("calendar_events").update({
+              time: ev.startTime, end_time: ev.endTime, date: ev.start, end_date: ev.end || ev.start,
+            }).eq("id", ev.id);
+          }
         }
       }
       forceUpdate(x => x + 1);
