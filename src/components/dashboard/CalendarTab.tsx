@@ -755,15 +755,17 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   };
 
   // ── Show detail ──
-  const showDetail = (e: React.MouseEvent, ev: CalendarEvent) => {
+  const showDetail = (e: React.MouseEvent, ev: CalendarEvent, occDate?: string) => {
     e.stopPropagation();
     const rect = (e.target as HTMLElement).getBoundingClientRect();
     let left = rect.right + 8, top = rect.top;
     if (left + 340 > window.innerWidth) left = rect.left - 348;
     if (top + 300 > window.innerHeight) top = window.innerHeight - 310;
     setDetailPos({ left: Math.max(4, left), top: Math.max(4, top) });
+    setDetailOccDate(occDate || ev.start);
     setDetailEvent(ev);
   };
+
 
   // ── Search ──
   const searchResults = useMemo(() => {
