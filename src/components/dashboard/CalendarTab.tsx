@@ -1513,7 +1513,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
               )}
             </div>
             <div className="cal-mfoot">
-              {editingId && <button className="btn btn-danger btn-sm" style={{ marginRight: "auto" }} onClick={() => { deleteEventFromDB(editingId); setModalOpen(false); }}>🗑 Usuń</button>}
+              {editingId && <button className="btn btn-danger btn-sm" style={{ marginRight: "auto" }} onClick={() => { deleteEventFromDB(editingId, editOccDate); setModalOpen(false); }}>🗑 Usuń</button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setModalOpen(false)}>Anuluj</button>
               <button className="btn btn-grad btn-sm" onClick={saveModal}>💾 Zapisz</button>
             </div>
