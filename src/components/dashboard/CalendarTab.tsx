@@ -848,7 +848,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
                   return (
                     <div key={e.id} className="event-pill"
                       style={{ background: `linear-gradient(90deg,${col}50 0%,${col}28 100%)`, border: `1px solid ${col}50`, color: col }}
-                      onClick={(ev) => { ev.stopPropagation(); showDetail(ev, e); }}>
+                      onClick={(ev) => { ev.stopPropagation(); showDetail(ev, e, ds); }}>
                       {e.title}
                     </div>
                   );
