@@ -1547,6 +1547,39 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
           </div>
         </div>
       )}
+
+      {/* ── RECURRING SCOPE DIALOG ── */}
+      {scopeDialog && (
+        <div className="cal-overlay" style={{ zIndex: 950 }} onClick={() => setScopeDialog(null)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: "#2c2c33", borderRadius: 18, padding: "24px 24px 18px", width: "min(420px, 92vw)",
+            color: "#fff", boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
+          }}>
+            <div style={{ fontSize: "1.15rem", fontWeight: 600, marginBottom: 18 }}>{scopeDialog.title}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, paddingLeft: 4 }}>
+              {([
+                { v: "single" as ScopeChoice, label: "To wydarzenie" },
+                { v: "future" as ScopeChoice, label: "To wydarzenie i kolejne wydarzenia" },
+                { v: "all" as ScopeChoice, label: "Wszystkie wydarzenia" },
+              ]).map(opt => (
+                <label key={opt.v} style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer", fontSize: ".95rem" }}>
+                  <input type="radio" name="scope" checked={scopeChoice === opt.v} onChange={() => setScopeChoice(opt.v)}
+                    style={{ accentColor: "#a4c2ff", width: 20, height: 20, margin: 0, cursor: "pointer" }} />
+                  <span>{opt.label}</span>
+                </label>
+              ))}
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 22 }}>
+              <button onClick={() => setScopeDialog(null)} style={{ background: "transparent", border: "none", color: "#a4c2ff", padding: "8px 16px", borderRadius: 20, cursor: "pointer", fontSize: ".9rem", fontWeight: 600 }}>Anuluj</button>
+              <button onClick={async () => {
+                const d = scopeDialog; const c = scopeChoice;
+                setScopeDialog(null);
+                if (d) await d.onConfirm(c);
+              }} style={{ background: "#c8d8ff", border: "none", color: "#1a2340", padding: "8px 20px", borderRadius: 20, cursor: "pointer", fontSize: ".9rem", fontWeight: 600 }}>{scopeDialog.confirmLabel}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
