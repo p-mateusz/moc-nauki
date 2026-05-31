@@ -64,10 +64,14 @@ type CalendarEvent = {
   desc: string;
   repeat: string;
   repeatEnd: string;
+  seriesId?: string;
+  exceptionDates?: string[];
   autoAdded?: boolean;
   source?: string;
   sourceTitle?: string;
 };
+
+type ScopeChoice = "single" | "future" | "all";
 
 type CalendarTabProps = {
   externalEvents?: CalEvent[];
