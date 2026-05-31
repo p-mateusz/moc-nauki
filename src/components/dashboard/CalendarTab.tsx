@@ -868,7 +868,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       const r = c.getBoundingClientRect();
       return { date: isoDate(addDays(ws, i)), left: r.left, right: r.right };
     });
-    dragRef.current = { mode, eventId: ev.id, startY: y, startMin: sm, origStartMin: sm, origEndMin: em, date: ev.start, origDate: ev.start, daysOffsets };
+    const grabOffsetMin = yToMin(y) - sm;
+    dragRef.current = { mode, eventId: ev.id, startY: y, startMin: sm, origStartMin: sm, origEndMin: em, date: ev.start, origDate: ev.start, daysOffsets, grabOffsetMin };
     forceUpdate(x => x + 1);
   };
 
