@@ -26,6 +26,7 @@ type DragState = {
   dayColWidth?: number;
   dayColsLeft?: number;
   daysOffsets?: { date: string; left: number; right: number }[];
+  grabOffsetMin?: number;
 };
 
 // ── Types ──
@@ -867,7 +868,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       const r = c.getBoundingClientRect();
       return { date: isoDate(addDays(ws, i)), left: r.left, right: r.right };
     });
-    dragRef.current = { mode, eventId: ev.id, startY: y, startMin: sm, origStartMin: sm, origEndMin: em, date: ev.start, origDate: ev.start, daysOffsets };
+    const grabOffsetMin = yToMin(y) - sm;
+    dragRef.current = { mode, eventId: ev.id, startY: y, startMin: sm, origStartMin: sm, origEndMin: em, date: ev.start, origDate: ev.start, daysOffsets, grabOffsetMin };
     forceUpdate(x => x + 1);
   };
 
@@ -904,7 +906,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
         if (!col) return;
         const y = getRelativeY(e, col);
         const duration = (drag.origEndMin || 0) - (drag.origStartMin || 0);
-        const newStart = snapMin(yToMin(y) - duration / 2);
+        const newStart = snapMin(yToMin(y) - (drag.grabOffsetMin ?? 0));
         const clampedStart = Math.max(0, Math.min(1440 - duration, newStart));
         setEvents(prev => prev.map(ev => ev.id !== drag.eventId ? ev : {
           ...ev, start: targetDate, end: targetDate,
