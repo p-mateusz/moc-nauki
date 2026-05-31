@@ -906,7 +906,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
         if (!col) return;
         const y = getRelativeY(e, col);
         const duration = (drag.origEndMin || 0) - (drag.origStartMin || 0);
-        const newStart = snapMin(yToMin(y) - duration / 2);
+        const newStart = snapMin(yToMin(y) - (drag.grabOffsetMin ?? 0));
         const clampedStart = Math.max(0, Math.min(1440 - duration, newStart));
         setEvents(prev => prev.map(ev => ev.id !== drag.eventId ? ev : {
           ...ev, start: targetDate, end: targetDate,
