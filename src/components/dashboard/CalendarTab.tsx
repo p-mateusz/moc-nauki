@@ -95,6 +95,7 @@ function startOfWeek(d: Date) { const r = new Date(d); const day = r.getDay(); r
 function timeToMin(t: string) { if (!t) return 0; const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0); }
 
 function occursOn(e: CalendarEvent, dateStr: string): boolean {
+  if (e.exceptionDates && e.exceptionDates.includes(dateStr)) return false;
   if (e.allDay) {
     const d = parseDate(dateStr), start = parseDate(e.start), end = parseDate(e.end || e.start);
     return d >= start && d <= end;
