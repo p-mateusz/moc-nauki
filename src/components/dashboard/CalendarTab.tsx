@@ -485,6 +485,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       type: "inne",
       subject: "",
       note: ev.desc || "",
+      series_id: ev.seriesId || null,
+      exception_dates: ev.exceptionDates || [],
     };
     if (isEdit) {
       const { error } = await supabase.from("calendar_events").update(row).eq("id", ev.id);
