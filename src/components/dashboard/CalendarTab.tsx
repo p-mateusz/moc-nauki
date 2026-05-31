@@ -1182,7 +1182,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
                 opacity: isDragging ? 0.85 : 1, cursor: "grab",
               }}
               onMouseDown={(ev) => handleEventMouseDown(ev, e, "move")}
-              onClick={(ev) => { ev.stopPropagation(); if (!dragRef.current) showDetail(ev, e); }}>
+              onClick={(ev) => { ev.stopPropagation(); if (!dragRef.current) showDetail(ev, e, ds); }}>
               <div style={{ padding: "3px 6px 3px 7px", fontWeight: 700, fontSize: ".65rem", lineHeight: "1.25", color, filter: "brightness(1.4) saturate(0.9)", wordBreak: "break-word", flex: 1 }}>
                 {e.title}
               </div>
