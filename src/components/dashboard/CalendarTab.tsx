@@ -1572,32 +1572,159 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
 
       {/* ── RECURRING SCOPE DIALOG ── */}
       {scopeDialog && (
-        <div className="cal-overlay" style={{ zIndex: 950 }} onClick={() => setScopeDialog(null)}>
-          <div onClick={e => e.stopPropagation()} style={{
-            background: "#2c2c33", borderRadius: 18, padding: "24px 24px 18px", width: "min(420px, 92vw)",
-            color: "#fff", boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
-          }}>
-            <div style={{ fontSize: "1.15rem", fontWeight: 600, marginBottom: 18 }}>{scopeDialog.title}</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14, paddingLeft: 4 }}>
+        <div
+          className="cal-overlay"
+          style={{
+            zIndex: 950,
+            backdropFilter: "blur(8px)",
+            background: "rgba(0,0,0,0.45)",
+          }}
+          onClick={() => setScopeDialog(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "rgba(14,24,48,0.96)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 18,
+              padding: "24px 24px 18px",
+              width: "min(420px, 92vw)",
+              color: "#fff",
+              boxShadow:
+                "0 20px 50px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "1.1rem",
+                fontWeight: 800,
+                marginBottom: 18,
+                color: "#fff",
+              }}
+            >
+              {scopeDialog.title}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
+              }}
+            >
               {([
-                { v: "single" as ScopeChoice, label: "To wydarzenie" },
-                { v: "future" as ScopeChoice, label: "To wydarzenie i kolejne wydarzenia" },
-                { v: "all" as ScopeChoice, label: "Wszystkie wydarzenia" },
-              ]).map(opt => (
-                <label key={opt.v} style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer", fontSize: ".95rem" }}>
-                  <input type="radio" name="scope" checked={scopeChoice === opt.v} onChange={() => setScopeChoice(opt.v)}
-                    style={{ accentColor: "#a4c2ff", width: 20, height: 20, margin: 0, cursor: "pointer" }} />
-                  <span>{opt.label}</span>
+                {
+                  v: "single" as ScopeChoice,
+                  label: "To wydarzenie",
+                },
+                {
+                  v: "future" as ScopeChoice,
+                  label: "To wydarzenie i kolejne wydarzenia",
+                },
+                {
+                  v: "all" as ScopeChoice,
+                  label: "Wszystkie wydarzenia",
+                },
+              ]).map((opt) => (
+                <label
+                  key={opt.v}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    cursor: "pointer",
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    background:
+                      scopeChoice === opt.v
+                        ? "rgba(59,130,246,0.08)"
+                        : "transparent",
+                    border:
+                      scopeChoice === opt.v
+                        ? "1px solid rgba(59,130,246,0.25)"
+                        : "1px solid transparent",
+                    transition: ".15s",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="scope"
+                    checked={scopeChoice === opt.v}
+                    onChange={() => setScopeChoice(opt.v)}
+                    style={{
+                      accentColor: "#60a5fa",
+                      width: 18,
+                      height: 18,
+                      margin: 0,
+                      cursor: "pointer",
+                    }}
+                  />
+
+                  <span
+                    style={{
+                      color:
+                        scopeChoice === opt.v
+                          ? "#dbeafe"
+                          : "#c8d8f0",
+                      fontSize: ".9rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {opt.label}
+                  </span>
                 </label>
               ))}
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 22 }}>
-              <button onClick={() => setScopeDialog(null)} style={{ background: "transparent", border: "none", color: "#a4c2ff", padding: "8px 16px", borderRadius: 20, cursor: "pointer", fontSize: ".9rem", fontWeight: 600 }}>Anuluj</button>
-              <button onClick={async () => {
-                const d = scopeDialog; const c = scopeChoice;
-                setScopeDialog(null);
-                if (d) await d.onConfirm(c);
-              }} style={{ background: "#c8d8ff", border: "none", color: "#1a2340", padding: "8px 20px", borderRadius: 20, cursor: "pointer", fontSize: ".9rem", fontWeight: 600 }}>{scopeDialog.confirmLabel}</button>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+                marginTop: 24,
+              }}
+            >
+              <button
+                onClick={() => setScopeDialog(null)}
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "#8899b4",
+                  padding: "9px 16px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  fontSize: ".85rem",
+                  fontWeight: 700,
+                }}
+              >
+                Anuluj
+              </button>
+
+              <button
+                onClick={async () => {
+                  const d = scopeDialog;
+                  const c = scopeChoice;
+
+                  setScopeDialog(null);
+
+                  if (d) await d.onConfirm(c);
+                }}
+                style={{
+                  background:
+                    "linear-gradient(135deg,#3b82f6,#6366f1)",
+                  border: "none",
+                  color: "#fff",
+                  padding: "9px 18px",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  fontSize: ".85rem",
+                  fontWeight: 700,
+                  boxShadow:
+                    "0 6px 18px rgba(59,130,246,0.35)",
+                }}
+              >
+                {scopeDialog.confirmLabel}
+              </button>
             </div>
           </div>
         </div>
