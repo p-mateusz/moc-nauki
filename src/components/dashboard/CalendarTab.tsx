@@ -140,6 +140,9 @@ function getEventSegment(e: CalendarEvent, dateStr: string) {
   return { top: 0, height, isContinuation: true, isOverflow: false };
 }
 
+function addDaysToStr(s: string, n: number) { const d = parseDate(s); d.setDate(d.getDate() + n); return isoDate(d); }
+function diffDays(a: string, b: string) { return Math.round((parseDate(a).getTime() - parseDate(b).getTime()) / 86400000); }
+
 // ══════════════════════════════════════════════
 // COMPONENT
 // ══════════════════════════════════════════════
