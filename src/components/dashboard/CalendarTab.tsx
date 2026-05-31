@@ -26,6 +26,7 @@ type DragState = {
   dayColWidth?: number;
   dayColsLeft?: number;
   daysOffsets?: { date: string; left: number; right: number }[];
+  grabOffsetMin?: number;
 };
 
 // ── Types ──
