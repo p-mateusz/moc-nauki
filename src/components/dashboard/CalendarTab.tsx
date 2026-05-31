@@ -953,7 +953,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
                   filter: "brightness(1.4) saturate(0.9)",
                   display: "flex", alignItems: "center", gap: 5, padding: "0 7px",
                 }}
-                onClick={(ev) => showDetail(ev, e)}>
+                onClick={(ev) => showDetail(ev, e, isoDate(days[startIdx]))}>
+
                 {e.title}
               </div>
             );
