@@ -558,12 +558,18 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   };
 
   // ── Full modal ──
-  const openEditModal = (ev: CalendarEvent) => {
+  const openEditModal = (ev: CalendarEvent, occDate?: string | null) => {
     setEditingId(ev.id);
+    setEditOccDate(occDate || null);
     setModalTitle(ev.title);
-    setModalStartDate(ev.start);
+    // For recurring events: pre-fill date fields with the occurrence date the
+    // user actually clicked, not the series master start. This way "to wydarzenie"
+    // edits the right day, and even "wszystkie" preserves intent.
+    const baseDate = (ev.repeat && ev.repeat !== "none" && occDate) ? occDate : ev.start;
+    const endDate = (ev.repeat && ev.repeat !== "none" && occDate) ? occDate : (ev.end || ev.start);
+    setModalStartDate(baseDate);
     setModalStartTime(ev.startTime);
-    setModalEndDate(ev.end || ev.start);
+    setModalEndDate(endDate);
     setModalEndTime(ev.endTime);
     setModalAllDay(ev.allDay);
     setModalCalId(ev.calId);
@@ -575,6 +581,80 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     setDetailEvent(null);
   };
 
+  const openScopeDialog = (title: string, confirmLabel: string, onConfirm: (c: ScopeChoice) => void | Promise<void>) => {
+    setScopeChoice("single");
+    setScopeDialog({ title, confirmLabel, onConfirm });
+  };
+
+  // Apply an edit to a recurring event according to user-chosen scope.
+  // `master` is the current series event in state, `occDate` is the date of the
+  // clicked occurrence, `newEv` is the edited payload (with new fields, but its
+  // start/end are already aligned to occDate when scope is "single").
+  const applyRecurringEdit = async (master: CalendarEvent, occDate: string, newEv: CalendarEvent, choice: ScopeChoice) => {
+    if (choice === "all") {
+      // Update master in place; if user moved the date, shift the whole series.
+      const dayShift = diffDays(newEv.start, occDate);
+      const shiftedStart = dayShift !== 0 ? addDaysToStr(master.start, dayShift) : master.start;
+      const shiftedEnd = dayShift !== 0 ? addDaysToStr(master.end || master.start, dayShift) : (newEv.end || newEv.start);
+      const updated: CalendarEvent = {
+        ...master,
+        title: newEv.title, calId: newEv.calId, allDay: newEv.allDay,
+        location: newEv.location, desc: newEv.desc,
+        startTime: newEv.startTime, endTime: newEv.endTime,
+        repeat: newEv.repeat, repeatEnd: newEv.repeatEnd,
+        start: shiftedStart, end: shiftedEnd,
+      };
+      const saved = await saveEventToDB(updated, true);
+      if (saved) setEvents(prev => prev.map(e => e.id === master.id ? updated : e));
+      return;
+    }
+    if (choice === "single") {
+      // Add occDate to exceptions of master, create a standalone event for the edit.
+      const newExceptions = Array.from(new Set([...(master.exceptionDates || []), occDate]));
+      const masterUpdated: CalendarEvent = { ...master, exceptionDates: newExceptions };
+      await saveEventToDB(masterUpdated, true);
+      const standalone: CalendarEvent = {
+        ...newEv,
+        id: "",
+        repeat: "none", repeatEnd: "",
+        seriesId: master.seriesId || master.id,
+        exceptionDates: [],
+      };
+      const saved = await saveEventToDB(standalone, false);
+      setEvents(prev => {
+        const next = prev.map(e => e.id === master.id ? masterUpdated : e);
+        if (saved) next.push(saved);
+        return next;
+      });
+      return;
+    }
+    if (choice === "future") {
+      // Truncate master at the day before occDate, create a new series from occDate.
+      const cutoff = addDaysToStr(occDate, -1);
+      const masterUpdated: CalendarEvent = { ...master, repeatEnd: cutoff };
+      await saveEventToDB(masterUpdated, true);
+      const dayShift = diffDays(newEv.start, occDate);
+      const newSeriesEnd = dayShift !== 0 ? addDaysToStr(newEv.end || newEv.start, 0) : (newEv.end || newEv.start);
+      const newSeries: CalendarEvent = {
+        ...newEv,
+        id: "",
+        start: newEv.start,
+        end: newSeriesEnd,
+        repeat: newEv.repeat || master.repeat,
+        repeatEnd: master.repeatEnd && parseDate(master.repeatEnd) >= parseDate(newEv.start) ? master.repeatEnd : "",
+        seriesId: undefined, // new series
+        exceptionDates: (master.exceptionDates || []).filter(d => parseDate(d) >= parseDate(newEv.start)),
+      };
+      const saved = await saveEventToDB(newSeries, false);
+      setEvents(prev => {
+        const next = prev.map(e => e.id === master.id ? masterUpdated : e);
+        if (saved) next.push(saved);
+        return next;
+      });
+      return;
+    }
+  };
+
   const saveModal = async () => {
     if (!modalTitle.trim()) { toast.warning("Podaj tytuł!"); return; }
     const ev: CalendarEvent = {
@@ -584,6 +664,19 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       allDay: modalAllDay, location: modalLocation.trim(), desc: modalDesc.trim(),
       repeat: modalRepeat, repeatEnd: modalRepeatEnd,
     };
+    // Recurring edit → ask scope first
+    if (editingId) {
+      const master = events.find(e => e.id === editingId);
+      if (master && master.repeat && master.repeat !== "none") {
+        const occDate = editOccDate || master.start;
+        setModalOpen(false);
+        openScopeDialog("Edytowanie wydarzenia cyklicznego", "Zapisz", async (choice) => {
+          await applyRecurringEdit(master, occDate, ev, choice);
+          toast.success("✅ Zapisano zmiany");
+        });
+        return;
+      }
+    }
     const saved = await saveEventToDB(ev, !!editingId);
     if (saved) {
       if (editingId) {
