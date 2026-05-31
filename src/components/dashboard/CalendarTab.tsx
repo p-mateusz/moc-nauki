@@ -518,12 +518,43 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     }
   };
 
-  const deleteEventFromDB = async (id: string) => {
+  const deleteEventRaw = async (id: string) => {
     await supabase.from("calendar_events").delete().eq("id", id);
     setEvents(prev => prev.filter(e => e.id !== id));
+  };
+
+  const deleteEventFromDB = async (id: string, occDate?: string | null) => {
+    const ev = events.find(e => e.id === id);
+    if (ev && ev.repeat && ev.repeat !== "none") {
+      const od = occDate || ev.start;
+      setDetailEvent(null);
+      openScopeDialog("Usuń wydarzenie cykliczne", "Usuń", async (choice) => {
+        if (choice === "all") {
+          await deleteEventRaw(id);
+        } else if (choice === "single") {
+          const newExceptions = Array.from(new Set([...(ev.exceptionDates || []), od]));
+          const updated: CalendarEvent = { ...ev, exceptionDates: newExceptions };
+          await saveEventToDB(updated, true);
+          setEvents(prev => prev.map(e => e.id === id ? updated : e));
+        } else if (choice === "future") {
+          const cutoff = addDaysToStr(od, -1);
+          if (parseDate(cutoff) < parseDate(ev.start)) {
+            await deleteEventRaw(id);
+          } else {
+            const updated: CalendarEvent = { ...ev, repeatEnd: cutoff };
+            await saveEventToDB(updated, true);
+            setEvents(prev => prev.map(e => e.id === id ? updated : e));
+          }
+        }
+        toast.info("🗑 Usunięto wydarzenie");
+      });
+      return;
+    }
+    await deleteEventRaw(id);
     setDetailEvent(null);
     toast.info("🗑 Usunięto wydarzenie");
   };
+
 
   // ── Quick popup ──
   const openQuickPopup = (ds: string, startTime?: string, endTime?: string, allDay = false) => {
