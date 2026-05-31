@@ -356,6 +356,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
         desc: e.description || e.note || "",
         repeat: e.repeat_type || "none",
         repeatEnd: e.repeat_end || "",
+        seriesId: e.series_id || undefined,
+        exceptionDates: e.exception_dates || [],
         autoAdded: e.auto_added,
         source: e.source || undefined,
         sourceTitle: e.source_title || undefined,
