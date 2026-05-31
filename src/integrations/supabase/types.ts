@@ -71,12 +71,14 @@ export type Database = {
           description: string
           end_date: string
           end_time: string
+          exception_dates: string[]
           id: string
           location: string
           name: string
           note: string
           repeat_end: string
           repeat_type: string
+          series_id: string | null
           source: string | null
           source_title: string | null
           subject: string
@@ -93,12 +95,14 @@ export type Database = {
           description?: string
           end_date?: string
           end_time?: string
+          exception_dates?: string[]
           id?: string
           location?: string
           name: string
           note?: string
           repeat_end?: string
           repeat_type?: string
+          series_id?: string | null
           source?: string | null
           source_title?: string | null
           subject?: string
@@ -115,12 +119,14 @@ export type Database = {
           description?: string
           end_date?: string
           end_time?: string
+          exception_dates?: string[]
           id?: string
           location?: string
           name?: string
           note?: string
           repeat_end?: string
           repeat_type?: string
+          series_id?: string | null
           source?: string | null
           source_title?: string | null
           subject?: string

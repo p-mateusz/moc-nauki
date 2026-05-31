@@ -64,10 +64,14 @@ type CalendarEvent = {
   desc: string;
   repeat: string;
   repeatEnd: string;
+  seriesId?: string;
+  exceptionDates?: string[];
   autoAdded?: boolean;
   source?: string;
   sourceTitle?: string;
 };
+
+type ScopeChoice = "single" | "future" | "all";
 
 type CalendarTabProps = {
   externalEvents?: CalEvent[];
@@ -91,6 +95,7 @@ function startOfWeek(d: Date) { const r = new Date(d); const day = r.getDay(); r
 function timeToMin(t: string) { if (!t) return 0; const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0); }
 
 function occursOn(e: CalendarEvent, dateStr: string): boolean {
+  if (e.exceptionDates && e.exceptionDates.includes(dateStr)) return false;
   if (e.allDay) {
     const d = parseDate(dateStr), start = parseDate(e.start), end = parseDate(e.end || e.start);
     return d >= start && d <= end;
@@ -135,6 +140,9 @@ function getEventSegment(e: CalendarEvent, dateStr: string) {
   return { top: 0, height, isContinuation: true, isOverflow: false };
 }
 
+function addDaysToStr(s: string, n: number) { const d = parseDate(s); d.setDate(d.getDate() + n); return isoDate(d); }
+function diffDays(a: string, b: string) { return Math.round((parseDate(a).getTime() - parseDate(b).getTime()) / 86400000); }
+
 // ══════════════════════════════════════════════
 // COMPONENT
 // ══════════════════════════════════════════════
@@ -164,6 +172,17 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   // Detail popup
   const [detailEvent, setDetailEvent] = useState<CalendarEvent | null>(null);
   const [detailPos, setDetailPos] = useState({ left: 0, top: 0 });
+  const [detailOccDate, setDetailOccDate] = useState<string | null>(null);
+  const [editOccDate, setEditOccDate] = useState<string | null>(null);
+
+  // Recurring scope dialog ("this / this+future / all")
+  const [scopeDialog, setScopeDialog] = useState<null | {
+    title: string;
+    confirmLabel: string;
+    onConfirm: (choice: ScopeChoice) => void | Promise<void>;
+  }>(null);
+  const [scopeChoice, setScopeChoice] = useState<ScopeChoice>("single");
+
 
   // Full modal
   const [modalOpen, setModalOpen] = useState(false);
@@ -348,6 +367,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
         desc: e.description || e.note || "",
         repeat: e.repeat_type || "none",
         repeatEnd: e.repeat_end || "",
+        seriesId: e.series_id || undefined,
+        exceptionDates: e.exception_dates || [],
         autoAdded: e.auto_added,
         source: e.source || undefined,
         sourceTitle: e.source_title || undefined,
@@ -441,18 +462,18 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     return "Przypomnienia";
   }, [view, cursor]);
 
-  // ── Scroll to now ──
+  // ── Scroll to 8:00 ──
   useEffect(() => {
     if (view === "week") {
       setTimeout(() => {
         if (weekBodyRef.current) {
-          // Scroll so 7:00 is at the top of the visible area
-          const target7am = (7 * 60) / 1440 * TOTAL_H;
-          weekBodyRef.current.scrollTop = Math.max(0, target7am);
+          // Scroll so 8:00 is at the top of the visible area
+          const target8am = (8 * 60) / 1440 * TOTAL_H;
+          weekBodyRef.current.scrollTop = Math.max(0, target8am);
         }
       }, 100);
     }
-  }, [view, cursor]);
+  }, [view, cursor, loading]);
 
   // ── CRUD ──
   const saveEventToDB = async (ev: CalendarEvent, isEdit: boolean) => {
@@ -475,6 +496,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       type: "inne",
       subject: "",
       note: ev.desc || "",
+      series_id: ev.seriesId || null,
+      exception_dates: ev.exceptionDates || [],
     };
     if (isEdit) {
       const { error } = await supabase.from("calendar_events").update(row).eq("id", ev.id);
@@ -491,16 +514,48 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
         toast.error(`Błąd zapisu wydarzenia: ${error?.message || "nieznany błąd"}`);
         return null;
       }
-      return { ...ev, id: data.id };
+      const d: any = data;
+      return { ...ev, id: d.id, seriesId: d.series_id || undefined, exceptionDates: d.exception_dates || [] };
     }
   };
 
-  const deleteEventFromDB = async (id: string) => {
+  const deleteEventRaw = async (id: string) => {
     await supabase.from("calendar_events").delete().eq("id", id);
     setEvents(prev => prev.filter(e => e.id !== id));
+  };
+
+  const deleteEventFromDB = async (id: string, occDate?: string | null) => {
+    const ev = events.find(e => e.id === id);
+    if (ev && ev.repeat && ev.repeat !== "none") {
+      const od = occDate || ev.start;
+      setDetailEvent(null);
+      openScopeDialog("Usuń wydarzenie cykliczne", "Usuń", async (choice) => {
+        if (choice === "all") {
+          await deleteEventRaw(id);
+        } else if (choice === "single") {
+          const newExceptions = Array.from(new Set([...(ev.exceptionDates || []), od]));
+          const updated: CalendarEvent = { ...ev, exceptionDates: newExceptions };
+          await saveEventToDB(updated, true);
+          setEvents(prev => prev.map(e => e.id === id ? updated : e));
+        } else if (choice === "future") {
+          const cutoff = addDaysToStr(od, -1);
+          if (parseDate(cutoff) < parseDate(ev.start)) {
+            await deleteEventRaw(id);
+          } else {
+            const updated: CalendarEvent = { ...ev, repeatEnd: cutoff };
+            await saveEventToDB(updated, true);
+            setEvents(prev => prev.map(e => e.id === id ? updated : e));
+          }
+        }
+        toast.info("🗑 Usunięto wydarzenie");
+      });
+      return;
+    }
+    await deleteEventRaw(id);
     setDetailEvent(null);
     toast.info("🗑 Usunięto wydarzenie");
   };
+
 
   // ── Quick popup ──
   const openQuickPopup = (ds: string, startTime?: string, endTime?: string, allDay = false) => {
@@ -535,12 +590,18 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   };
 
   // ── Full modal ──
-  const openEditModal = (ev: CalendarEvent) => {
+  const openEditModal = (ev: CalendarEvent, occDate?: string | null) => {
     setEditingId(ev.id);
+    setEditOccDate(occDate || null);
     setModalTitle(ev.title);
-    setModalStartDate(ev.start);
+    // For recurring events: pre-fill date fields with the occurrence date the
+    // user actually clicked, not the series master start. This way "to wydarzenie"
+    // edits the right day, and even "wszystkie" preserves intent.
+    const baseDate = (ev.repeat && ev.repeat !== "none" && occDate) ? occDate : ev.start;
+    const endDate = (ev.repeat && ev.repeat !== "none" && occDate) ? occDate : (ev.end || ev.start);
+    setModalStartDate(baseDate);
     setModalStartTime(ev.startTime);
-    setModalEndDate(ev.end || ev.start);
+    setModalEndDate(endDate);
     setModalEndTime(ev.endTime);
     setModalAllDay(ev.allDay);
     setModalCalId(ev.calId);
@@ -552,6 +613,80 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     setDetailEvent(null);
   };
 
+  const openScopeDialog = (title: string, confirmLabel: string, onConfirm: (c: ScopeChoice) => void | Promise<void>) => {
+    setScopeChoice("single");
+    setScopeDialog({ title, confirmLabel, onConfirm });
+  };
+
+  // Apply an edit to a recurring event according to user-chosen scope.
+  // `master` is the current series event in state, `occDate` is the date of the
+  // clicked occurrence, `newEv` is the edited payload (with new fields, but its
+  // start/end are already aligned to occDate when scope is "single").
+  const applyRecurringEdit = async (master: CalendarEvent, occDate: string, newEv: CalendarEvent, choice: ScopeChoice) => {
+    if (choice === "all") {
+      // Update master in place; if user moved the date, shift the whole series.
+      const dayShift = diffDays(newEv.start, occDate);
+      const shiftedStart = dayShift !== 0 ? addDaysToStr(master.start, dayShift) : master.start;
+      const shiftedEnd = dayShift !== 0 ? addDaysToStr(master.end || master.start, dayShift) : (newEv.end || newEv.start);
+      const updated: CalendarEvent = {
+        ...master,
+        title: newEv.title, calId: newEv.calId, allDay: newEv.allDay,
+        location: newEv.location, desc: newEv.desc,
+        startTime: newEv.startTime, endTime: newEv.endTime,
+        repeat: newEv.repeat, repeatEnd: newEv.repeatEnd,
+        start: shiftedStart, end: shiftedEnd,
+      };
+      const saved = await saveEventToDB(updated, true);
+      if (saved) setEvents(prev => prev.map(e => e.id === master.id ? updated : e));
+      return;
+    }
+    if (choice === "single") {
+      // Add occDate to exceptions of master, create a standalone event for the edit.
+      const newExceptions = Array.from(new Set([...(master.exceptionDates || []), occDate]));
+      const masterUpdated: CalendarEvent = { ...master, exceptionDates: newExceptions };
+      await saveEventToDB(masterUpdated, true);
+      const standalone: CalendarEvent = {
+        ...newEv,
+        id: "",
+        repeat: "none", repeatEnd: "",
+        seriesId: master.seriesId || master.id,
+        exceptionDates: [],
+      };
+      const saved = await saveEventToDB(standalone, false);
+      setEvents(prev => {
+        const next = prev.map(e => e.id === master.id ? masterUpdated : e);
+        if (saved) next.push(saved);
+        return next;
+      });
+      return;
+    }
+    if (choice === "future") {
+      // Truncate master at the day before occDate, create a new series from occDate.
+      const cutoff = addDaysToStr(occDate, -1);
+      const masterUpdated: CalendarEvent = { ...master, repeatEnd: cutoff };
+      await saveEventToDB(masterUpdated, true);
+      const dayShift = diffDays(newEv.start, occDate);
+      const newSeriesEnd = dayShift !== 0 ? addDaysToStr(newEv.end || newEv.start, 0) : (newEv.end || newEv.start);
+      const newSeries: CalendarEvent = {
+        ...newEv,
+        id: "",
+        start: newEv.start,
+        end: newSeriesEnd,
+        repeat: newEv.repeat || master.repeat,
+        repeatEnd: master.repeatEnd && parseDate(master.repeatEnd) >= parseDate(newEv.start) ? master.repeatEnd : "",
+        seriesId: undefined, // new series
+        exceptionDates: (master.exceptionDates || []).filter(d => parseDate(d) >= parseDate(newEv.start)),
+      };
+      const saved = await saveEventToDB(newSeries, false);
+      setEvents(prev => {
+        const next = prev.map(e => e.id === master.id ? masterUpdated : e);
+        if (saved) next.push(saved);
+        return next;
+      });
+      return;
+    }
+  };
+
   const saveModal = async () => {
     if (!modalTitle.trim()) { toast.warning("Podaj tytuł!"); return; }
     const ev: CalendarEvent = {
@@ -561,6 +696,19 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       allDay: modalAllDay, location: modalLocation.trim(), desc: modalDesc.trim(),
       repeat: modalRepeat, repeatEnd: modalRepeatEnd,
     };
+    // Recurring edit → ask scope first
+    if (editingId) {
+      const master = events.find(e => e.id === editingId);
+      if (master && master.repeat && master.repeat !== "none") {
+        const occDate = editOccDate || master.start;
+        setModalOpen(false);
+        openScopeDialog("Edytowanie wydarzenia cyklicznego", "Zapisz", async (choice) => {
+          await applyRecurringEdit(master, occDate, ev, choice);
+          toast.success("✅ Zapisano zmiany");
+        });
+        return;
+      }
+    }
     const saved = await saveEventToDB(ev, !!editingId);
     if (saved) {
       if (editingId) {
@@ -608,15 +756,17 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   };
 
   // ── Show detail ──
-  const showDetail = (e: React.MouseEvent, ev: CalendarEvent) => {
+  const showDetail = (e: React.MouseEvent, ev: CalendarEvent, occDate?: string) => {
     e.stopPropagation();
     const rect = (e.target as HTMLElement).getBoundingClientRect();
     let left = rect.right + 8, top = rect.top;
     if (left + 340 > window.innerWidth) left = rect.left - 348;
     if (top + 300 > window.innerHeight) top = window.innerHeight - 310;
     setDetailPos({ left: Math.max(4, left), top: Math.max(4, top) });
+    setDetailOccDate(occDate || ev.start);
     setDetailEvent(ev);
   };
+
 
   // ── Search ──
   const searchResults = useMemo(() => {
@@ -699,7 +849,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
                   return (
                     <div key={e.id} className="event-pill"
                       style={{ background: `linear-gradient(90deg,${col}50 0%,${col}28 100%)`, border: `1px solid ${col}50`, color: col }}
-                      onClick={(ev) => { ev.stopPropagation(); showDetail(ev, e); }}>
+                      onClick={(ev) => { ev.stopPropagation(); showDetail(ev, e, ds); }}>
                       {e.title}
                     </div>
                   );
@@ -804,7 +954,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
                   filter: "brightness(1.4) saturate(0.9)",
                   display: "flex", alignItems: "center", gap: 5, padding: "0 7px",
                 }}
-                onClick={(ev) => showDetail(ev, e)}>
+                onClick={(ev) => showDetail(ev, e, isoDate(days[startIdx]))}>
+
                 {e.title}
               </div>
             );
@@ -926,9 +1077,30 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       if ((drag.mode === "resize" || drag.mode === "move") && drag.eventId) {
         const ev = events.find(e => e.id === drag.eventId);
         if (ev) {
-          await supabase.from("calendar_events").update({
-            time: ev.startTime, end_time: ev.endTime, date: ev.start, end_date: ev.end || ev.start,
-          }).eq("id", ev.id);
+          // Recurring → revert local change, ask which scope to apply.
+          if (ev.repeat && ev.repeat !== "none") {
+            const origStartTime = drag.origStartMin != null ? minToTime(drag.origStartMin) : ev.startTime;
+            const origEndTime = drag.origEndMin != null ? minToTime(drag.origEndMin) : ev.endTime;
+            const origDate = drag.origDate || ev.start;
+            const newEv: CalendarEvent = {
+              ...ev,
+              start: ev.start,
+              end: ev.end,
+              startTime: ev.startTime,
+              endTime: ev.endTime,
+            };
+            // restore master in state
+            const reverted: CalendarEvent = { ...ev, start: origDate, end: origDate, startTime: origStartTime, endTime: origEndTime };
+            setEvents(prev => prev.map(e => e.id === ev.id ? reverted : e));
+            openScopeDialog("Edytowanie wydarzenia cyklicznego", "Zapisz", async (choice) => {
+              await applyRecurringEdit(reverted, origDate, newEv, choice);
+              toast.success("✅ Zapisano zmiany");
+            });
+          } else {
+            await supabase.from("calendar_events").update({
+              time: ev.startTime, end_time: ev.endTime, date: ev.start, end_date: ev.end || ev.start,
+            }).eq("id", ev.id);
+          }
         }
       }
       forceUpdate(x => x + 1);
@@ -1032,7 +1204,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
                 opacity: isDragging ? 0.85 : 1, cursor: "grab",
               }}
               onMouseDown={(ev) => handleEventMouseDown(ev, e, "move")}
-              onClick={(ev) => { ev.stopPropagation(); if (!dragRef.current) showDetail(ev, e); }}>
+              onClick={(ev) => { ev.stopPropagation(); if (!dragRef.current) showDetail(ev, e, ds); }}>
               <div style={{ padding: "3px 6px 3px 7px", fontWeight: 700, fontSize: ".65rem", lineHeight: "1.25", color, filter: "brightness(1.4) saturate(0.9)", wordBreak: "break-word", flex: 1 }}>
                 {e.title}
               </div>
@@ -1063,7 +1235,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
           {evs.map(e => {
             const col = calColor_(e);
             return (
-              <div key={e.id} className="agenda-event-row" onClick={(ev) => showDetail(ev, e)}>
+              <div key={e.id} className="agenda-event-row" onClick={(ev) => showDetail(ev, e, ds)}>
                 <div className="agenda-event-time">{e.allDay ? "Cały dzień" : `${e.startTime || ""}${e.endTime ? " – " + e.endTime : ""}`}</div>
                 <div className="agenda-event-dot" style={{ background: col }} />
                 <div className="agenda-event-body">
@@ -1275,8 +1447,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
                 {detailEvent.title}
               </div>
               <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                <button onClick={() => openEditModal(detailEvent)} style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#8899b4", padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: ".75rem" }}>✏️</button>
-                <button onClick={() => deleteEventFromDB(detailEvent.id)} style={{ background: "rgba(248,113,113,0.1)", border: "none", color: "#f87171", padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: ".75rem" }}>🗑</button>
+                <button onClick={() => openEditModal(detailEvent, detailOccDate)} style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#8899b4", padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: ".75rem" }}>✏️</button>
+                <button onClick={() => deleteEventFromDB(detailEvent.id, detailOccDate)} style={{ background: "rgba(248,113,113,0.1)", border: "none", color: "#f87171", padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: ".75rem" }}>🗑</button>
                 <button onClick={() => setDetailEvent(null)} style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#8899b4", padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: ".75rem" }}>✕</button>
               </div>
             </div>
@@ -1363,7 +1535,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
               )}
             </div>
             <div className="cal-mfoot">
-              {editingId && <button className="btn btn-danger btn-sm" style={{ marginRight: "auto" }} onClick={() => { deleteEventFromDB(editingId); setModalOpen(false); }}>🗑 Usuń</button>}
+              {editingId && <button className="btn btn-danger btn-sm" style={{ marginRight: "auto" }} onClick={() => { deleteEventFromDB(editingId, editOccDate); setModalOpen(false); }}>🗑 Usuń</button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setModalOpen(false)}>Anuluj</button>
               <button className="btn btn-grad btn-sm" onClick={saveModal}>💾 Zapisz</button>
             </div>
@@ -1393,6 +1565,39 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
               {calEditId && <button className="btn btn-danger btn-sm" style={{ marginRight: "auto" }} onClick={deleteCal}>🗑 Usuń</button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setCalModalOpen(false)}>Anuluj</button>
               <button className="btn btn-grad btn-sm" onClick={saveCal}>💾 Zapisz</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── RECURRING SCOPE DIALOG ── */}
+      {scopeDialog && (
+        <div className="cal-overlay" style={{ zIndex: 950 }} onClick={() => setScopeDialog(null)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: "#2c2c33", borderRadius: 18, padding: "24px 24px 18px", width: "min(420px, 92vw)",
+            color: "#fff", boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
+          }}>
+            <div style={{ fontSize: "1.15rem", fontWeight: 600, marginBottom: 18 }}>{scopeDialog.title}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, paddingLeft: 4 }}>
+              {([
+                { v: "single" as ScopeChoice, label: "To wydarzenie" },
+                { v: "future" as ScopeChoice, label: "To wydarzenie i kolejne wydarzenia" },
+                { v: "all" as ScopeChoice, label: "Wszystkie wydarzenia" },
+              ]).map(opt => (
+                <label key={opt.v} style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer", fontSize: ".95rem" }}>
+                  <input type="radio" name="scope" checked={scopeChoice === opt.v} onChange={() => setScopeChoice(opt.v)}
+                    style={{ accentColor: "#a4c2ff", width: 20, height: 20, margin: 0, cursor: "pointer" }} />
+                  <span>{opt.label}</span>
+                </label>
+              ))}
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 22 }}>
+              <button onClick={() => setScopeDialog(null)} style={{ background: "transparent", border: "none", color: "#a4c2ff", padding: "8px 16px", borderRadius: 20, cursor: "pointer", fontSize: ".9rem", fontWeight: 600 }}>Anuluj</button>
+              <button onClick={async () => {
+                const d = scopeDialog; const c = scopeChoice;
+                setScopeDialog(null);
+                if (d) await d.onConfirm(c);
+              }} style={{ background: "#c8d8ff", border: "none", color: "#1a2340", padding: "8px 20px", borderRadius: 20, cursor: "pointer", fontSize: ".9rem", fontWeight: 600 }}>{scopeDialog.confirmLabel}</button>
             </div>
           </div>
         </div>
