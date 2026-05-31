@@ -172,6 +172,17 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   // Detail popup
   const [detailEvent, setDetailEvent] = useState<CalendarEvent | null>(null);
   const [detailPos, setDetailPos] = useState({ left: 0, top: 0 });
+  const [detailOccDate, setDetailOccDate] = useState<string | null>(null);
+  const [editOccDate, setEditOccDate] = useState<string | null>(null);
+
+  // Recurring scope dialog ("this / this+future / all")
+  const [scopeDialog, setScopeDialog] = useState<null | {
+    title: string;
+    confirmLabel: string;
+    onConfirm: (choice: ScopeChoice) => void | Promise<void>;
+  }>(null);
+  const [scopeChoice, setScopeChoice] = useState<ScopeChoice>("single");
+
 
   // Full modal
   const [modalOpen, setModalOpen] = useState(false);
