@@ -518,8 +518,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       type: "inne",
       subject: "",
       note: ev.desc || "",
-      series_id: ev.seriesId || null,
-      exception_dates: ev.exceptionDates || [],
+      source: writeRecurrenceMeta(ev),
+      source_title: ev.sourceTitle || null,
     };
     if (isEdit) {
       const { error } = await supabase.from("calendar_events").update(row).eq("id", ev.id);
@@ -537,7 +537,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
         return null;
       }
       const d: any = data;
-      return { ...ev, id: d.id, seriesId: d.series_id || undefined, exceptionDates: d.exception_dates || [] };
+      const meta = readRecurrenceMeta(d.source);
+      return { ...ev, id: d.id, seriesId: d.series_id || meta.seriesId, exceptionDates: d.exception_dates || meta.exceptionDates };
     }
   };
 
