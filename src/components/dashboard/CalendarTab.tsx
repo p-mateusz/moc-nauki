@@ -86,6 +86,7 @@ const DAY_NAMES_FULL = ["Niedziela", "Poniedziałek", "Wtorek", "Środa", "Czwar
 const MONTH_NAMES = ["Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"];
 const MONTH_NAMES_GEN = ["stycznia", "lutego", "marca", "kwietnia", "maja", "czerwca", "lipca", "sierpnia", "września", "października", "listopada", "grudnia"];
 const COLORS = ["#6366f1", "#3b82f6", "#22d3ee", "#34d399", "#fbbf24", "#fb923c", "#f87171", "#f472b6", "#a78bfa", "#e2e8f0"];
+const RECURRENCE_META_PREFIX = "__mn_calendar_meta__:";
 
 function isoDate(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
 function pad(n: number) { return String(n).padStart(2, "0"); }
@@ -93,6 +94,24 @@ function parseDate(s: string) { const [y, m, d] = s.split("-").map(Number); retu
 function addDays(d: Date, n: number) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
 function startOfWeek(d: Date) { const r = new Date(d); const day = r.getDay(); r.setDate(r.getDate() - (day === 0 ? 6 : day - 1)); return r; }
 function timeToMin(t: string) { if (!t) return 0; const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0); }
+function readRecurrenceMeta(source?: string | null): { seriesId?: string; exceptionDates: string[] } {
+  if (!source?.startsWith(RECURRENCE_META_PREFIX)) return { exceptionDates: [] };
+  try {
+    const parsed = JSON.parse(source.slice(RECURRENCE_META_PREFIX.length));
+    return {
+      seriesId: typeof parsed.seriesId === "string" ? parsed.seriesId : undefined,
+      exceptionDates: Array.isArray(parsed.exceptionDates) ? parsed.exceptionDates.filter((d: unknown) => typeof d === "string") : [],
+    };
+  } catch {
+    return { exceptionDates: [] };
+  }
+}
+function writeRecurrenceMeta(ev: CalendarEvent) {
+  const exceptionDates = ev.exceptionDates || [];
+  if (!ev.seriesId && exceptionDates.length === 0) return ev.source || null;
+  return `${RECURRENCE_META_PREFIX}${JSON.stringify({ seriesId: ev.seriesId || null, exceptionDates })}`;
+}
+function visibleSource(source?: string | null) { return source?.startsWith(RECURRENCE_META_PREFIX) ? undefined : source || undefined; }
 
 function occursOn(e: CalendarEvent, dateStr: string): boolean {
   if (e.exceptionDates && e.exceptionDates.includes(dateStr)) return false;
