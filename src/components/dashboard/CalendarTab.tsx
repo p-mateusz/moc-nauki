@@ -373,25 +373,28 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     }
 
     if (evRes.data) {
-      setEvents(evRes.data.map((e: any) => ({
-        id: e.id,
-        title: e.name,
-        calId: e.calendar_id || "",
-        start: e.date,
-        startTime: e.time || "",
-        end: e.end_date || e.date,
-        endTime: e.end_time || "",
-        allDay: e.all_day || false,
-        location: e.location || "",
-        desc: e.description || e.note || "",
-        repeat: e.repeat_type || "none",
-        repeatEnd: e.repeat_end || "",
-        seriesId: e.series_id || undefined,
-        exceptionDates: e.exception_dates || [],
-        autoAdded: e.auto_added,
-        source: e.source || undefined,
-        sourceTitle: e.source_title || undefined,
-      })));
+      setEvents(evRes.data.map((e: any) => {
+        const meta = readRecurrenceMeta(e.source);
+        return {
+          id: e.id,
+          title: e.name,
+          calId: e.calendar_id || "",
+          start: e.date,
+          startTime: e.time || "",
+          end: e.end_date || e.date,
+          endTime: e.end_time || "",
+          allDay: e.all_day || false,
+          location: e.location || "",
+          desc: e.description || e.note || "",
+          repeat: e.repeat_type || "none",
+          repeatEnd: e.repeat_end || "",
+          seriesId: e.series_id || meta.seriesId,
+          exceptionDates: e.exception_dates || meta.exceptionDates,
+          autoAdded: e.auto_added,
+          source: visibleSource(e.source),
+          sourceTitle: e.source_title || undefined,
+        };
+      }));
     }
     setLoading(false);
   }, [userId, guestMode]);
