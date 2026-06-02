@@ -647,17 +647,14 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   // start/end are already aligned to occDate when scope is "single").
   const applyRecurringEdit = async (master: CalendarEvent, occDate: string, newEv: CalendarEvent, choice: ScopeChoice) => {
     if (choice === "all") {
-      // Update master in place; if user moved the date, shift the whole series.
-      const dayShift = diffDays(newEv.start, occDate);
-      const shiftedStart = dayShift !== 0 ? addDaysToStr(master.start, dayShift) : master.start;
-      const shiftedEnd = dayShift !== 0 ? addDaysToStr(master.end || master.start, dayShift) : (newEv.end || newEv.start);
+      // Apply only non-date fields to the master. Keep master.start/end intact
+      // so previous occurrences don't disappear or shift unexpectedly.
       const updated: CalendarEvent = {
         ...master,
         title: newEv.title, calId: newEv.calId, allDay: newEv.allDay,
         location: newEv.location, desc: newEv.desc,
         startTime: newEv.startTime, endTime: newEv.endTime,
         repeat: newEv.repeat, repeatEnd: newEv.repeatEnd,
-        start: shiftedStart, end: shiftedEnd,
       };
       const saved = await saveEventToDB(updated, true);
       if (saved) setEvents(prev => prev.map(e => e.id === master.id ? updated : e));
@@ -684,17 +681,31 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       return;
     }
     if (choice === "future") {
-      // Truncate master at the day before occDate, create a new series from occDate.
+      // If user picked "future" on (or before) the very first occurrence,
+      // it's equivalent to "all" — just update master in place to avoid
+      // creating a duplicate event on that day.
+      if (parseDate(occDate) <= parseDate(master.start)) {
+        const updated: CalendarEvent = {
+          ...master,
+          title: newEv.title, calId: newEv.calId, allDay: newEv.allDay,
+          location: newEv.location, desc: newEv.desc,
+          startTime: newEv.startTime, endTime: newEv.endTime,
+          repeat: newEv.repeat, repeatEnd: newEv.repeatEnd,
+          start: newEv.start, end: newEv.end || newEv.start,
+        };
+        const saved = await saveEventToDB(updated, true);
+        if (saved) setEvents(prev => prev.map(e => e.id === master.id ? updated : e));
+        return;
+      }
+      // Truncate master at the day before occDate, create a new series from newEv.start.
       const cutoff = addDaysToStr(occDate, -1);
       const masterUpdated: CalendarEvent = { ...master, repeatEnd: cutoff };
       await saveEventToDB(masterUpdated, true);
-      const dayShift = diffDays(newEv.start, occDate);
-      const newSeriesEnd = dayShift !== 0 ? addDaysToStr(newEv.end || newEv.start, 0) : (newEv.end || newEv.start);
       const newSeries: CalendarEvent = {
         ...newEv,
         id: "",
         start: newEv.start,
-        end: newSeriesEnd,
+        end: newEv.end || newEv.start,
         repeat: newEv.repeat || master.repeat,
         repeatEnd: master.repeatEnd && parseDate(master.repeatEnd) >= parseDate(newEv.start) ? master.repeatEnd : "",
         seriesId: undefined, // new series
