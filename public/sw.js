@@ -1,5 +1,5 @@
 const CACHE_NAME = "moc-nauki-v2";
-const APP_SHELL = ["/", "/index.html", "/manifest.json", "/fav.png"];
+const APP_SHELL = ["/", "/index.html", "/manifest.json", "/favicon.ico"];
 const STATIC_ASSET_PATTERN = /\.(?:png|jpg|jpeg|svg|gif|webp|ico|woff2?|ttf|otf)$/i;
 
 self.addEventListener("install", (event) => {
