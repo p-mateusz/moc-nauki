@@ -23,6 +23,8 @@ type DragState = {
   origEndMin?: number;
   date: string;
   origDate?: string;
+  masterStart?: string;
+  masterEnd?: string;
   dayColWidth?: number;
   dayColsLeft?: number;
   daysOffsets?: { date: string; left: number; right: number }[];
