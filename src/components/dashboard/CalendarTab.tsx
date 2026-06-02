@@ -1147,7 +1147,11 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
               endTime: ev.endTime,
             };
             // restore master in state
-            const reverted: CalendarEvent = { ...ev, start: origDate, end: origDate, startTime: origStartTime, endTime: origEndTime };
+            // restore master in state — keep the series anchor at its true
+            // start (e.g. January), not the grabbed occurrence date.
+            const masterStart = drag.masterStart || ev.start;
+            const masterEnd = drag.masterEnd || ev.end || masterStart;
+            const reverted: CalendarEvent = { ...ev, start: masterStart, end: masterEnd, startTime: origStartTime, endTime: origEndTime };
             setEvents(prev => prev.map(e => e.id === ev.id ? reverted : e));
             openScopeDialog("Edytowanie wydarzenia cyklicznego", "Zapisz", async (choice) => {
               await applyRecurringEdit(reverted, origDate, newEv, choice);
