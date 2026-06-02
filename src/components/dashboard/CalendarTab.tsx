@@ -23,6 +23,8 @@ type DragState = {
   origEndMin?: number;
   date: string;
   origDate?: string;
+  masterStart?: string;
+  masterEnd?: string;
   dayColWidth?: number;
   dayColsLeft?: number;
   daysOffsets?: { date: string; left: number; right: number }[];
@@ -1070,7 +1072,12 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       return { date: isoDate(addDays(ws, i)), left: r.left, right: r.right };
     });
     const grabOffsetMin = yToMin(y) - sm;
-    dragRef.current = { mode, eventId: ev.id, startY: y, startMin: sm, origStartMin: sm, origEndMin: em, date: ev.start, origDate: ev.start, daysOffsets, grabOffsetMin };
+    // For recurring events the master.start is the series start (e.g. January),
+    // but the user grabbed a specific occurrence (e.g. May). Use the column's
+    // data-date so applyRecurringEdit knows which occurrence is being edited;
+    // otherwise "future" scope would truncate the entire series back to January.
+    const colDate = col.getAttribute("data-date") || ev.start;
+    dragRef.current = { mode, eventId: ev.id, startY: y, startMin: sm, origStartMin: sm, origEndMin: em, date: colDate, origDate: colDate, masterStart: ev.start, masterEnd: ev.end || ev.start, daysOffsets, grabOffsetMin };
     forceUpdate(x => x + 1);
   };
 
@@ -1140,7 +1147,11 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
               endTime: ev.endTime,
             };
             // restore master in state
-            const reverted: CalendarEvent = { ...ev, start: origDate, end: origDate, startTime: origStartTime, endTime: origEndTime };
+            // restore master in state — keep the series anchor at its true
+            // start (e.g. January), not the grabbed occurrence date.
+            const masterStart = drag.masterStart || ev.start;
+            const masterEnd = drag.masterEnd || ev.end || masterStart;
+            const reverted: CalendarEvent = { ...ev, start: masterStart, end: masterEnd, startTime: origStartTime, endTime: origEndTime };
             setEvents(prev => prev.map(e => e.id === ev.id ? reverted : e));
             openScopeDialog("Edytowanie wydarzenia cyklicznego", "Zapisz", async (choice) => {
               await applyRecurringEdit(reverted, origDate, newEv, choice);
