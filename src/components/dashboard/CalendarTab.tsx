@@ -1070,7 +1070,12 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       return { date: isoDate(addDays(ws, i)), left: r.left, right: r.right };
     });
     const grabOffsetMin = yToMin(y) - sm;
-    dragRef.current = { mode, eventId: ev.id, startY: y, startMin: sm, origStartMin: sm, origEndMin: em, date: ev.start, origDate: ev.start, daysOffsets, grabOffsetMin };
+    // For recurring events the master.start is the series start (e.g. January),
+    // but the user grabbed a specific occurrence (e.g. May). Use the column's
+    // data-date so applyRecurringEdit knows which occurrence is being edited;
+    // otherwise "future" scope would truncate the entire series back to January.
+    const colDate = col.getAttribute("data-date") || ev.start;
+    dragRef.current = { mode, eventId: ev.id, startY: y, startMin: sm, origStartMin: sm, origEndMin: em, date: colDate, origDate: colDate, daysOffsets, grabOffsetMin };
     forceUpdate(x => x + 1);
   };
 
