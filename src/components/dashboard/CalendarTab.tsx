@@ -730,11 +730,27 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       allDay: modalAllDay, location: modalLocation.trim(), desc: modalDesc.trim(),
       repeat: modalRepeat, repeatEnd: modalRepeatEnd,
     };
-    // Recurring edit → ask scope first
+    // Recurring edit → ask scope first (only if something actually changed)
     if (editingId) {
       const master = events.find(e => e.id === editingId);
       if (master && master.repeat && master.repeat !== "none") {
         const occDate = editOccDate || master.start;
+        const noDateChange = ev.start === occDate && (ev.end || ev.start) === occDate;
+        const unchanged =
+          ev.title === master.title &&
+          ev.calId === master.calId &&
+          ev.allDay === master.allDay &&
+          ev.location === master.location &&
+          ev.desc === master.desc &&
+          ev.startTime === master.startTime &&
+          ev.endTime === master.endTime &&
+          ev.repeat === master.repeat &&
+          ev.repeatEnd === master.repeatEnd &&
+          noDateChange;
+        if (unchanged) {
+          setModalOpen(false);
+          return;
+        }
         setModalOpen(false);
         openScopeDialog("Edytowanie wydarzenia cyklicznego", "Zapisz", async (choice) => {
           await applyRecurringEdit(master, occDate, ev, choice);
