@@ -516,6 +516,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       repeat_type: ev.repeat || "none",
       repeat_end: ev.repeatEnd || "",
       calendar_id: ev.calId || null,
+      series_id: ev.seriesId || null,
+      exception_dates: ev.exceptionDates || [],
       auto_added: false,
       type: "inne",
       subject: "",
@@ -524,13 +526,15 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       source_title: ev.sourceTitle || null,
     };
     if (isEdit) {
-      const { error } = await supabase.from("calendar_events").update(row).eq("id", ev.id);
-      if (error) {
+      const { data, error } = await supabase.from("calendar_events").update(row).eq("id", ev.id).select().single();
+      if (error || !data) {
         console.error("calendar_events update error:", error);
-        toast.error(`Błąd zapisu wydarzenia: ${error.message}`);
+        toast.error(`Błąd zapisu wydarzenia: ${error?.message || "nieznany błąd"}`);
         return null;
       }
-      return ev;
+      const d: any = data;
+      const meta = readRecurrenceMeta(d.source);
+      return { ...ev, id: d.id, seriesId: d.series_id || meta.seriesId, exceptionDates: d.exception_dates || meta.exceptionDates };
     } else {
       const { data, error } = await supabase.from("calendar_events").insert(row).select().single();
       if (error || !data) {
@@ -1134,11 +1138,18 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       if ((drag.mode === "resize" || drag.mode === "move") && drag.eventId) {
         const ev = events.find(e => e.id === drag.eventId);
         if (ev) {
+          const origStartTime = drag.origStartMin != null ? minToTime(drag.origStartMin) : ev.startTime;
+          const origEndTime = drag.origEndMin != null ? minToTime(drag.origEndMin) : ev.endTime;
+          const origDate = drag.origDate || ev.start;
+          const origEndDate = drag.masterEnd || ev.end || origDate;
+          const changed = ev.start !== origDate || ev.startTime !== origStartTime || ev.end !== origEndDate || ev.endTime !== origEndTime;
+          if (!changed) {
+            forceUpdate(x => x + 1);
+            return;
+          }
+
           // Recurring → revert local change, ask which scope to apply.
           if (ev.repeat && ev.repeat !== "none") {
-            const origStartTime = drag.origStartMin != null ? minToTime(drag.origStartMin) : ev.startTime;
-            const origEndTime = drag.origEndMin != null ? minToTime(drag.origEndMin) : ev.endTime;
-            const origDate = drag.origDate || ev.start;
             const newEv: CalendarEvent = {
               ...ev,
               start: ev.start,
@@ -1146,17 +1157,17 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
               startTime: ev.startTime,
               endTime: ev.endTime,
             };
-            // restore master in state
             // restore master in state — keep the series anchor at its true
             // start (e.g. January), not the grabbed occurrence date.
             const masterStart = drag.masterStart || ev.start;
             const masterEnd = drag.masterEnd || ev.end || masterStart;
             const reverted: CalendarEvent = { ...ev, start: masterStart, end: masterEnd, startTime: origStartTime, endTime: origEndTime };
+            // Revert visible master in UI and open full edit modal pre-filled
+            // with the user's moved/resized values. The scope dialog (this/next/all)
+            // will be shown when the user confirms Save in the modal.
             setEvents(prev => prev.map(e => e.id === ev.id ? reverted : e));
-            openScopeDialog("Edytowanie wydarzenia cyklicznego", "Zapisz", async (choice) => {
-              await applyRecurringEdit(reverted, origDate, newEv, choice);
-              toast.success("✅ Zapisano zmiany");
-            });
+            openEditModal(newEv, origDate);
+            toast.info("Wprowadź zmiany w edytorze i zapisz, aby zastosować do serii");
           } else {
             await supabase.from("calendar_events").update({
               time: ev.startTime, end_time: ev.endTime, date: ev.start, end_date: ev.end || ev.start,
@@ -1680,7 +1691,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
                 },
                 {
                   v: "future" as ScopeChoice,
-                  label: "To wydarzenie i kolejne wydarzenia",
+                  label: "To i kolejne wydarzenia",
                 },
                 {
                   v: "all" as ScopeChoice,
