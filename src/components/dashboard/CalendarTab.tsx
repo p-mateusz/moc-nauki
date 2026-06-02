@@ -1077,7 +1077,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     // data-date so applyRecurringEdit knows which occurrence is being edited;
     // otherwise "future" scope would truncate the entire series back to January.
     const colDate = col.getAttribute("data-date") || ev.start;
-    dragRef.current = { mode, eventId: ev.id, startY: y, startMin: sm, origStartMin: sm, origEndMin: em, date: colDate, origDate: colDate, daysOffsets, grabOffsetMin };
+    dragRef.current = { mode, eventId: ev.id, startY: y, startMin: sm, origStartMin: sm, origEndMin: em, date: colDate, origDate: colDate, masterStart: ev.start, masterEnd: ev.end || ev.start, daysOffsets, grabOffsetMin };
     forceUpdate(x => x + 1);
   };
 
