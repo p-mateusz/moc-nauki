@@ -1139,6 +1139,20 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
             const origStartTime = drag.origStartMin != null ? minToTime(drag.origStartMin) : ev.startTime;
             const origEndTime = drag.origEndMin != null ? minToTime(drag.origEndMin) : ev.endTime;
             const origDate = drag.origDate || ev.start;
+            // No actual change (pure click, no drag/resize) → don't show scope dialog.
+            const unchanged =
+              ev.startTime === origStartTime &&
+              ev.endTime === origEndTime &&
+              ev.start === origDate &&
+              (ev.end || ev.start) === origDate;
+            const masterStart = drag.masterStart || ev.start;
+            const masterEnd = drag.masterEnd || ev.end || masterStart;
+            const reverted: CalendarEvent = { ...ev, start: masterStart, end: masterEnd, startTime: origStartTime, endTime: origEndTime };
+            setEvents(prev => prev.map(e => e.id === ev.id ? reverted : e));
+            if (unchanged) {
+              forceUpdate(x => x + 1);
+              return;
+            }
             const newEv: CalendarEvent = {
               ...ev,
               start: ev.start,
@@ -1146,13 +1160,6 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
               startTime: ev.startTime,
               endTime: ev.endTime,
             };
-            // restore master in state
-            // restore master in state — keep the series anchor at its true
-            // start (e.g. January), not the grabbed occurrence date.
-            const masterStart = drag.masterStart || ev.start;
-            const masterEnd = drag.masterEnd || ev.end || masterStart;
-            const reverted: CalendarEvent = { ...ev, start: masterStart, end: masterEnd, startTime: origStartTime, endTime: origEndTime };
-            setEvents(prev => prev.map(e => e.id === ev.id ? reverted : e));
             openScopeDialog("Edytowanie wydarzenia cyklicznego", "Zapisz", async (choice) => {
               await applyRecurringEdit(reverted, origDate, newEv, choice);
               toast.success("✅ Zapisano zmiany");
