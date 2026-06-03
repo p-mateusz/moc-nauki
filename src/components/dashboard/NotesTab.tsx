@@ -1200,12 +1200,12 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
             <button className="et-btn" onClick={() => execCmd("italic")} title="Kursywa"><i>I</i></button>
             <button className="et-btn" onClick={() => execCmd("underline")} title="Podkreślenie"><u>U</u></button>
             <div className="et-sep" />
-            <button className="et-btn" onClick={() => execCmd("insertUnorderedList")} title="Lista">• Lista</button>
-            <button className="et-btn" onClick={() => execCmd("insertOrderedList")} title="Lista numerowana">1. Lista</button>
+            <button className="et-btn" onClick={() => execCmd("insertUnorderedList")} title="Lista">⋮≡</button>
+            <button className="et-btn" onClick={() => execCmd("insertOrderedList")} title="Lista numerowana">➀➁➂</button>
             <div className="et-sep" />
-            <button className="et-btn" onClick={insertTable} title="Wstaw tabelę">▦ Tabela</button>
+            <button className="et-btn" onClick={insertTable} title="Wstaw tabelę">▦</button>
             <div className="et-sep" />
-            <button className="et-btn" onClick={pickImage} title="Wstaw zdjęcie">🖼 Zdjęcie</button>
+            <button className="et-btn" onClick={pickImage} title="Wstaw zdjęcie">📷</button>
             <input
               ref={imageInputRef}
               type="file"
