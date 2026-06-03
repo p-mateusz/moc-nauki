@@ -89,6 +89,28 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   const titleRef = useRef<HTMLInputElement>(null);
   const saveTimeout = useRef<any>(null);
   const [pagesCollapsed, setPagesCollapsed] = useState(false);
+  const [currentBlock, setCurrentBlock] = useState<string>("");
+
+  useEffect(() => {
+    const detect = () => {
+      const editor = editorRef.current;
+      if (!editor) return;
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      let node: Node | null = sel.anchorNode;
+      if (!node || !editor.contains(node)) { setCurrentBlock(""); return; }
+      let el: HTMLElement | null = node.nodeType === 1 ? (node as HTMLElement) : node.parentElement;
+      const blockTags = new Set(["H1","H2","H3","H4","H5","H6","P","PRE","DIV","LI","BLOCKQUOTE"]);
+      while (el && el !== editor && !blockTags.has(el.tagName)) {
+        el = el.parentElement;
+      }
+      if (!el || el === editor) { setCurrentBlock(""); return; }
+      const tag = el.tagName.toLowerCase();
+      setCurrentBlock(["h1","h2","h3","h4","h5","h6","p","pre"].includes(tag) ? tag : "");
+    };
+    document.addEventListener("selectionchange", detect);
+    return () => document.removeEventListener("selectionchange", detect);
+  }, []);
 
   const formatCreatedDate = (iso: string) => {
     if (!iso) return "";
