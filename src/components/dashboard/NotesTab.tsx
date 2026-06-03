@@ -1180,11 +1180,10 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
             )}
             <select
               className="ef-select"
+              value={currentBlock}
               onChange={(e) => {
                 if (e.target.value) execCmd("formatBlock", e.target.value);
-                e.target.value = "";
               }}
-              defaultValue=""
             >
               <option value="" disabled>Nagłówek</option>
               <option value="h1">H1</option>
