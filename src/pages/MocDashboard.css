@@ -1010,6 +1010,19 @@ body:has(.moc-dashboard) #root {
   caret-color: #60a5fa;
 }
 .editor-content:empty::before { content: attr(data-placeholder); color: rgba(255, 255, 255, 0.18); pointer-events: none; }
+.editor-content ul,
+.editor-content ol {
+  margin: 0.5em 0;
+  padding-left: 1.75em;
+}
+.editor-content ul { list-style: disc outside; }
+.editor-content ol { list-style: decimal outside; }
+.editor-content ul ul { list-style: circle outside; }
+.editor-content ul ul ul { list-style: square outside; }
+.editor-content ol ol { list-style: lower-alpha outside; }
+.editor-content ol ol ol { list-style: lower-roman outside; }
+.editor-content li { margin: 0.15em 0; padding-left: 0.25em; }
+.editor-content li::marker { color: #60a5fa; }
 .editor-meta {
   padding: 8px 28px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
