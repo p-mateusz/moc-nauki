@@ -1153,51 +1153,16 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                 aria-label="Zwiń panel stron"
               >‹</button>
             </div>
-            <div className="nps-search-wrap">
-              <span className="nps-search-icon" aria-hidden="true">🔍</span>
-              <input
-                type="text"
-                className="nps-search-input"
-                placeholder="Szukaj w stronach…"
-                value={pageSearch}
-                onChange={(e) => setPageSearch(e.target.value)}
-              />
-              {pageSearch && (
-                <button
-                  type="button"
-                  className="nps-search-clear"
-                  onClick={() => setPageSearch("")}
-                  title="Wyczyść"
-                  aria-label="Wyczyść wyszukiwanie"
-                >×</button>
-              )}
-            </div>
             <div className="nps-pages-list">
-              {(() => {
-                const q = pageSearch.trim().toLowerCase();
-                const filtered = q
-                  ? activeSec.pages.filter(p =>
-                      (p.title || "").toLowerCase().includes(q) ||
-                      stripHtml(p.content || "").includes(q)
-                    )
-                  : activeSec.pages;
-                if (filtered.length === 0) {
-                  return (
-                    <div className="nps-empty-search">
-                      {q ? "Brak wyników" : "Brak stron"}
-                    </div>
-                  );
-                }
-                return filtered.map(p => (
-                  <div
-                    key={p.id}
-                    className={`nps-page-item ${activePageId === p.id ? "active" : ""}`}
-                    onClick={() => selectPage(p.id)}
-                  >
-                    <div className="nps-page-title">{p.title || "Bez tytułu"}</div>
-                  </div>
-                ));
-              })()}
+              {activeSec.pages.map(p => (
+                <div
+                  key={p.id}
+                  className={`nps-page-item ${activePageId === p.id ? "active" : ""}`}
+                  onClick={() => selectPage(p.id)}
+                >
+                  <div className="nps-page-title">{p.title || "Bez tytułu"}</div>
+                </div>
+              ))}
             </div>
             <button className="notes-bottom-btn" onClick={() => addPage(activeSec.id)}>
               ＋ Strona
@@ -1339,50 +1304,120 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
         <div className="nbs-header">
           <div className="nbs-title">Notesy</div>
         </div>
-        <div className="nbs-list">
-          {notebooks.length === 0 ? (
-            <div style={{ fontSize: ".8rem", color: "#8899b4", padding: "10px 12px" }}>Brak notesów. Kliknij ＋</div>
-          ) : notebooks.map(nb => (
-            <div
-              key={nb.id}
-              className={`nb-item ${activeNbId === nb.id ? "active" : ""} ${dragOverNbId === nb.id ? "drag-over" : ""}`}
-              onClick={() => selectNb(nb.id)}
-              draggable
-              onDragStart={(e) => handleDragStart(e, nb.id)}
-              onDragOver={(e) => handleDragOver(e, nb.id)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, nb.id)}
-              onDragEnd={handleDragEnd}
-              onTouchStart={(e) => handleTouchStart(nb.id, e)}
-              onTouchEnd={() => handleTouchEnd(nb.id)}
-              style={{ position: "relative", opacity: dragNbId === nb.id ? 0.5 : 1 }}
-            >
-              <GripVertical size={12} className="nb-grip" style={{ color: "#8899b4", opacity: 0.3, flexShrink: 0, cursor: "grab" }} />
-              <div className="nb-dot" style={{ background: nb.color }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="nb-name">{nb.name}</div>
-              </div>
-              <div className="nb-count">{nb.sections.reduce((a, s) => a + s.pages.length, 0)}</div>
-              <button
-                className="nb-ctx-btn"
-                onClick={(e) => { e.stopPropagation(); setNbContextMenu(nbContextMenu === nb.id ? null : nb.id); setSecContextMenu(null); }}
-                style={{ background: "none", border: "none", color: "#8899b4", cursor: "pointer", padding: "2px 4px", borderRadius: 4, opacity: 0, transition: "opacity 0.15s", marginLeft: 4, flexShrink: 0 }}
-              >
-                <MoreVertical size={14} />
-              </button>
-              {nbContextMenu === nb.id && (
-                <div className="nb-context-menu" onClick={e => e.stopPropagation()} style={{
-                  position: "absolute", right: 4, top: "100%", zIndex: 50,
-                  background: "rgba(14,24,48,0.97)", border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 8, padding: "4px 0", minWidth: 150, boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-                }}>
-                  <button className="nb-ctx-item" onClick={() => openEditNotebook(nb.id)}>✏️ Edytuj</button>
-                  <button className="nb-ctx-item" style={{ color: "#f87171" }} onClick={() => deleteNotebook(nb.id)}>🗑 Usuń</button>
-                </div>
-              )}
-            </div>
-          ))}
+        <div className="nps-search-wrap">
+          <span className="nps-search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="text"
+            className="nps-search-input"
+            placeholder="Szukaj we wszystkich notesach…"
+            value={pageSearch}
+            onChange={(e) => setPageSearch(e.target.value)}
+          />
+          {pageSearch && (
+            <button
+              type="button"
+              className="nps-search-clear"
+              onClick={() => setPageSearch("")}
+              title="Wyczyść"
+              aria-label="Wyczyść wyszukiwanie"
+            >×</button>
+          )}
         </div>
+        {pageSearch.trim() ? (
+          <div className="nbs-list">
+            {(() => {
+              const q = pageSearch.trim().toLowerCase();
+              const results: { nb: Notebook; sec: Section; page: Page; snippet: string }[] = [];
+              for (const nb of notebooks) {
+                for (const sec of nb.sections) {
+                  for (const page of sec.pages) {
+                    const title = (page.title || "").toLowerCase();
+                    const text = stripHtml(page.content || "");
+                    const titleMatch = title.includes(q);
+                    const idx = text.indexOf(q);
+                    if (titleMatch || idx > -1) {
+                      let snippet = "";
+                      if (idx > -1) {
+                        const start = Math.max(0, idx - 25);
+                        const end = Math.min(text.length, idx + q.length + 35);
+                        snippet = (start > 0 ? "…" : "") + text.slice(start, end) + (end < text.length ? "…" : "");
+                      }
+                      results.push({ nb, sec, page, snippet });
+                    }
+                  }
+                }
+              }
+              if (results.length === 0) {
+                return <div className="nps-empty-search">Brak wyników</div>;
+              }
+              return results.map(({ nb, sec, page, snippet }) => (
+                <div
+                  key={page.id}
+                  className="nb-search-result"
+                  onClick={async () => {
+                    await flushSavePage();
+                    setActiveNbId(nb.id);
+                    setActiveSecId(sec.id);
+                    setActivePageId(page.id);
+                    setViewMode("page");
+                  }}
+                >
+                  <div className="nb-sr-top">
+                    <span className="nb-sr-dot" style={{ background: nb.color }} />
+                    <span className="nb-sr-crumb">{nb.name} › {sec.name}</span>
+                  </div>
+                  <div className="nb-sr-title">{page.title || "Bez tytułu"}</div>
+                  {snippet && <div className="nb-sr-snippet">{snippet}</div>}
+                </div>
+              ));
+            })()}
+          </div>
+        ) : (
+          <div className="nbs-list">
+            {notebooks.length === 0 ? (
+              <div style={{ fontSize: ".8rem", color: "#8899b4", padding: "10px 12px" }}>Brak notesów. Kliknij ＋</div>
+            ) : notebooks.map(nb => (
+              <div
+                key={nb.id}
+                className={`nb-item ${activeNbId === nb.id ? "active" : ""} ${dragOverNbId === nb.id ? "drag-over" : ""}`}
+                onClick={() => selectNb(nb.id)}
+                draggable
+                onDragStart={(e) => handleDragStart(e, nb.id)}
+                onDragOver={(e) => handleDragOver(e, nb.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, nb.id)}
+                onDragEnd={handleDragEnd}
+                onTouchStart={(e) => handleTouchStart(nb.id, e)}
+                onTouchEnd={() => handleTouchEnd(nb.id)}
+                style={{ position: "relative", opacity: dragNbId === nb.id ? 0.5 : 1 }}
+              >
+                <GripVertical size={12} className="nb-grip" style={{ color: "#8899b4", opacity: 0.3, flexShrink: 0, cursor: "grab" }} />
+                <div className="nb-dot" style={{ background: nb.color }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="nb-name">{nb.name}</div>
+                </div>
+                <div className="nb-count">{nb.sections.reduce((a, s) => a + s.pages.length, 0)}</div>
+                <button
+                  className="nb-ctx-btn"
+                  onClick={(e) => { e.stopPropagation(); setNbContextMenu(nbContextMenu === nb.id ? null : nb.id); setSecContextMenu(null); }}
+                  style={{ background: "none", border: "none", color: "#8899b4", cursor: "pointer", padding: "2px 4px", borderRadius: 4, opacity: 0, transition: "opacity 0.15s", marginLeft: 4, flexShrink: 0 }}
+                >
+                  <MoreVertical size={14} />
+                </button>
+                {nbContextMenu === nb.id && (
+                  <div className="nb-context-menu" onClick={e => e.stopPropagation()} style={{
+                    position: "absolute", right: 4, top: "100%", zIndex: 50,
+                    background: "rgba(14,24,48,0.97)", border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 8, padding: "4px 0", minWidth: 150, boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                  }}>
+                    <button className="nb-ctx-item" onClick={() => openEditNotebook(nb.id)}>✏️ Edytuj</button>
+                    <button className="nb-ctx-item" style={{ color: "#f87171" }} onClick={() => deleteNotebook(nb.id)}>🗑 Usuń</button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
         <button className="notes-bottom-btn" onClick={() => setShowNbModal(true)}>＋ Notes</button>
       </div>
 
