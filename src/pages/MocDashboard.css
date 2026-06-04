@@ -1433,6 +1433,55 @@ body:has(.moc-dashboard) #root {
   color: rgba(182, 198, 224, 0.6);
   font-style: italic;
 }
+.nb-search-result {
+  padding: 9px 12px;
+  margin: 2px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background .15s, border-color .15s;
+}
+.nb-search-result:hover {
+  background: rgba(96, 165, 250, 0.10);
+  border-color: rgba(96, 165, 250, 0.25);
+}
+.nb-sr-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: rgba(182, 198, 224, 0.7);
+  margin-bottom: 2px;
+}
+.nb-sr-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.nb-sr-crumb {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nb-sr-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e5edff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nb-sr-snippet {
+  font-size: 11.5px;
+  color: rgba(182, 198, 224, 0.7);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
 .nps-pages-list {
   flex: 1;
   overflow-y: auto;
