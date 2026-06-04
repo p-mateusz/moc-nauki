@@ -90,6 +90,14 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   const saveTimeout = useRef<any>(null);
   const [pagesCollapsed, setPagesCollapsed] = useState(false);
   const [currentBlock, setCurrentBlock] = useState<string>("");
+  const [pageSearch, setPageSearch] = useState<string>("");
+
+  const stripHtml = (html: string) => {
+    if (!html) return "";
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    return (tmp.textContent || tmp.innerText || "").toLowerCase();
+  };
 
   useEffect(() => {
     const detect = () => {
