@@ -90,6 +90,14 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   const saveTimeout = useRef<any>(null);
   const [pagesCollapsed, setPagesCollapsed] = useState(false);
   const [currentBlock, setCurrentBlock] = useState<string>("");
+  const [pageSearch, setPageSearch] = useState<string>("");
+
+  const stripHtml = (html: string) => {
+    if (!html) return "";
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    return (tmp.textContent || tmp.innerText || "").toLowerCase();
+  };
 
   useEffect(() => {
     const detect = () => {
@@ -1145,16 +1153,51 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                 aria-label="Zwiń panel stron"
               >‹</button>
             </div>
+            <div className="nps-search-wrap">
+              <span className="nps-search-icon" aria-hidden="true">🔍</span>
+              <input
+                type="text"
+                className="nps-search-input"
+                placeholder="Szukaj w stronach…"
+                value={pageSearch}
+                onChange={(e) => setPageSearch(e.target.value)}
+              />
+              {pageSearch && (
+                <button
+                  type="button"
+                  className="nps-search-clear"
+                  onClick={() => setPageSearch("")}
+                  title="Wyczyść"
+                  aria-label="Wyczyść wyszukiwanie"
+                >×</button>
+              )}
+            </div>
             <div className="nps-pages-list">
-              {activeSec.pages.map(p => (
-                <div
-                  key={p.id}
-                  className={`nps-page-item ${activePageId === p.id ? "active" : ""}`}
-                  onClick={() => selectPage(p.id)}
-                >
-                  <div className="nps-page-title">{p.title || "Bez tytułu"}</div>
-                </div>
-              ))}
+              {(() => {
+                const q = pageSearch.trim().toLowerCase();
+                const filtered = q
+                  ? activeSec.pages.filter(p =>
+                      (p.title || "").toLowerCase().includes(q) ||
+                      stripHtml(p.content || "").includes(q)
+                    )
+                  : activeSec.pages;
+                if (filtered.length === 0) {
+                  return (
+                    <div className="nps-empty-search">
+                      {q ? "Brak wyników" : "Brak stron"}
+                    </div>
+                  );
+                }
+                return filtered.map(p => (
+                  <div
+                    key={p.id}
+                    className={`nps-page-item ${activePageId === p.id ? "active" : ""}`}
+                    onClick={() => selectPage(p.id)}
+                  >
+                    <div className="nps-page-title">{p.title || "Bez tytułu"}</div>
+                  </div>
+                ));
+              })()}
             </div>
             <button className="notes-bottom-btn" onClick={() => addPage(activeSec.id)}>
               ＋ Strona
