@@ -100,7 +100,7 @@ type ProfileData = {
 
 const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
   const [editing, setEditing] = useState(false);
-  const [editingAvatar, setEditingAvatar] = useState(false);
+  const [loading_unused_placeholder, _setLP] = useState(false);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [cropFile, setCropFile] = useState<File | null>(null);
