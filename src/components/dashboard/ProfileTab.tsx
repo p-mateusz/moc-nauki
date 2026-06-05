@@ -202,7 +202,6 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
   };
 
   const handleCroppedUpload = async (blob: Blob) => {
-    setCropFile(null);
     setUploading(true);
     const path = `${userId}/avatar.jpg`;
 
