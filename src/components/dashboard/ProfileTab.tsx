@@ -450,61 +450,8 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
         )}
       </div>
 
-      {/* Avatar edit modal */}
-      {editingAvatar && (
-        <div className="md-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setEditingAvatar(false); }}>
-          <div className="md-modal" style={{ maxWidth: 400 }}>
-            <button className="md-modal-close" onClick={() => setEditingAvatar(false)}>✕</button>
-            <div className="md-modal-title">📷 Zdjęcie profilowe</div>
 
-            <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <div style={{
-                width: 96, height: 96, borderRadius: "50%", margin: "0 auto 12px",
-                background: avColorStyles[editAvColor] || avColorStyles["av-c1"],
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "2rem", fontWeight: 900, overflow: "hidden",
-              }}>
-                {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                ) : initials}
-              </div>
-              <button
-                className="md-btn md-btn-prim"
-                style={{ marginRight: 8 }}
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-              >
-                {uploading ? "Przesyłanie..." : "📷 Prześlij zdjęcie"}
-              </button>
-              {profile.avatar_url && (
-                <button className="md-btn md-btn-danger" onClick={removeAvatar}>Usuń zdjęcie</button>
-              )}
-            </div>
 
-            <div className="md-form-group">
-              <label>Kolor avatara (widoczny gdy brak zdjęcia)</label>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {Object.entries(avColorStyles).map(([cls, bg]) => (
-                  <div
-                    key={cls}
-                    onClick={() => setEditAvColor(cls)}
-                    style={{
-                      width: 32, height: 32, borderRadius: "50%", cursor: "pointer",
-                      background: bg,
-                      border: editAvColor === cls ? "2px solid rgba(255,255,255,0.7)" : "2px solid transparent"
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="md-modal-footer">
-              <button className="md-btn" onClick={() => setEditingAvatar(false)}>Anuluj</button>
-              <button className="md-btn md-btn-prim" onClick={saveAvatarColor}>Zapisz</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Edit profile modal */}
       {editing && (
