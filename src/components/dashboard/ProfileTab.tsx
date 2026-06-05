@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { getUserIdSafe } from "@/lib/authSession";
 import { toast } from "sonner";
 import { useRoles } from "@/hooks/use-roles";
-import AvatarCropModal from "./AvatarCropModal";
+
 import { setAvatarCache } from "@/lib/avatarCache";
 import { LoadingInline } from "@/components/ui/loading-state";
 
