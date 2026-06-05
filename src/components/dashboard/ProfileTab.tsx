@@ -103,7 +103,7 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
   
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [cropFile, setCropFile] = useState<File | null>(null);
+  
   const [profile, setProfile] = useState<ProfileData>({
     bio: "", location: "", interests: [],
     avatar_color: "av-c1", banner_color: "banner-c1", avatar_url: null,
