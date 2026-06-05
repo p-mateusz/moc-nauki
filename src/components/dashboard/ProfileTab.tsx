@@ -310,11 +310,12 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
 
         <div style={{ padding: "0 24px 20px", display: "flex", alignItems: "flex-end", gap: 16, position: "relative", marginTop: -40 }}>
           <div style={{ position: "relative", flexShrink: 0 }}>
-            <div onClick={openAvatarEdit} style={{
+            <div onClick={openAvatarEdit} title={uploading ? "Przesyłanie..." : "Kliknij, aby zmienić zdjęcie"} style={{
               width: 80, height: 80, borderRadius: "50%",
               background: avColorStyles[profile.avatar_color] || avColorStyles["av-c1"],
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "1.6rem", fontWeight: 900, border: "3px solid #0a1428", cursor: "pointer",
+              fontSize: "1.6rem", fontWeight: 900, border: "3px solid #0a1428",
+              cursor: uploading ? "wait" : "pointer",
               overflow: "hidden", position: "relative",
             }}>
               {profile.avatar_url ? (
@@ -325,9 +326,21 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
                 background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: ".6rem", color: "#fff", fontWeight: 700,
               }}>
-                📷
+                {uploading ? "…" : "📷"}
               </div>
             </div>
+            {profile.avatar_url && !uploading && (
+              <button
+                onClick={removeAvatar}
+                style={{
+                  display: "block", margin: "6px auto 0", background: "transparent",
+                  border: "none", color: "#f87171", fontSize: ".7rem", cursor: "pointer",
+                  fontFamily: "inherit", padding: 0, textDecoration: "underline",
+                }}
+              >
+                Usuń zdjęcie
+              </button>
+            )}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
