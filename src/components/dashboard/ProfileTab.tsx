@@ -182,8 +182,8 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
   };
 
   const openAvatarEdit = () => {
-    setEditAvColor(profile.avatar_color);
-    setEditingAvatar(true);
+    if (uploading) return;
+    fileInputRef.current?.click();
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
