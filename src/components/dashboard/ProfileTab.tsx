@@ -100,7 +100,7 @@ type ProfileData = {
 
 const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
   const [editing, setEditing] = useState(false);
-  const [editingAvatar, setEditingAvatar] = useState(false);
+  
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [cropFile, setCropFile] = useState<File | null>(null);
@@ -182,8 +182,8 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
   };
 
   const openAvatarEdit = () => {
-    setEditAvColor(profile.avatar_color);
-    setEditingAvatar(true);
+    if (uploading) return;
+    fileInputRef.current?.click();
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -232,15 +232,8 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
     toast.success("Zdjęcie profilowe zaktualizowane!");
   };
 
-  const saveAvatarColor = async () => {
-    await supabase.from("user_profiles").upsert(
-      { user_id: userId, avatar_color: editAvColor },
-      { onConflict: "user_id" }
-    );
-    setProfile(prev => ({ ...prev, avatar_color: editAvColor }));
-    setEditingAvatar(false);
-    toast.success("Kolor avatara zapisany!");
-  };
+
+
 
   const removeAvatar = async () => {
     await supabase.from("user_profiles").upsert(
@@ -310,11 +303,12 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
 
         <div style={{ padding: "0 24px 20px", display: "flex", alignItems: "flex-end", gap: 16, position: "relative", marginTop: -40 }}>
           <div style={{ position: "relative", flexShrink: 0 }}>
-            <div onClick={openAvatarEdit} style={{
+            <div onClick={openAvatarEdit} title={uploading ? "Przesyłanie..." : "Kliknij, aby zmienić zdjęcie"} style={{
               width: 80, height: 80, borderRadius: "50%",
               background: avColorStyles[profile.avatar_color] || avColorStyles["av-c1"],
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "1.6rem", fontWeight: 900, border: "3px solid #0a1428", cursor: "pointer",
+              fontSize: "1.6rem", fontWeight: 900, border: "3px solid #0a1428",
+              cursor: uploading ? "wait" : "pointer",
               overflow: "hidden", position: "relative",
             }}>
               {profile.avatar_url ? (
@@ -325,9 +319,21 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
                 background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: ".6rem", color: "#fff", fontWeight: 700,
               }}>
-                📷
+                {uploading ? "…" : "📷"}
               </div>
             </div>
+            {profile.avatar_url && !uploading && (
+              <button
+                onClick={removeAvatar}
+                style={{
+                  display: "block", margin: "6px auto 0", background: "transparent",
+                  border: "none", color: "#f87171", fontSize: ".7rem", cursor: "pointer",
+                  fontFamily: "inherit", padding: 0, textDecoration: "underline",
+                }}
+              >
+                Usuń zdjęcie
+              </button>
+            )}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
@@ -437,61 +443,8 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
         )}
       </div>
 
-      {/* Avatar edit modal */}
-      {editingAvatar && (
-        <div className="md-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setEditingAvatar(false); }}>
-          <div className="md-modal" style={{ maxWidth: 400 }}>
-            <button className="md-modal-close" onClick={() => setEditingAvatar(false)}>✕</button>
-            <div className="md-modal-title">📷 Zdjęcie profilowe</div>
 
-            <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <div style={{
-                width: 96, height: 96, borderRadius: "50%", margin: "0 auto 12px",
-                background: avColorStyles[editAvColor] || avColorStyles["av-c1"],
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "2rem", fontWeight: 900, overflow: "hidden",
-              }}>
-                {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                ) : initials}
-              </div>
-              <button
-                className="md-btn md-btn-prim"
-                style={{ marginRight: 8 }}
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-              >
-                {uploading ? "Przesyłanie..." : "📷 Prześlij zdjęcie"}
-              </button>
-              {profile.avatar_url && (
-                <button className="md-btn md-btn-danger" onClick={removeAvatar}>Usuń zdjęcie</button>
-              )}
-            </div>
 
-            <div className="md-form-group">
-              <label>Kolor avatara (widoczny gdy brak zdjęcia)</label>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {Object.entries(avColorStyles).map(([cls, bg]) => (
-                  <div
-                    key={cls}
-                    onClick={() => setEditAvColor(cls)}
-                    style={{
-                      width: 32, height: 32, borderRadius: "50%", cursor: "pointer",
-                      background: bg,
-                      border: editAvColor === cls ? "2px solid rgba(255,255,255,0.7)" : "2px solid transparent"
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="md-modal-footer">
-              <button className="md-btn" onClick={() => setEditingAvatar(false)}>Anuluj</button>
-              <button className="md-btn md-btn-prim" onClick={saveAvatarColor}>Zapisz</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Edit profile modal */}
       {editing && (
