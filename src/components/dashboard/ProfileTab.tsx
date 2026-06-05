@@ -463,37 +463,12 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
               <label>Zainteresowania (oddziel przecinkami)</label>
               <input value={editInterests} onChange={(e) => setEditInterests(e.target.value)} placeholder="np. muzyka, sport" maxLength={100} />
             </div>
-            <div className="md-form-group">
-              <label>Kolor banera</label>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {Object.entries(bannerColors).map(([cls, bg]) => (
-                  <div
-                    key={cls}
-                    onClick={() => setEditBannerColor(cls)}
-                    style={{
-                      width: 44, height: 22, borderRadius: 5, cursor: "pointer",
-                      background: bg,
-                      border: editBannerColor === cls ? "2px solid rgba(255,255,255,0.7)" : "2px solid transparent"
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
             <div className="md-modal-footer">
               <button className="md-btn" onClick={() => setEditing(false)}>Anuluj</button>
               <button className="md-btn md-btn-prim" onClick={saveEdit}>Zapisz zmiany</button>
             </div>
           </div>
         </div>
-      )}
-
-      {/* Crop modal */}
-      {cropFile && (
-        <AvatarCropModal
-          imageFile={cropFile}
-          onCropped={handleCroppedUpload}
-          onCancel={() => setCropFile(null)}
-        />
       )}
     </div>
   );
