@@ -188,6 +188,7 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Proszę wybrać plik graficzny");
@@ -197,9 +198,7 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
       toast.error("Maksymalny rozmiar pliku to 10MB");
       return;
     }
-    setCropFile(file);
-    // Reset input so the same file can be selected again
-    e.target.value = "";
+    handleCroppedUpload(file);
   };
 
   const handleCroppedUpload = async (blob: Blob) => {
