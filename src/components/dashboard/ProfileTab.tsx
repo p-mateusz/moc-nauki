@@ -232,15 +232,8 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
     toast.success("Zdjęcie profilowe zaktualizowane!");
   };
 
-  const saveAvatarColor = async () => {
-    await supabase.from("user_profiles").upsert(
-      { user_id: userId, avatar_color: editAvColor },
-      { onConflict: "user_id" }
-    );
-    setProfile(prev => ({ ...prev, avatar_color: editAvColor }));
-    setEditingAvatar(false);
-    toast.success("Kolor avatara zapisany!");
-  };
+
+
 
   const removeAvatar = async () => {
     await supabase.from("user_profiles").upsert(
