@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { getUserIdSafe } from "@/lib/authSession";
 import { toast } from "sonner";
 import { useRoles } from "@/hooks/use-roles";
-import AvatarCropModal from "./AvatarCropModal";
+
 import { setAvatarCache } from "@/lib/avatarCache";
 import { LoadingInline } from "@/components/ui/loading-state";
 
@@ -103,7 +103,7 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
   
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [cropFile, setCropFile] = useState<File | null>(null);
+  
   const [profile, setProfile] = useState<ProfileData>({
     bio: "", location: "", interests: [],
     avatar_color: "av-c1", banner_color: "banner-c1", avatar_url: null,
@@ -188,6 +188,7 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Proszę wybrać plik graficzny");
@@ -197,19 +198,16 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
       toast.error("Maksymalny rozmiar pliku to 10MB");
       return;
     }
-    setCropFile(file);
-    // Reset input so the same file can be selected again
-    e.target.value = "";
+    handleCroppedUpload(file);
   };
 
   const handleCroppedUpload = async (blob: Blob) => {
-    setCropFile(null);
     setUploading(true);
     const path = `${userId}/avatar.jpg`;
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
-      .upload(path, blob, { upsert: true, contentType: "image/jpeg" });
+      .upload(path, blob, { upsert: true, contentType: (blob as File).type || "image/jpeg" });
 
     if (uploadError) {
       toast.error("Błąd przesyłania zdjęcia");
@@ -464,37 +462,12 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
               <label>Zainteresowania (oddziel przecinkami)</label>
               <input value={editInterests} onChange={(e) => setEditInterests(e.target.value)} placeholder="np. muzyka, sport" maxLength={100} />
             </div>
-            <div className="md-form-group">
-              <label>Kolor banera</label>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {Object.entries(bannerColors).map(([cls, bg]) => (
-                  <div
-                    key={cls}
-                    onClick={() => setEditBannerColor(cls)}
-                    style={{
-                      width: 44, height: 22, borderRadius: 5, cursor: "pointer",
-                      background: bg,
-                      border: editBannerColor === cls ? "2px solid rgba(255,255,255,0.7)" : "2px solid transparent"
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
             <div className="md-modal-footer">
               <button className="md-btn" onClick={() => setEditing(false)}>Anuluj</button>
               <button className="md-btn md-btn-prim" onClick={saveEdit}>Zapisz zmiany</button>
             </div>
           </div>
         </div>
-      )}
-
-      {/* Crop modal */}
-      {cropFile && (
-        <AvatarCropModal
-          imageFile={cropFile}
-          onCropped={handleCroppedUpload}
-          onCancel={() => setCropFile(null)}
-        />
       )}
     </div>
   );
