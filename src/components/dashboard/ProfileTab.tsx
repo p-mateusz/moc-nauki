@@ -208,7 +208,7 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
-      .upload(path, blob, { upsert: true, contentType: "image/jpeg" });
+      .upload(path, blob, { upsert: true, contentType: (blob as File).type || "image/jpeg" });
 
     if (uploadError) {
       toast.error("Błąd przesyłania zdjęcia");
