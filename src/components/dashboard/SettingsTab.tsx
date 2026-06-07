@@ -971,22 +971,6 @@ const SettingsTab = ({
               }}
             />
 
-            <label style={{ fontSize: ".78rem", color: "#94a3b8", fontWeight: 700, display: "block", marginBottom: 8 }}>
-              Kolor banera
-            </label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
-              {Object.keys(bannerColors).map((k) => (
-                <div
-                  key={k}
-                  onClick={() => setEditBannerColor(k)}
-                  style={{
-                    width: 56, height: 36, borderRadius: 10, cursor: "pointer",
-                    background: bannerColors[k],
-                    border: editBannerColor === k ? "2px solid #3b82f6" : "2px solid transparent",
-                  }}
-                />
-              ))}
-            </div>
 
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button
