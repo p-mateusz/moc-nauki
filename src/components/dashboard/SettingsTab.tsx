@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRoles } from "@/hooks/use-roles";
 import { logoutUser } from "@/lib/authCleanup";
-import AvatarCropModal from "./AvatarCropModal";
+
 import { setAvatarCache } from "@/lib/avatarCache";
 import { LoadingInline } from "@/components/ui/loading-state";
 import {
@@ -60,10 +60,8 @@ const SettingsTab = ({
   onNavigateToFriends?: () => void;
 }) => {
   const [editing, setEditing] = useState(false);
-  const [editingAvatar, setEditingAvatar] = useState(false);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [cropFile, setCropFile] = useState<File | null>(null);
 
   const [profile, setProfile] = useState<ProfileData>({
     bio: "",
@@ -157,13 +155,13 @@ const SettingsTab = ({
   };
 
   const openAvatarEdit = () => {
-    setEditAvColor(profile.avatar_color);
-    setEditingAvatar(true);
+    if (uploading) return;
+    fileInputRef.current?.click();
   };
 
   const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-
+    e.target.value = "";
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
@@ -176,12 +174,10 @@ const SettingsTab = ({
       return;
     }
 
-    setCropFile(file);
-    e.target.value = "";
+    handleCroppedUpload(file);
   };
 
   const handleCroppedUpload = async (blob: Blob) => {
-    setCropFile(null);
     setUploading(true);
 
     const path = `${userId}/avatar.jpg`;
@@ -190,7 +186,7 @@ const SettingsTab = ({
       .from("avatars")
       .upload(path, blob, {
         upsert: true,
-        contentType: "image/jpeg",
+        contentType: (blob as File).type || "image/jpeg",
       });
 
     if (uploadError) {
@@ -224,27 +220,6 @@ const SettingsTab = ({
     setUploading(false);
 
     toast.success("Zdjęcie profilowe zaktualizowane!");
-  };
-
-  const saveAvatarColor = async () => {
-    await supabase
-      .from("user_profiles")
-      .upsert(
-        {
-          user_id: userId,
-          avatar_color: editAvColor,
-        },
-        { onConflict: "user_id" }
-      );
-
-    setProfile((prev) => ({
-      ...prev,
-      avatar_color: editAvColor,
-    }));
-
-    setEditingAvatar(false);
-
-    toast.success("Kolor avatara zapisany!");
   };
 
   const removeAvatar = async () => {
@@ -934,14 +909,6 @@ const SettingsTab = ({
         </div>
       </div>
 
-      {/* AVATAR CROP MODAL */}
-      {cropFile && (
-        <AvatarCropModal
-          imageFile={cropFile}
-          onCancel={() => setCropFile(null)}
-          onCropped={handleCroppedUpload}
-        />
-      )}
 
       {/* EDIT PROFILE MODAL */}
       {editing && (
@@ -1004,22 +971,6 @@ const SettingsTab = ({
               }}
             />
 
-            <label style={{ fontSize: ".78rem", color: "#94a3b8", fontWeight: 700, display: "block", marginBottom: 8 }}>
-              Kolor banera
-            </label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
-              {Object.keys(bannerColors).map((k) => (
-                <div
-                  key={k}
-                  onClick={() => setEditBannerColor(k)}
-                  style={{
-                    width: 56, height: 36, borderRadius: 10, cursor: "pointer",
-                    background: bannerColors[k],
-                    border: editBannerColor === k ? "2px solid #3b82f6" : "2px solid transparent",
-                  }}
-                />
-              ))}
-            </div>
 
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button
@@ -1042,88 +993,6 @@ const SettingsTab = ({
         </div>
       )}
 
-      {/* EDIT AVATAR MODAL */}
-      {editingAvatar && (
-        <div
-          onClick={() => setEditingAvatar(false)}
-          style={{
-            position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            zIndex: 1000, padding: 16, backdropFilter: "blur(8px)",
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#0f172a", borderRadius: 20, padding: 24,
-              maxWidth: 420, width: "100%",
-              border: "1px solid rgba(255,255,255,0.1)",
-            }}
-          >
-            <h3 style={{ fontSize: "1.1rem", fontWeight: 900, marginBottom: 16 }}>
-              📷 Zdjęcie profilowe
-            </h3>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                style={{
-                  padding: "12px 16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)",
-                  background: "rgba(59,130,246,0.15)", color: "#fff",
-                  cursor: uploading ? "wait" : "pointer", fontWeight: 700,
-                }}
-              >{uploading ? "Przesyłanie…" : "📤 Wgraj zdjęcie"}</button>
-
-              {profile.avatar_url && (
-                <button
-                  onClick={removeAvatar}
-                  style={{
-                    padding: "12px 16px", borderRadius: 12, border: "1px solid rgba(239,68,68,0.22)",
-                    background: "rgba(239,68,68,0.1)", color: "#fca5a5",
-                    cursor: "pointer", fontWeight: 700,
-                  }}
-                >🗑️ Usuń zdjęcie</button>
-              )}
-            </div>
-
-            <label style={{ fontSize: ".78rem", color: "#94a3b8", fontWeight: 700, display: "block", marginBottom: 8 }}>
-              …lub wybierz kolor tła
-            </label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
-              {Object.keys(avColorStyles).map((k) => (
-                <div
-                  key={k}
-                  onClick={() => setEditAvColor(k)}
-                  style={{
-                    width: 48, height: 48, borderRadius: "50%", cursor: "pointer",
-                    background: avColorStyles[k],
-                    border: editAvColor === k ? "3px solid #3b82f6" : "3px solid transparent",
-                  }}
-                />
-              ))}
-            </div>
-
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button
-                onClick={() => setEditingAvatar(false)}
-                style={{
-                  padding: "10px 18px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)",
-                  background: "transparent", color: "#fff", cursor: "pointer", fontWeight: 700,
-                }}
-              >Anuluj</button>
-              <button
-                onClick={saveAvatarColor}
-                style={{
-                  padding: "10px 18px", borderRadius: 12, border: "none",
-                  background: "linear-gradient(135deg,#3b82f6,#6366f1)", color: "#fff",
-                  cursor: "pointer", fontWeight: 800,
-                }}
-              >Zapisz kolor</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* CHANGE PASSWORD MODAL */}
       {changePasswordDialogOpen && (
