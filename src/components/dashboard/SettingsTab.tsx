@@ -519,6 +519,44 @@ const SettingsTab = ({
                 📷 Zmień
               </div>
             </div>
+
+            {profile.avatar_url && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeAvatar();
+                }}
+                title="Usuń zdjęcie"
+                style={{
+                  position: "absolute",
+                  top: -2,
+                  right: -2,
+                  width: 26,
+                  height: 26,
+                  borderRadius: "50%",
+                  background: "rgba(239,68,68,0.92)",
+                  border: "2px solid #0a1428",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  fontSize: ".7rem",
+                  zIndex: 2,
+                  transition: ".15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "scale(1.1)";
+                  e.currentTarget.style.background = "rgba(220,38,38,0.95)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.background = "rgba(239,68,68,0.92)";
+                }}
+              >
+                🗑️
+              </button>
+            )}
           </div>
 
           {/* USER INFO */}
