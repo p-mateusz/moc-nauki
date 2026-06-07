@@ -909,14 +909,6 @@ const SettingsTab = ({
         </div>
       </div>
 
-      {/* AVATAR CROP MODAL */}
-      {cropFile && (
-        <AvatarCropModal
-          imageFile={cropFile}
-          onCancel={() => setCropFile(null)}
-          onCropped={handleCroppedUpload}
-        />
-      )}
 
       {/* EDIT PROFILE MODAL */}
       {editing && (
