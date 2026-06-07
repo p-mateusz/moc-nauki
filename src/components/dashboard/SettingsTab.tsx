@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRoles } from "@/hooks/use-roles";
 import { logoutUser } from "@/lib/authCleanup";
-import AvatarCropModal from "./AvatarCropModal";
+
 import { setAvatarCache } from "@/lib/avatarCache";
 import { LoadingInline } from "@/components/ui/loading-state";
 import {
