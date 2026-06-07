@@ -155,13 +155,13 @@ const SettingsTab = ({
   };
 
   const openAvatarEdit = () => {
-    setEditAvColor(profile.avatar_color);
-    setEditingAvatar(true);
+    if (uploading) return;
+    fileInputRef.current?.click();
   };
 
   const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-
+    e.target.value = "";
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
@@ -174,12 +174,10 @@ const SettingsTab = ({
       return;
     }
 
-    setCropFile(file);
-    e.target.value = "";
+    handleCroppedUpload(file);
   };
 
   const handleCroppedUpload = async (blob: Blob) => {
-    setCropFile(null);
     setUploading(true);
 
     const path = `${userId}/avatar.jpg`;
@@ -188,7 +186,7 @@ const SettingsTab = ({
       .from("avatars")
       .upload(path, blob, {
         upsert: true,
-        contentType: "image/jpeg",
+        contentType: (blob as File).type || "image/jpeg",
       });
 
     if (uploadError) {
@@ -222,27 +220,6 @@ const SettingsTab = ({
     setUploading(false);
 
     toast.success("Zdjęcie profilowe zaktualizowane!");
-  };
-
-  const saveAvatarColor = async () => {
-    await supabase
-      .from("user_profiles")
-      .upsert(
-        {
-          user_id: userId,
-          avatar_color: editAvColor,
-        },
-        { onConflict: "user_id" }
-      );
-
-    setProfile((prev) => ({
-      ...prev,
-      avatar_color: editAvColor,
-    }));
-
-    setEditingAvatar(false);
-
-    toast.success("Kolor avatara zapisany!");
   };
 
   const removeAvatar = async () => {
