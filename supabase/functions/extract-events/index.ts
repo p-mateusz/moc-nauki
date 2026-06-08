@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getUserIdFromRequest } from "../_shared/auth.ts";
 import { reserveWebhookCall, webhookLimitResponse } from "../_shared/webhookUsage.ts";
+import { createAdminClient, getAppSetting } from "../_shared/appSettings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,16 +20,12 @@ serve(async (req) => {
 
   try {
     const { pageTitle, content, noteDate, subject } = await req.json();
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    const sbUrl = Deno.env.get("SUPABASE_URL")!;
-    const sbKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const adminSb = createClient(sbUrl, sbKey);
+    const adminSb = createAdminClient();
 
     const limit = await reserveWebhookCall(adminSb, userId);
     if (!limit.allowed) return webhookLimitResponse(limit, corsHeaders);
 
-    const { data: settingRow } = await adminSb.from("app_settings").select("value").eq("key", "webhook_notes").maybeSingle();
-    const webhookUrl = settingRow?.value;
+    const webhookUrl = await getAppSetting(adminSb, "webhook_notes");
     if (!webhookUrl) {
       return new Response(JSON.stringify({ events: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
