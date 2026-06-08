@@ -317,10 +317,14 @@ const CreateList = () => {
         try {
           clearInterval(progressInterval);
           setSentenceProgress(95);
-          const { data: triggerData, error: triggerError } = await supabase.functions.invoke("trigger-sentences-generation", {
-            body: { listId: listId!, userId, language: lang, definitionLanguage: defLang, specialInstructions: specialInstructions.trim() || "", proficiencyLevel },
-          });
-          if (triggerError) throw triggerError;
+          const { getStoredAccessToken } = await import("@/lib/supabase");
+          const accessToken = getStoredAccessToken();
+          if (!accessToken) throw new Error("Musisz być zalogowany.");
+          await invokeProjectFunction(
+            "trigger-sentences-generation",
+            accessToken,
+            { listId: listId!, userId, language: lang, definitionLanguage: defLang, specialInstructions: specialInstructions.trim() || "", proficiencyLevel },
+          );
           setSentenceProgress(100);
           setSentenceMessage("Gotowe!");
           submittedRef.current = true;
