@@ -33,7 +33,7 @@ const invokeProjectFunction = async <T,>(functionName: string, accessToken: stri
   }
 
   if (!response.ok) {
-    throw new Error(payload?.error || payload?.message || payload?.detail || `Błąd funkcji (${response.status})`);
+    throw new Error(payload?.detail || payload?.error || payload?.message || `Błąd funkcji (${response.status})`);
   }
 
   return payload as T;
