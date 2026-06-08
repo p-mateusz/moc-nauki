@@ -168,8 +168,7 @@ const RecordingWidget = ({ activeTab, onRecordingStateChange }: RecordingWidgetP
        const formData = new FormData();
        formData.append("file", blob, "recording.webm");
        formData.append("duration", duration);
-        const result = await invokeCloudFunction<any>("proxy-n8n-audio", { body: formData });
-        const resultText = typeof result === "string" ? result : JSON.stringify(result);
+        const resultText = await invokeCloudFunction<string>("proxy-n8n-audio", { body: formData, responseType: "text" });
        let title = "Notatka z lekcji";
        let content = resultText;
        try {
