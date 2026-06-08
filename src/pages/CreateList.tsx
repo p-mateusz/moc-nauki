@@ -11,6 +11,34 @@ import { motion, AnimatePresence } from "framer-motion";
 type WordEntry = { word: string; definition: string; sentence?: string; hint?: string };
 const MAX_WORDS_PER_LIST = 300;
 
+const invokeProjectFunction = async <T,>(functionName: string, accessToken: string, body: unknown): Promise<T> => {
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!projectId || !publishableKey) throw new Error("Brak konfiguracji backendu.");
+
+  const response = await fetch(`https://${projectId}.supabase.co/functions/v1/${functionName}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: publishableKey,
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const raw = await response.text();
+  let payload: any = null;
+  if (raw) {
+    try { payload = JSON.parse(raw); } catch { payload = { error: raw }; }
+  }
+
+  if (!response.ok) {
+    throw new Error(payload?.error || payload?.message || payload?.detail || `Błąd funkcji (${response.status})`);
+  }
+
+  return payload as T;
+};
+
 const CreateList = () => {
   const [searchParams] = useSearchParams();
   const draftParam = searchParams.get("draft");
@@ -198,14 +226,14 @@ const CreateList = () => {
       const { getStoredAccessToken } = await import("@/lib/supabase");
       const accessToken = getStoredAccessToken();
       if (!accessToken) throw new Error("Musisz być zalogowany.");
-      const { data, error } = await supabase.functions.invoke("generate-definitions", {
-        body: { words: lines, language: lang, definitionLanguage: defLang, specialInstructions },
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const data = await invokeProjectFunction<{ definitions?: { word: string; definition: string }[] }>(
+        "generate-definitions",
+        accessToken,
+        { words: lines, language: lang, definitionLanguage: defLang, specialInstructions },
+      );
       clearInterval(progressInterval);
       setGenProgress(100);
       setGenMessage("Gotowe!");
-      if (error) throw error;
       if (data?.definitions?.length) {
         setWords((prev) => {
           const cleaned = prev.filter((w) => w.word.trim());
