@@ -20,8 +20,8 @@ serve(async (req) => {
   try {
     const { words, language, definitionLanguage, specialInstructions } = await req.json();
     const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    const sbUrl = Deno.env.get("SUPABASE_URL")!;
-    const sbKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const sbUrl = Deno.env.get("CUSTOM_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
+    const sbKey = Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminSb = createClient(sbUrl, sbKey);
 
     const limit = await reserveWebhookCall(adminSb, userId);
@@ -59,20 +59,25 @@ serve(async (req) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 120000);
 
-    const response = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: controller.signal,
-      body: JSON.stringify({
-        words: formattedWords,
-        formattedWords,
-        language,
-        definitionLanguage: definitionLanguageInfo,
-        definitionLanguageMode: definitionLanguage,
-      }),
-    });
-
-    clearTimeout(timeout);
+    let response: Response;
+    try {
+      console.log("Calling definitions webhook", { userId, wordsCount: words.length, language, definitionLanguage });
+      response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          words: formattedWords,
+          formattedWords,
+          language,
+          definitionLanguage: definitionLanguageInfo,
+          definitionLanguageMode: definitionLanguage,
+          specialInstructions: specialInstructions || "",
+        }),
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!response.ok) throw new Error(`Webhook error: ${response.status}`);
 
