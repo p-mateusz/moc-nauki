@@ -79,7 +79,18 @@ serve(async (req) => {
       clearTimeout(timeout);
     }
 
-    if (!response.ok) throw new Error(`Webhook error: ${response.status}`);
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      console.error("Definitions webhook rejected request", {
+        status: response.status,
+        statusText: response.statusText,
+        responsePreview: errorText.slice(0, 300),
+      });
+      const hint = response.status === 404
+        ? "n8n zwrócił 404 — sprawdź czy workflow jest aktywny i czy N8N_DEFINITIONS_WEBHOOK wskazuje Production URL z aktywnego webhooka (/webhook/...), a nie testowy URL (/webhook-test/...)."
+        : `n8n zwrócił błąd ${response.status}.`;
+      throw new Error(hint);
+    }
 
     const resultText = await response.text();
 
