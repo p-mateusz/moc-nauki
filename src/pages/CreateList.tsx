@@ -195,8 +195,12 @@ const CreateList = () => {
       });
     }, 1000);
     try {
+      const { getStoredAccessToken } = await import("@/lib/supabase");
+      const accessToken = getStoredAccessToken();
+      if (!accessToken) throw new Error("Musisz być zalogowany.");
       const { data, error } = await supabase.functions.invoke("generate-definitions", {
         body: { words: lines, language: lang, definitionLanguage: defLang, specialInstructions },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       clearInterval(progressInterval);
       setGenProgress(100);
