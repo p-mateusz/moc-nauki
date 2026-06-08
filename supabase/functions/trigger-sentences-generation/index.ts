@@ -7,9 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SENTENCES_WEBHOOK_URL = Deno.env.get("N8N_SENTENCES_WEBHOOK") ?? "";
-
 type ParsedSentence = { word: string; definition: string; sentence: string; hint: string };
+
+function webhookErrorMessage(status: number, body: string): string {
+  const sample = body.slice(0, 300);
+  if (status === 404 && /No workspace here|webhook-test|not found/i.test(body)) {
+    return "Webhook zdań n8n nie istnieje albo używa złego adresu. Wklej produkcyjny URL z aktywnego workflow n8n do sekretu N8N_SENTENCES_WEBHOOK.";
+  }
+  return `Webhook n8n zwrócił błąd ${status}: ${sample}`;
+}
 
 function parseSentencesPayload(raw: any): ParsedSentence[] {
   const toItem = (item: any): ParsedSentence => ({
@@ -103,12 +109,13 @@ serve(async (req) => {
 
     let response: Response;
     try {
-      if (!SENTENCES_WEBHOOK_URL) {
+      const sentencesWebhookUrl = Deno.env.get("N8N_SENTENCES_WEBHOOK") ?? "";
+      if (!sentencesWebhookUrl) {
         return new Response(JSON.stringify({ error: "Service not configured" }), {
           status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      response = await fetch(SENTENCES_WEBHOOK_URL, {
+      response = await fetch(sentencesWebhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
@@ -130,9 +137,7 @@ serve(async (req) => {
     const responseText = await response.text();
     console.log("Sentences webhook status:", response.status);
 
-    if (!response.ok) {
-      throw new Error(`Webhook ${response.status}: ${responseText.slice(0, 300)}`);
-    }
+    if (!response.ok) throw new Error(webhookErrorMessage(response.status, responseText));
 
     let raw: any = responseText;
     try { raw = JSON.parse(responseText); } catch { /* keep as string */ }
