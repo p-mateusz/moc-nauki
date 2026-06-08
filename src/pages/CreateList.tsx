@@ -216,7 +216,17 @@ const CreateList = () => {
       }
     } catch (e: any) {
       clearInterval(progressInterval);
-      toast.error("Wystąpił błąd. Spróbuj ponownie za chwilę — generowanie może trwać do 2 minut.");
+      console.error("generate definitions failed", e);
+      let message = "Wystąpił błąd. Spróbuj ponownie za chwilę — generowanie może trwać do 2 minut.";
+      try {
+        if (e?.context instanceof Response) {
+          const payload = await e.context.clone().json().catch(async () => ({ error: await e.context.clone().text() }));
+          message = payload?.error || payload?.message || payload?.detail || message;
+        } else if (e?.message) {
+          message = e.message;
+        }
+      } catch {}
+      toast.error(message);
     } finally { setTimeout(() => setBulkLoading(false), 500); }
   };
 
