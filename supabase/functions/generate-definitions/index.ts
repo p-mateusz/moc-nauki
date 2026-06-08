@@ -115,8 +115,9 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("generate-definitions error:", e);
-    return new Response(JSON.stringify({ error: "Operacja nie powiodła się — spróbuj ponownie" }), {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("generate-definitions error:", msg, e);
+    return new Response(JSON.stringify({ error: "Operacja nie powiodła się — spróbuj ponownie", detail: msg }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
