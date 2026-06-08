@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { invokeCloudFunction, supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRoles, type Role } from "@/hooks/use-roles";
 
@@ -1367,12 +1367,7 @@ const SettingsView = () => {
 
   const userId = localStorage.getItem("userId");
     const callSettings = useCallback(async (body: any) => {
-      const res = await supabase.functions.invoke("manage-app-settings", {
-        body,
-      });
-      if (res.error) throw new Error(res.error.message);
-      if (res.data?.error) throw new Error(res.data.error);
-      return res.data;
+      return invokeCloudFunction("manage-app-settings", { body });
     }, []);
 
   useEffect(() => {
