@@ -14,14 +14,16 @@ export async function getUserIdFromRequest(req: Request): Promise<string | null>
 
   const sbUrl = Deno.env.get("CUSTOM_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
   const anonKey = Deno.env.get("CUSTOM_SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_ANON_KEY")!;
+  const serviceKey = Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || anonKey;
   const sb = createClient(sbUrl, anonKey);
+  const adminSb = createClient(sbUrl, serviceKey);
 
   try {
     const { data, error } = await sb.auth.getClaims(token);
     if (!error && data?.claims?.sub) return data.claims.sub as string;
   } catch {}
   try {
-    const { data, error } = await sb.auth.getUser(token);
+    const { data, error } = await adminSb.auth.getUser(token);
     if (error || !data?.user) return null;
     return data.user.id;
   } catch {
