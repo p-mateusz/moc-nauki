@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getUserIdFromRequest } from "../_shared/auth.ts";
 import { reserveWebhookCall, webhookLimitResponse } from "../_shared/webhookUsage.ts";
+import { createAdminClient, getRequiredWebhookUrl, webhookErrorMessage } from "../_shared/appSettings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,10 +20,7 @@ serve(async (req) => {
 
   try {
     const { words, language, definitionLanguage, specialInstructions } = await req.json();
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    const sbUrl = Deno.env.get("CUSTOM_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
-    const sbKey = Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const adminSb = createClient(sbUrl, sbKey);
+    const adminSb = createAdminClient();
 
     const limit = await reserveWebhookCall(adminSb, userId);
     if (!limit.allowed) return webhookLimitResponse(limit, corsHeaders);
@@ -34,12 +32,7 @@ serve(async (req) => {
       });
     }
 
-    const webhookUrl = Deno.env.get("N8N_DEFINITIONS_WEBHOOK");
-    if (!webhookUrl) {
-      return new Response(JSON.stringify({ error: "Service not configured" }), {
-        status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const webhookUrl = await getRequiredWebhookUrl(adminSb, "webhook_languages", "Webhook definicji");
 
     // Format: {word1 | def1}, {word2 | -}, ...
     const formattedWords = (words || [])
@@ -86,10 +79,7 @@ serve(async (req) => {
         statusText: response.statusText,
         responsePreview: errorText.slice(0, 300),
       });
-      const hint = response.status === 404
-        ? "n8n zwrócił 404 — sprawdź czy workflow jest aktywny i czy N8N_DEFINITIONS_WEBHOOK wskazuje Production URL z aktywnego webhooka (/webhook/...), a nie testowy URL (/webhook-test/...)."
-        : `n8n zwrócił błąd ${response.status}.`;
-      throw new Error(hint);
+      throw new Error(webhookErrorMessage("Webhook definicji", response.status, errorText));
     }
 
     const resultText = await response.text();
