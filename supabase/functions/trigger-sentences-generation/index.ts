@@ -58,8 +58,8 @@ serve(async (req) => {
     }
 
     const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    const sbUrl = Deno.env.get("SUPABASE_URL")!;
-    const sbKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const sbUrl = Deno.env.get("CUSTOM_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
+    const sbKey = Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminSb = createClient(sbUrl, sbKey);
 
     const limit = await reserveWebhookCall(adminSb, authedUserId);
@@ -187,11 +187,15 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
     );
   } catch (e) {
-    console.error("trigger-sentences-generation error:", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("trigger-sentences-generation error:", msg, e);
     // Reset generating flag so UI can recover.
     try {
       const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-      const adminSb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const adminSb = createClient(
+        Deno.env.get("CUSTOM_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
       const body = await req.clone().json().catch(() => ({}));
       if (body?.listId) {
         await adminSb.from("word_lists").update({ sentences_generating: false }).eq("id", body.listId);
@@ -199,7 +203,7 @@ serve(async (req) => {
     } catch (_) { /* noop */ }
 
     return new Response(
-      JSON.stringify({ error: "Operacja nie powiodła się — spróbuj ponownie" }),
+      JSON.stringify({ error: "Operacja nie powiodła się — spróbuj ponownie", detail: msg }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
