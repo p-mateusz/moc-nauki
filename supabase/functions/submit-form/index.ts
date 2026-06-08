@@ -1,4 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createAdminClient, getRequiredWebhookUrl } from "../_shared/appSettings.ts";
 
 const corsHeaders = {
