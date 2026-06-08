@@ -20,6 +20,47 @@ export const getStoredAccessToken = () => {
   }
 };
 
+export const invokeCloudFunction = async <T,>(
+  functionName: string,
+  options: { body?: unknown; accessToken?: string | null; headers?: Record<string, string>; responseType?: "json" | "text" } = {},
+): Promise<T> => {
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!projectId || !publishableKey) throw new Error("Brak konfiguracji backendu.");
+
+  const accessToken = options.accessToken === undefined ? getStoredAccessToken() : options.accessToken;
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+  const headers: Record<string, string> = {
+    apikey: publishableKey,
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
+    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    ...(options.headers || {}),
+  };
+
+  const response = await fetch(`https://${projectId}.supabase.co/functions/v1/${functionName}`, {
+    method: "POST",
+    headers,
+    body: isFormData ? options.body as BodyInit : JSON.stringify(options.body ?? {}),
+  });
+
+  const raw = await response.text();
+  if (options.responseType === "text") {
+    if (!response.ok) throw new Error(raw || `Błąd funkcji (${response.status})`);
+    return raw as T;
+  }
+
+  let payload: any = null;
+  if (raw) {
+    try { payload = JSON.parse(raw); } catch { payload = { error: raw }; }
+  }
+
+  if (!response.ok) {
+    throw new Error(payload?.detail || payload?.error || payload?.message || `Błąd funkcji (${response.status})`);
+  }
+
+  return payload as T;
+};
+
 // gotrue-js domyślnie używa Web Locks (navigator.locks) do koordynacji
 // odświeżania tokena między kartami. W kontekście iframe podglądu Lovable
 // te locki potrafią się zawiesić ("Lock was not released within 5000ms"),

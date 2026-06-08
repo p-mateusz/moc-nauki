@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getUserIdFromRequest } from "../_shared/auth.ts";
 import { reserveWebhookCall, webhookLimitResponse } from "../_shared/webhookUsage.ts";
+import { createAdminClient, getRequiredWebhookUrl, webhookErrorMessage } from "../_shared/appSettings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,17 +35,12 @@ serve(async (req) => {
   }
 
   try {
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    const sbUrl = Deno.env.get("SUPABASE_URL")!;
-    const sbKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const adminSb = createClient(sbUrl, sbKey);
+    const adminSb = createAdminClient();
 
     const limit = await reserveWebhookCall(adminSb, userId);
     if (!limit.allowed) return webhookLimitResponse(limit, corsHeaders);
 
-    const { data: settingRow } = await adminSb.from("app_settings").select("value").eq("key", "webhook_ocr").maybeSingle();
-    const webhookUrl = settingRow?.value;
-    if (!webhookUrl) throw new Error("Webhook URL for OCR not configured");
+    const webhookUrl = await getRequiredWebhookUrl(adminSb, "webhook_ocr", "Webhook OCR");
 
     // Accept either multipart/form-data (preferred — true binary) or JSON { imageBase64 }
     const contentType = req.headers.get("content-type") || "";
@@ -102,7 +98,7 @@ serve(async (req) => {
     if (!response.ok) {
       const errText = await response.text();
       console.error("OCR webhook error:", errText);
-      throw new Error(`Webhook error: ${response.status}`);
+      throw new Error(webhookErrorMessage("Webhook OCR", response.status, errText));
     }
 
     const resultText = await response.text();

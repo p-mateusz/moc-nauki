@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getUserIdFromRequest } from "../_shared/auth.ts";
 import { reserveWebhookCall, webhookLimitResponse } from "../_shared/webhookUsage.ts";
+import { createAdminClient, getRequiredWebhookUrl, webhookErrorMessage } from "../_shared/appSettings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,17 +20,12 @@ serve(async (req) => {
 
   try {
     const { audioBase64, duration } = await req.json();
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    const sbUrl = Deno.env.get("SUPABASE_URL")!;
-    const sbKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const adminSb = createClient(sbUrl, sbKey);
+    const adminSb = createAdminClient();
 
     const limit = await reserveWebhookCall(adminSb, userId);
     if (!limit.allowed) return webhookLimitResponse(limit, corsHeaders);
 
-    const { data: settingRow } = await adminSb.from("app_settings").select("value").eq("key", "webhook_notes").maybeSingle();
-    const webhookUrl = settingRow?.value;
-    if (!webhookUrl) throw new Error("Webhook URL for notes not configured");
+    const webhookUrl = await getRequiredWebhookUrl(adminSb, "webhook_notes", "Webhook notatek");
 
     console.log("Calling transcribe-note webhook:", webhookUrl);
     console.log("Payload size:", JSON.stringify({ audioBase64, duration, type: "transcribe" }).length, "bytes");
@@ -55,7 +51,7 @@ serve(async (req) => {
       throw fetchErr;
     }
 
-    if (!response.ok) throw new Error(`Webhook error: ${response.status}`);
+    if (!response.ok) throw new Error(webhookErrorMessage("Webhook notatek", response.status, await response.text().catch(() => "")));
 
     const data = await response.json();
 

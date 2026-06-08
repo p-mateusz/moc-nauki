@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { invokeCloudFunction, supabase } from "@/lib/supabase";
 
 const MAX_RETRIES = 3;
 
@@ -168,18 +168,7 @@ const RecordingWidget = ({ activeTab, onRecordingStateChange }: RecordingWidgetP
        const formData = new FormData();
        formData.append("file", blob, "recording.webm");
        formData.append("duration", duration);
-       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-       const { data: sessionData } = await supabase.auth.getSession();
-       const accessToken = sessionData?.session?.access_token;
-       if (!accessToken) throw new Error("Musisz być zalogowany.");
-       const response = await fetch(`${supabaseUrl}/functions/v1/proxy-n8n-audio`, {
-         method: "POST",
-         headers: { apikey: anonKey, authorization: `Bearer ${accessToken}` },
-         body: formData,
-       });
-       const resultText = await response.text();
-       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const resultText = await invokeCloudFunction<string>("proxy-n8n-audio", { body: formData, responseType: "text" });
        let title = "Notatka z lekcji";
        let content = resultText;
        try {

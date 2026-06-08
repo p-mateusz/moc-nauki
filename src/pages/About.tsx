@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { motion } from "framer-motion";
-import { supabase } from "@/lib/supabase";
+import { invokeCloudFunction } from "@/lib/supabase";
 import TermsModal, { DocumentType } from "@/components/TermsModal";
 import { Seo } from "@/components/Seo";
 import "./LandingPage.css";
@@ -111,13 +111,12 @@ const About = () => {
     ).map((i) => i.value.trim());
 
     try {
-      const { data, error } = await supabase.functions.invoke("submit-form", {
+      const data = await invokeCloudFunction<{ success?: boolean; succeed?: string }>("submit-form", {
         body: { name, email, learning, achievements, motivation },
+        accessToken: null,
       });
 
-      if (error) throw error;
-
-      if (data?.succeed === "yes") {
+      if (data?.success || data?.succeed === "yes") {
         setShowSuccess(true);
 
         inputs.forEach((i) => (i.value = ""));

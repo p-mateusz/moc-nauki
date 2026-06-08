@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { invokeCloudFunction, supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRoles, type Role } from "@/hooks/use-roles";
 
@@ -1351,7 +1351,7 @@ const NewUserModal = ({ onClose, onSave, allRoleNames, customRoles }: { onClose:
 const WEBHOOK_FIELDS = [
   { key: "webhook_notes", icon: "📝", label: "Webhook – Notatki", desc: "Webhook do przetwarzania notatek, transkrypcji i ekstrakcji wydarzeń z notatek." },
   { key: "webhook_languages", icon: "🌐", label: "Webhook – Definicje", desc: "Webhook do generowania definicji słówek. Oczekiwany format odpowiedzi: {słowo | definicja}" },
-  { key: "webhook_languages_sentences", icon: "📖", label: "Webhook – Zdania", desc: "Webhook do generowania zdań z lukami. Oczekiwane wejście: {słowo | definicja}. Oczekiwana odpowiedź callback'u: JSON z {listId, userId, sentences: '{słowo | definicja | zdanie}'}" },
+  { key: "webhook_languages_sentences", icon: "📖", label: "Webhook – Zdania", desc: "Webhook do generowania zdań z lukami. Oczekiwane wejście: {słowo | definicja}. Oczekiwana odpowiedź: JSON albo tekst w formacie {słowo | definicja | zdanie}." },
   { key: "webhook_ocr", icon: "📸", label: "Webhook – Fiszki ze zdjęcia", desc: "Webhook do rozpoznawania słówek ze zdjęć podręczników (OCR)." },
   { key: "webhook_form", icon: "📋", label: "Webhook – Formularz zgłoszeniowy", desc: "Webhook do formularza zgłoszeniowego do zespołu Moc Nauki." },
 ] as const;
@@ -1367,12 +1367,7 @@ const SettingsView = () => {
 
   const userId = localStorage.getItem("userId");
     const callSettings = useCallback(async (body: any) => {
-      const res = await supabase.functions.invoke("manage-app-settings", {
-        body,
-      });
-      if (res.error) throw new Error(res.error.message);
-      if (res.data?.error) throw new Error(res.data.error);
-      return res.data;
+      return invokeCloudFunction("manage-app-settings", { body });
     }, []);
 
   useEffect(() => {

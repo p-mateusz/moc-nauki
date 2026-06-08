@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { invokeCloudFunction, supabase } from "@/lib/supabase";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
@@ -10,34 +10,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 type WordEntry = { word: string; definition: string; sentence?: string; hint?: string };
 const MAX_WORDS_PER_LIST = 300;
-
-const invokeProjectFunction = async <T,>(functionName: string, accessToken: string, body: unknown): Promise<T> => {
-  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-  const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  if (!projectId || !publishableKey) throw new Error("Brak konfiguracji backendu.");
-
-  const response = await fetch(`https://${projectId}.supabase.co/functions/v1/${functionName}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: publishableKey,
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  const raw = await response.text();
-  let payload: any = null;
-  if (raw) {
-    try { payload = JSON.parse(raw); } catch { payload = { error: raw }; }
-  }
-
-  if (!response.ok) {
-    throw new Error(payload?.detail || payload?.error || payload?.message || `Błąd funkcji (${response.status})`);
-  }
-
-  return payload as T;
-};
 
 const CreateList = () => {
   const [searchParams] = useSearchParams();
@@ -187,8 +159,7 @@ const CreateList = () => {
         fd.append("file", file, file.name || "image.png");
         fd.append("language", lang);
         fd.append("definitionLanguage", defLang);
-        const { data, error } = await supabase.functions.invoke("ocr-extract", { body: fd });
-        if (error) throw error;
+        const data = await invokeCloudFunction<any>("ocr-extract", { body: fd });
         if (data?.words?.length) {
           setWords((prev) => {
             const cleaned = prev.filter((w) => w.word.trim());
@@ -223,13 +194,9 @@ const CreateList = () => {
       });
     }, 1000);
     try {
-      const { getStoredAccessToken } = await import("@/lib/supabase");
-      const accessToken = getStoredAccessToken();
-      if (!accessToken) throw new Error("Musisz być zalogowany.");
-      const data = await invokeProjectFunction<{ definitions?: { word: string; definition: string }[] }>(
+      const data = await invokeCloudFunction<{ definitions?: { word: string; definition: string }[] }>(
         "generate-definitions",
-        accessToken,
-        { words: lines, language: lang, definitionLanguage: defLang, specialInstructions },
+        { body: { words: lines, language: lang, definitionLanguage: defLang, specialInstructions } },
       );
       clearInterval(progressInterval);
       setGenProgress(100);
@@ -317,13 +284,9 @@ const CreateList = () => {
         try {
           clearInterval(progressInterval);
           setSentenceProgress(95);
-          const { getStoredAccessToken } = await import("@/lib/supabase");
-          const accessToken = getStoredAccessToken();
-          if (!accessToken) throw new Error("Musisz być zalogowany.");
-          await invokeProjectFunction(
+          await invokeCloudFunction(
             "trigger-sentences-generation",
-            accessToken,
-            { listId: listId!, userId, language: lang, definitionLanguage: defLang, specialInstructions: specialInstructions.trim() || "", proficiencyLevel },
+            { body: { listId: listId!, userId, language: lang, definitionLanguage: defLang, specialInstructions: specialInstructions.trim() || "", proficiencyLevel } },
           );
           setSentenceProgress(100);
           setSentenceMessage("Gotowe!");

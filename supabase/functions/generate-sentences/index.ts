@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getUserIdFromRequest } from "../_shared/auth.ts";
 import { reserveWebhookCall, webhookLimitResponse } from "../_shared/webhookUsage.ts";
+import { createAdminClient, getRequiredWebhookUrl, webhookErrorMessage } from "../_shared/appSettings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,10 +21,7 @@ serve(async (req) => {
   try {
     const { words, specialInstructions, language, definitionLanguage, listId } = await req.json();
     if (!listId) throw new Error("Missing required field: listId");
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    const sbUrl = Deno.env.get("SUPABASE_URL")!;
-    const sbKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const adminSb = createClient(sbUrl, sbKey);
+    const adminSb = createAdminClient();
 
     const limit = await reserveWebhookCall(adminSb, authedUserId);
     if (!limit.allowed) return webhookLimitResponse(limit, corsHeaders);
@@ -49,12 +47,7 @@ serve(async (req) => {
       });
     }
 
-    const webhookUrl = Deno.env.get("N8N_SENTENCES_WEBHOOK");
-    if (!webhookUrl) {
-      return new Response(JSON.stringify({ error: "Service not configured" }), {
-        status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const webhookUrl = await getRequiredWebhookUrl(adminSb, "webhook_languages_sentences", "Webhook zdań");
 
     const formatted = words.map((w: any) => {
       const def = w.definition?.trim() ? w.definition.trim() : "-";
@@ -81,7 +74,7 @@ serve(async (req) => {
     });
 
     clearTimeout(timeout);
-    if (!response.ok) throw new Error(`Webhook error: ${response.status}`);
+    if (!response.ok) throw new Error(webhookErrorMessage("Webhook zdań", response.status, await response.text().catch(() => "")));
 
     const resultText = await response.text();
     console.log("Webhook response text:", resultText);
