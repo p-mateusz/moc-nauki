@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getUserIdFromRequest } from "../_shared/auth.ts";
 import { reserveWebhookCall, webhookLimitResponse } from "../_shared/webhookUsage.ts";
+import { createAdminClient, getRequiredWebhookUrl, webhookErrorMessage } from "../_shared/appSettings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,14 +9,6 @@ const corsHeaders = {
 };
 
 type ParsedSentence = { word: string; definition: string; sentence: string; hint: string };
-
-function webhookErrorMessage(status: number, body: string): string {
-  const sample = body.slice(0, 300);
-  if (status === 404 && /No workspace here|webhook-test|not found/i.test(body)) {
-    return "Webhook zdań n8n nie istnieje albo używa złego adresu. Wklej produkcyjny URL z aktywnego workflow n8n do sekretu N8N_SENTENCES_WEBHOOK.";
-  }
-  return `Webhook n8n zwrócił błąd ${status}: ${sample}`;
-}
 
 function parseSentencesPayload(raw: any): ParsedSentence[] {
   const toItem = (item: any): ParsedSentence => ({
@@ -63,10 +56,7 @@ serve(async (req) => {
       throw new Error("Missing required fields: listId, language");
     }
 
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    const sbUrl = Deno.env.get("CUSTOM_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
-    const sbKey = Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const adminSb = createClient(sbUrl, sbKey);
+    const adminSb = createAdminClient();
 
     const limit = await reserveWebhookCall(adminSb, authedUserId);
     if (!limit.allowed) return webhookLimitResponse(limit, corsHeaders);
@@ -109,12 +99,7 @@ serve(async (req) => {
 
     let response: Response;
     try {
-      const sentencesWebhookUrl = Deno.env.get("N8N_SENTENCES_WEBHOOK") ?? "";
-      if (!sentencesWebhookUrl) {
-        return new Response(JSON.stringify({ error: "Service not configured" }), {
-          status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      const sentencesWebhookUrl = await getRequiredWebhookUrl(adminSb, "webhook_languages_sentences", "Webhook zdań");
       response = await fetch(sentencesWebhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -137,7 +122,7 @@ serve(async (req) => {
     const responseText = await response.text();
     console.log("Sentences webhook status:", response.status);
 
-    if (!response.ok) throw new Error(webhookErrorMessage(response.status, responseText));
+    if (!response.ok) throw new Error(webhookErrorMessage("Webhook zdań", response.status, responseText));
 
     let raw: any = responseText;
     try { raw = JSON.parse(responseText); } catch { /* keep as string */ }
@@ -196,11 +181,7 @@ serve(async (req) => {
     console.error("trigger-sentences-generation error:", msg, e);
     // Reset generating flag so UI can recover.
     try {
-      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-      const adminSb = createClient(
-        Deno.env.get("CUSTOM_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("CUSTOM_SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      );
+      const adminSb = createAdminClient();
       const body = await req.clone().json().catch(() => ({}));
       if (body?.listId) {
         await adminSb.from("word_lists").update({ sentences_generating: false }).eq("id", body.listId);
