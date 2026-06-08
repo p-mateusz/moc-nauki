@@ -22,7 +22,7 @@ export const getStoredAccessToken = () => {
 
 export const invokeCloudFunction = async <T,>(
   functionName: string,
-  options: { body?: unknown; accessToken?: string | null; headers?: Record<string, string> } = {},
+  options: { body?: unknown; accessToken?: string | null; headers?: Record<string, string>; responseType?: "json" | "text" } = {},
 ): Promise<T> => {
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
   const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -44,6 +44,11 @@ export const invokeCloudFunction = async <T,>(
   });
 
   const raw = await response.text();
+  if (options.responseType === "text") {
+    if (!response.ok) throw new Error(raw || `Błąd funkcji (${response.status})`);
+    return raw as T;
+  }
+
   let payload: any = null;
   if (raw) {
     try { payload = JSON.parse(raw); } catch { payload = { error: raw }; }
