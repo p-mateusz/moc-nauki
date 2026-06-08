@@ -1351,7 +1351,7 @@ const NewUserModal = ({ onClose, onSave, allRoleNames, customRoles }: { onClose:
 const WEBHOOK_FIELDS = [
   { key: "webhook_notes", icon: "📝", label: "Webhook – Notatki", desc: "Webhook do przetwarzania notatek, transkrypcji i ekstrakcji wydarzeń z notatek." },
   { key: "webhook_languages", icon: "🌐", label: "Webhook – Definicje", desc: "Webhook do generowania definicji słówek. Oczekiwany format odpowiedzi: {słowo | definicja}" },
-  { key: "webhook_languages_sentences", icon: "📖", label: "Webhook – Zdania", desc: "Webhook do generowania zdań z lukami. Oczekiwane wejście: {słowo | definicja}. Oczekiwana odpowiedź callback'u: JSON z {listId, userId, sentences: '{słowo | definicja | zdanie}'}" },
+  { key: "webhook_languages_sentences", icon: "📖", label: "Webhook – Zdania", desc: "Webhook do generowania zdań z lukami. Oczekiwane wejście: {słowo | definicja}. Oczekiwana odpowiedź: JSON albo tekst w formacie {słowo | definicja | zdanie}." },
   { key: "webhook_ocr", icon: "📸", label: "Webhook – Fiszki ze zdjęcia", desc: "Webhook do rozpoznawania słówek ze zdjęć podręczników (OCR)." },
   { key: "webhook_form", icon: "📋", label: "Webhook – Formularz zgłoszeniowy", desc: "Webhook do formularza zgłoszeniowego do zespołu Moc Nauki." },
 ] as const;

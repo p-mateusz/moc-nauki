@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createAdminClient, getRequiredWebhookUrl } from "../_shared/appSettings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -77,23 +78,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    const { data: settingRow } = await supabase
-      .from("app_settings")
-      .select("value")
-      .eq("key", "webhook_form")
-      .maybeSingle();
-
-    const webhookUrl = settingRow?.value;
-    if (!webhookUrl) {
-      return new Response(JSON.stringify({ error: "Webhook nie jest skonfigurowany" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const webhookUrl = await getRequiredWebhookUrl(createAdminClient(), "webhook_form", "Webhook formularza");
 
     const response = await fetch(webhookUrl, {
       method: "POST",
