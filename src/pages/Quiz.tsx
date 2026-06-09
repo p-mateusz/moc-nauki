@@ -635,85 +635,229 @@ const Quiz = () => {
   }
 
   if (finished) {
-    const totalCards = allCards.length;
     return (
-      <div style={pageStyle}>
+      <div
+        style={{
+          ...pageStyle,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "24px 20px",
+        }}
+      >
         <div style={blob1Style} />
         <div style={blob2Style} />
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <header style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(6,13,26,0.8)", backdropFilter: "blur(12px)", padding: "0 20px" }}>
-            <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", alignItems: "center", gap: 12, padding: "16px 0" }}>
-              <button style={backBtnStyle} onClick={() => navigate("/dashboard")}>
-                <ArrowLeft size={18} />
-              </button>
-              <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#fff", margin: 0 }}>{listName}</h1>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{
+            width: "100%",
+            maxWidth: 430,
+            textAlign: "center",
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
+          <div
+            style={{
+              ...cardStyle,
+              border: "1px solid rgba(52,211,153,0.25)",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 3,
+                background:
+                  "linear-gradient(90deg, #34d399, #10b981, #059669)",
+              }}
+            />
+
+            <div style={{ fontSize: "3.5rem", marginBottom: 16 }}>🎉</div>
+
+            <h2 style={{ fontSize: "1.7rem", fontWeight: 900, marginBottom: 10 }}>
+              Quiz ukończony!
+            </h2>
+
+            <p style={{ color: "#94a3b8", lineHeight: 1.7, marginBottom: 32 }}>
+              Opanowałeś wszystkie{" "}
+              <strong style={{ color: "#34d399" }}>{allCards.length}</strong>{" "}
+              słów z „{listName}”
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={btnSecondaryStyle}
+                onClick={restartAll}
+              >
+                <RotateCcw size={16} />
+                Zacznij od nowa
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={btnPrimaryStyle}
+                onClick={() => navigate("/dashboard")}
+              >
+                {t("backToHome", lang)}
+              </motion.button>
             </div>
-          </header>
-          <main style={{ maxWidth: 460, margin: "0 auto", padding: "70px 20px", textAlign: "center" }}>
-            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
-              <div style={{ fontSize: "4rem", marginBottom: 18 }}>🎉</div>
-              <h2 style={{ fontSize: "1.9rem", fontWeight: 900, color: "#fff", marginBottom: 10, letterSpacing: "-0.03em" }}>
-                Brawo! Quiz ukończony
-              </h2>
-              <p style={{ color: "#8899b4", marginBottom: 28, fontSize: ".95rem" }}>
-                Opanowałeś wszystkie {totalCards} {totalCards === 1 ? "słowo" : "słów"} w {roundNumber} {roundNumber === 1 ? "rundzie" : "rundach"}.
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <motion.button style={btnPrimaryStyle} onClick={restartAll} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <RotateCcw size={18} /> Powtórz quiz
-                </motion.button>
-                <motion.button style={btnSecondaryStyle} onClick={() => navigate("/dashboard")} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  Wróć do panelu
-                </motion.button>
-              </div>
-            </motion.div>
-          </main>
-        </div>
+          </div>
+        </motion.div>
       </div>
     );
   }
 
   if (roundEnded) {
-    const wrongCount = wrongThisRound.length;
     return (
-      <div style={pageStyle}>
+      <div
+        style={{
+          ...pageStyle,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "24px 20px",
+        }}
+      >
         <div style={blob1Style} />
         <div style={blob2Style} />
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <header style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(6,13,26,0.8)", backdropFilter: "blur(12px)", padding: "0 20px" }}>
-            <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", alignItems: "center", gap: 12, padding: "16px 0" }}>
-              <button style={backBtnStyle} onClick={() => navigate("/dashboard")}>
-                <ArrowLeft size={18} />
-              </button>
-              <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#fff", margin: 0 }}>{listName}</h1>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            width: "100%",
+            maxWidth: 430,
+            textAlign: "center",
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
+          <div style={cardStyle}>
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 3,
+                background:
+                  "linear-gradient(90deg, #3b82f6, #6366f1, #a78bfa)",
+              }}
+            />
+
+            <div style={{ fontSize: "3rem", marginBottom: 12 }}>📊</div>
+
+            <div
+              style={{
+                fontSize: ".72rem",
+                fontWeight: 800,
+                letterSpacing: 3,
+                textTransform: "uppercase",
+                color: "#60a5fa",
+                marginBottom: 8,
+              }}
+            >
+              Runda {roundNumber}
             </div>
-          </header>
-          <main style={{ maxWidth: 460, margin: "0 auto", padding: "70px 20px", textAlign: "center" }}>
-            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
-              <div style={{ fontSize: "3.5rem", marginBottom: 18 }}>📘</div>
-              <h2 style={{ fontSize: "1.7rem", fontWeight: 900, color: "#fff", marginBottom: 10, letterSpacing: "-0.03em" }}>
-                Koniec rundy {roundNumber}
-              </h2>
-              <p style={{ color: "#8899b4", marginBottom: 28, fontSize: ".95rem" }}>
-                Poprawnie: <strong style={{ color: "#34d399" }}>{roundCorrect}</strong> · Do powtórzenia: <strong style={{ color: "#fb923c" }}>{wrongCount}</strong>
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <motion.button style={btnPrimaryStyle} onClick={continueWithWrong} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <ArrowRight size={18} /> Powtórz błędne ({wrongCount})
-                </motion.button>
-                <motion.button style={btnSecondaryStyle} onClick={restartAll} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <RotateCcw size={18} /> Zacznij od początku
-                </motion.button>
-                <motion.button style={btnSecondaryStyle} onClick={() => navigate("/dashboard")} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  Wróć do panelu
-                </motion.button>
+
+            <h2 style={{ fontSize: "1.6rem", fontWeight: 900, marginBottom: 10 }}>
+              Zakończona!
+            </h2>
+
+            <p style={{ color: "#94a3b8", marginBottom: 30 }}>
+              Odpowiedziałeś na każde pytanie raz
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: 16,
+                marginBottom: 30,
+              }}
+            >
+              <div
+                style={{
+                  background: "rgba(52,211,153,0.1)",
+                  border: "1px solid rgba(52,211,153,0.2)",
+                  borderRadius: 18,
+                  padding: "18px 26px",
+                }}
+              >
+                <Check size={20} color="#34d399" style={{ marginBottom: 6 }} />
+                <div style={{ fontSize: "2rem", fontWeight: 900, color: "#34d399" }}>
+                  {roundCorrect}
+                </div>
+                <div style={{ fontSize: ".75rem", color: "#94a3b8" }}>
+                  dobrze
+                </div>
               </div>
-            </motion.div>
-          </main>
-        </div>
+
+              <div
+                style={{
+                  background: "rgba(239,68,68,0.1)",
+                  border: "1px solid rgba(239,68,68,0.2)",
+                  borderRadius: 18,
+                  padding: "18px 26px",
+                }}
+              >
+                <X size={20} color="#ef4444" style={{ marginBottom: 6 }} />
+                <div style={{ fontSize: "2rem", fontWeight: 900, color: "#ef4444" }}>
+                  {roundWrong}
+                </div>
+                <div style={{ fontSize: ".75rem", color: "#94a3b8" }}>
+                  do powtórki
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <motion.button
+                style={btnPrimaryStyle}
+                onClick={continueWithWrong}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <ArrowRight size={16} />
+                Kontynuuj naukę ({roundWrong})
+              </motion.button>
+
+              <motion.button
+                style={btnSecondaryStyle}
+                onClick={restartAll}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <RotateCcw size={16} />
+                Zacznij od nowa
+              </motion.button>
+
+              <button
+                style={{
+                  ...btnSecondaryStyle,
+                  background: "transparent",
+                  border: "none",
+                  color: "#94a3b8",
+                }}
+                onClick={() => navigate("/dashboard")}
+              >
+                {t("backToHome", lang)}
+              </button>
+            </div>
+          </div>
+        </motion.div>
       </div>
     );
   }
+
 
   if (!currentQuestion) return null;
 
