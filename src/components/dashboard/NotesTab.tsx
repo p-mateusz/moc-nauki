@@ -13,6 +13,7 @@ type Page = {
   modified: string;
   created: string;
   section_id: string;
+  sort_order?: number;
 };
 
 type Section = {
@@ -136,6 +137,8 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   const [dragOverNbId, setDragOverNbId] = useState<string | null>(null);
   const [dragSecId, setDragSecId] = useState<string | null>(null);
   const [dragOverSecId, setDragOverSecId] = useState<string | null>(null);
+  const [dragPageId, setDragPageId] = useState<string | null>(null);
+  const [dragOverPageId, setDragOverPageId] = useState<string | null>(null);
 
   const loadNotebooks = useCallback(async () => {
     if (guestMode) {
@@ -343,6 +346,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               modified: new Date(p.modified_at).toLocaleDateString("pl-PL") + " " + new Date(p.modified_at).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }),
               created: p.created_at || new Date().toISOString(),
               section_id: p.section_id,
+              sort_order: p.sort_order ?? 0,
             })),
         })),
     }));
@@ -729,13 +733,14 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     if (!activeNb) return;
     const sec = activeNb.sections.find(s => s.id === secId);
     if (!sec) return;
+    const nextSort = sec.pages.reduce((max, p) => Math.max(max, p.sort_order), -1) + 1;
     const { data: page, error } = await supabase.from("notebook_pages").insert({
-      section_id: secId, title: "", content: "",
+      section_id: secId, title: "", content: "", sort_order: nextSort,
     }).select().single();
     if (error || !page) return;
     const newPage: Page = {
       id: page.id, title: "", content: "",
-      modified: now(), created: todayStr(), section_id: secId,
+      modified: now(), created: todayStr(), section_id: secId, sort_order: page.sort_order ?? nextSort,
     };
     sec.pages.push(newPage);
     setActiveSecId(secId);
@@ -807,13 +812,14 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
       nb.sections.push(sec);
     }
 
+    const nextSort = sec.pages.reduce((max, p) => Math.max(max, p.sort_order), -1) + 1;
     const { data: page, error } = await supabase.from("notebook_pages").insert({
-      section_id: sec.id, title, content,
+      section_id: sec.id, title, content, sort_order: nextSort,
     }).select().single();
     if (error || !page) return;
 
     const newPage: Page = {
-      id: page.id, title, content, modified: now(), created: todayStr(), section_id: sec.id,
+      id: page.id, title, content, modified: now(), created: todayStr(), section_id: sec.id, sort_order: page.sort_order ?? nextSort,
     };
     sec.pages.push(newPage);
     setActiveNbId(nb.id);
@@ -1057,6 +1063,28 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     );
   };
 
+  const reorderPages = async (sourcePageId: string, targetPageId: string) => {
+    if (!activeSec) return;
+
+    const fromIdx = activeSec.pages.findIndex(p => p.id === sourcePageId);
+    const toIdx = activeSec.pages.findIndex(p => p.id === targetPageId);
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+
+    const reordered = [...activeSec.pages];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+
+    const updatedPages = reordered.map((page, index) => ({ ...page, sort_order: index }));
+    setNotebooks(prev => prev.map(nb => nb.id === activeNb?.id ? {
+      ...nb,
+      sections: nb.sections.map(sec => sec.id === activeSec.id ? { ...sec, pages: updatedPages } : sec),
+    } : nb));
+
+    await Promise.all(
+      updatedPages.map((page) => supabase.from("notebook_pages").update({ sort_order: page.sort_order }).eq("id", page.id)),
+    );
+  };
+
   // === Drag & Drop reorder notebooks ===
   const handleDragStart = (e: React.DragEvent, nbId: string) => {
     setDragNbId(nbId);
@@ -1103,6 +1131,20 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     touchStartRef.current = null;
   };
 
+  const pageTouchStartRef = useRef<{ id: string; y: number } | null>(null);
+  const handlePageTouchStart = (id: string, e: React.TouchEvent) => {
+    pageTouchStartRef.current = { id, y: e.touches[0].clientY };
+  };
+
+  const handlePageTouchEnd = (targetId: string) => {
+    if (!pageTouchStartRef.current || pageTouchStartRef.current.id === targetId) {
+      pageTouchStartRef.current = null;
+      return;
+    }
+    reorderPages(pageTouchStartRef.current.id, targetId);
+    pageTouchStartRef.current = null;
+  };
+
   const handleSectionDragStart = (e: React.DragEvent, secId: string) => {
     setDragSecId(secId);
     e.dataTransfer.effectAllowed = "move";
@@ -1126,6 +1168,31 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   const handleSectionDragEnd = () => {
     setDragSecId(null);
     setDragOverSecId(null);
+  };
+
+  const handlePageDragStart = (e: React.DragEvent, pageId: string) => {
+    setDragPageId(pageId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", pageId);
+  };
+
+  const handlePageDragOver = (e: React.DragEvent, pageId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dragPageId !== pageId) setDragOverPageId(pageId);
+  };
+
+  const handlePageDrop = async (e: React.DragEvent, targetPageId: string) => {
+    e.preventDefault();
+    setDragOverPageId(null);
+    if (!dragPageId || dragPageId === targetPageId) { setDragPageId(null); return; }
+    await reorderPages(dragPageId, targetPageId);
+    setDragPageId(null);
+  };
+
+  const handlePageDragEnd = () => {
+    setDragPageId(null);
+    setDragOverPageId(null);
   };
 
   if (loading) return <LoadingInline label="Ładowanie notatek…" minHeight={300} />;
@@ -1157,8 +1224,16 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               {activeSec.pages.map(p => (
                 <div
                   key={p.id}
-                  className={`nps-page-item ${activePageId === p.id ? "active" : ""}`}
+                  className={`nps-page-item ${activePageId === p.id ? "active" : ""} ${dragOverPageId === p.id ? "drag-over" : ""}`}
                   onClick={() => selectPage(p.id)}
+                  draggable
+                  onDragStart={(e) => handlePageDragStart(e, p.id)}
+                  onDragOver={(e) => handlePageDragOver(e, p.id)}
+                  onDragLeave={() => setDragOverPageId(null)}
+                  onDrop={(e) => handlePageDrop(e, p.id)}
+                  onDragEnd={handlePageDragEnd}
+                  onTouchStart={(e) => handlePageTouchStart(p.id, e)}
+                  onTouchEnd={() => handlePageTouchEnd(p.id)}
                 >
                   <div className="nps-page-title">{p.title || "Bez tytułu"}</div>
                 </div>
@@ -1556,8 +1631,16 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               ) : activeSec.pages.map(p => (
                 <div
                   key={p.id}
-                  className={`pages-col-item ${activePageId === p.id ? "active" : ""}`}
+                  className={`pages-col-item ${activePageId === p.id ? "active" : ""} ${dragOverPageId === p.id ? "drag-over" : ""}`}
                   onClick={() => selectPage(p.id)}
+                  draggable
+                  onDragStart={(e) => handlePageDragStart(e, p.id)}
+                  onDragOver={(e) => handlePageDragOver(e, p.id)}
+                  onDragLeave={() => setDragOverPageId(null)}
+                  onDrop={(e) => handlePageDrop(e, p.id)}
+                  onDragEnd={handlePageDragEnd}
+                  onTouchStart={(e) => handlePageTouchStart(p.id, e)}
+                  onTouchEnd={() => handlePageTouchEnd(p.id)}
                 >
                   <div className="pages-col-item-title">{p.title || "Bez tytułu"}</div>
                   <div className="pages-col-item-preview">

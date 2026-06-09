@@ -1502,6 +1502,10 @@ body:has(.moc-dashboard) #root {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0.1));
   border-color: rgba(99, 102, 241, 0.25);
 }
+.nps-page-item.drag-over {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.35);
+}
 .nps-page-title {
   font-size: .86rem;
   font-weight: 700;
@@ -1756,6 +1760,7 @@ body:has(.moc-dashboard) #root {
 }
 .pages-col-item:hover { background: rgba(255, 255, 255, 0.03); }
 .pages-col-item.active { background: rgba(59, 130, 246, 0.1); border-left: 3px solid #3b82f6; }
+.pages-col-item.drag-over { background: rgba(99, 102, 241, 0.12); box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.35); }
 .pages-col-item-title {
   font-size: .88rem;
   font-weight: 700;
