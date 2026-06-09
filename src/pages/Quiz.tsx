@@ -634,6 +634,87 @@ const Quiz = () => {
     );
   }
 
+  if (finished) {
+    const totalCards = allCards.length;
+    return (
+      <div style={pageStyle}>
+        <div style={blob1Style} />
+        <div style={blob2Style} />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <header style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(6,13,26,0.8)", backdropFilter: "blur(12px)", padding: "0 20px" }}>
+            <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", alignItems: "center", gap: 12, padding: "16px 0" }}>
+              <button style={backBtnStyle} onClick={() => navigate("/dashboard")}>
+                <ArrowLeft size={18} />
+              </button>
+              <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#fff", margin: 0 }}>{listName}</h1>
+            </div>
+          </header>
+          <main style={{ maxWidth: 460, margin: "0 auto", padding: "70px 20px", textAlign: "center" }}>
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
+              <div style={{ fontSize: "4rem", marginBottom: 18 }}>🎉</div>
+              <h2 style={{ fontSize: "1.9rem", fontWeight: 900, color: "#fff", marginBottom: 10, letterSpacing: "-0.03em" }}>
+                Brawo! Quiz ukończony
+              </h2>
+              <p style={{ color: "#8899b4", marginBottom: 28, fontSize: ".95rem" }}>
+                Opanowałeś wszystkie {totalCards} {totalCards === 1 ? "słowo" : "słów"} w {roundNumber} {roundNumber === 1 ? "rundzie" : "rundach"}.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <motion.button style={btnPrimaryStyle} onClick={restartAll} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <RotateCcw size={18} /> Powtórz quiz
+                </motion.button>
+                <motion.button style={btnSecondaryStyle} onClick={() => navigate("/dashboard")} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  Wróć do panelu
+                </motion.button>
+              </div>
+            </motion.div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (roundEnded) {
+    const wrongCount = wrongThisRound.length;
+    return (
+      <div style={pageStyle}>
+        <div style={blob1Style} />
+        <div style={blob2Style} />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <header style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(6,13,26,0.8)", backdropFilter: "blur(12px)", padding: "0 20px" }}>
+            <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", alignItems: "center", gap: 12, padding: "16px 0" }}>
+              <button style={backBtnStyle} onClick={() => navigate("/dashboard")}>
+                <ArrowLeft size={18} />
+              </button>
+              <h1 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#fff", margin: 0 }}>{listName}</h1>
+            </div>
+          </header>
+          <main style={{ maxWidth: 460, margin: "0 auto", padding: "70px 20px", textAlign: "center" }}>
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
+              <div style={{ fontSize: "3.5rem", marginBottom: 18 }}>📘</div>
+              <h2 style={{ fontSize: "1.7rem", fontWeight: 900, color: "#fff", marginBottom: 10, letterSpacing: "-0.03em" }}>
+                Koniec rundy {roundNumber}
+              </h2>
+              <p style={{ color: "#8899b4", marginBottom: 28, fontSize: ".95rem" }}>
+                Poprawnie: <strong style={{ color: "#34d399" }}>{roundCorrect}</strong> · Do powtórzenia: <strong style={{ color: "#fb923c" }}>{wrongCount}</strong>
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <motion.button style={btnPrimaryStyle} onClick={continueWithWrong} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <ArrowRight size={18} /> Powtórz błędne ({wrongCount})
+                </motion.button>
+                <motion.button style={btnSecondaryStyle} onClick={restartAll} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <RotateCcw size={18} /> Zacznij od początku
+                </motion.button>
+                <motion.button style={btnSecondaryStyle} onClick={() => navigate("/dashboard")} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  Wróć do panelu
+                </motion.button>
+              </div>
+            </motion.div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentQuestion) return null;
 
   const prompt =
