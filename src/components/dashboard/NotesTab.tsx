@@ -1280,7 +1280,55 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                   setPagesCollapsed(true);
                 }
               }}
-              onPaste={handleEditorPaste}
+               onPaste={handleEditorPaste}
+              onKeyDown={(e) => {
+                // Tab / Shift+Tab inside a list item: change nesting level, max 3 levels
+                const sel = window.getSelection();
+                if (!sel || sel.rangeCount === 0) return;
+                let node: Node | null = sel.anchorNode;
+                let li: HTMLElement | null = null;
+                while (node && node !== editorRef.current) {
+                  if ((node as HTMLElement).nodeType === 1 && (node as HTMLElement).tagName === "LI") {
+                    li = node as HTMLElement;
+                    break;
+                  }
+                  node = node.parentNode;
+                }
+                if (!li) return;
+
+                const getDepth = (el: HTMLElement) => {
+                  let d = 0;
+                  let p: HTMLElement | null = el.parentElement;
+                  while (p && p !== editorRef.current) {
+                    if (p.tagName === "UL" || p.tagName === "OL") d++;
+                    p = p.parentElement;
+                  }
+                  return d; // 1 = top level
+                };
+
+                if (e.key === "Tab") {
+                  e.preventDefault();
+                  if (e.shiftKey) {
+                    document.execCommand("outdent");
+                  } else {
+                    if (getDepth(li) < 3) document.execCommand("indent");
+                  }
+                  saveCurrentPage();
+                } else if (e.key === "Backspace") {
+                  // Outdent when caret is at start of a nested list item
+                  const range = sel.getRangeAt(0);
+                  if (!range.collapsed) return;
+                  const atStart = range.startOffset === 0 &&
+                    (range.startContainer === li ||
+                     (range.startContainer.nodeType === 3 && range.startContainer === li.firstChild) ||
+                     (range.startContainer.nodeType === 1 && (range.startContainer as HTMLElement) === li.firstElementChild && range.startOffset === 0));
+                  if (atStart && getDepth(li) > 1) {
+                    e.preventDefault();
+                    document.execCommand("outdent");
+                    saveCurrentPage();
+                  }
+                }
+              }}
             />
           </div>
         </div>
