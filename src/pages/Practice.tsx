@@ -29,6 +29,7 @@ const pageStyle: React.CSSProperties = {
   color: "#f1f5f9",
   position: "relative",
   overflow: "hidden",
+  paddingTop: "env(safe-area-inset-top)",
 };
 
 const blob1Style: React.CSSProperties = {
