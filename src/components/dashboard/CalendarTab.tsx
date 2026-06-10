@@ -3,6 +3,7 @@ import { Menu } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { LoadingInline } from "@/components/ui/loading-state";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // ── Interaction types ──
 type GhostEvent = {
