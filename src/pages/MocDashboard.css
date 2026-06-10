@@ -1957,6 +1957,7 @@ body:has(.moc-dashboard) #root {
     width: 260px;
     transform: translateX(-100%);
     z-index: 100;
+    padding-top: env(safe-area-inset-top);
   }
   .md-sidebar.open {
     transform: translateX(0);
@@ -1976,7 +1977,7 @@ body:has(.moc-dashboard) #root {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: calc(10px + max(0px, env(safe-area-inset-top))) 16px 10px 16px;
+    padding: 10px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(6, 13, 26, 0.95);
     backdrop-filter: blur(12px);
