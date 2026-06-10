@@ -131,3 +131,23 @@
   }
 }
 
+/* Autofill styling — green border + dark background, matching saved-password indication */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #f1f5f9 !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(16, 24, 39, 0.95) inset !important;
+  box-shadow: 0 0 0 1000px rgba(16, 24, 39, 0.95) inset !important;
+  border: 1px solid #10b981 !important;
+  caret-color: #f1f5f9 !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+input:autofill {
+  border: 1px solid #10b981 !important;
+  background-color: rgba(16, 24, 39, 0.95) !important;
+  color: #f1f5f9 !important;
+}
+
+
