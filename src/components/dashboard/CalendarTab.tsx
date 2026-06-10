@@ -498,14 +498,47 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   useEffect(() => {
     if (view === "week") {
       setTimeout(() => {
-        if (weekBodyRef.current) {
-          // Scroll so 8:00 is at the top of the visible area
-          const target8am = (8 * 60) / 1440 * TOTAL_H;
+        const target8am = (8 * 60) / 1440 * TOTAL_H;
+        if (isMobile && weekHScrollRef.current) {
+          weekHScrollRef.current.scrollTop = Math.max(0, target8am);
+        } else if (weekBodyRef.current) {
           weekBodyRef.current.scrollTop = Math.max(0, target8am);
         }
       }, 100);
     }
-  }, [view, cursor, loading]);
+  }, [view, cursor, loading, isMobile]);
+
+  // ── Mobile horizontal scroller measurement & sync ──
+  useEffect(() => {
+    if (!isMobile || view !== "week") return;
+    const el = weekHScrollRef.current;
+    if (!el) return;
+    const update = () => setHScrollerW(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isMobile, view]);
+
+  const handleHScroll = () => {
+    if (syncingScrollRef.current) return;
+    const el = weekHScrollRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    setSliderVal(maxScroll > 0 ? Math.round((el.scrollLeft / maxScroll) * 1000) : 0);
+  };
+
+  const onSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = Number(e.target.value);
+    setSliderVal(v);
+    const el = weekHScrollRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    syncingScrollRef.current = true;
+    el.scrollLeft = (v / 1000) * maxScroll;
+    requestAnimationFrame(() => { syncingScrollRef.current = false; });
+  };
+
 
   // ── CRUD ──
   const saveEventToDB = async (ev: CalendarEvent, isEdit: boolean) => {
