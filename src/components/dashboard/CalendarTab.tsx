@@ -228,6 +228,13 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   const [calColor, setCalColor] = useState("#6366f1");
   const [calSidebarOpen, setCalSidebarOpen] = useState(false);
   const weekBodyRef = useRef<HTMLDivElement>(null);
+  const weekHScrollRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const VISIBLE_DAYS_MOBILE = 4;
+  const MOBILE_GUTTER_W = 32;
+  const [hScrollerW, setHScrollerW] = useState(0);
+  const [sliderVal, setSliderVal] = useState(0);
+  const syncingScrollRef = useRef(false);
   
 
   // ── Drag / ghost interaction state ──
