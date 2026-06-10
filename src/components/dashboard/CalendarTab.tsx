@@ -3,6 +3,7 @@ import { Menu } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { LoadingInline } from "@/components/ui/loading-state";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // ── Interaction types ──
 type GhostEvent = {
@@ -227,6 +228,13 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   const [calColor, setCalColor] = useState("#6366f1");
   const [calSidebarOpen, setCalSidebarOpen] = useState(false);
   const weekBodyRef = useRef<HTMLDivElement>(null);
+  const weekHScrollRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const VISIBLE_DAYS_MOBILE = 4;
+  const MOBILE_GUTTER_W = 32;
+  const [hScrollerW, setHScrollerW] = useState(0);
+  const [sliderVal, setSliderVal] = useState(0);
+  const syncingScrollRef = useRef(false);
   
 
   // ── Drag / ghost interaction state ──
@@ -490,14 +498,47 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   useEffect(() => {
     if (view === "week") {
       setTimeout(() => {
-        if (weekBodyRef.current) {
-          // Scroll so 8:00 is at the top of the visible area
-          const target8am = (8 * 60) / 1440 * TOTAL_H;
+        const target8am = (8 * 60) / 1440 * TOTAL_H;
+        if (isMobile && weekHScrollRef.current) {
+          weekHScrollRef.current.scrollTop = Math.max(0, target8am);
+        } else if (weekBodyRef.current) {
           weekBodyRef.current.scrollTop = Math.max(0, target8am);
         }
       }, 100);
     }
-  }, [view, cursor, loading]);
+  }, [view, cursor, loading, isMobile]);
+
+  // ── Mobile horizontal scroller measurement & sync ──
+  useEffect(() => {
+    if (!isMobile || view !== "week") return;
+    const el = weekHScrollRef.current;
+    if (!el) return;
+    const update = () => setHScrollerW(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isMobile, view]);
+
+  const handleHScroll = () => {
+    if (syncingScrollRef.current) return;
+    const el = weekHScrollRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    setSliderVal(maxScroll > 0 ? Math.round((el.scrollLeft / maxScroll) * 1000) : 0);
+  };
+
+  const onSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = Number(e.target.value);
+    setSliderVal(v);
+    const el = weekHScrollRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    syncingScrollRef.current = true;
+    el.scrollLeft = (v / 1000) * maxScroll;
+    requestAnimationFrame(() => { syncingScrollRef.current = false; });
+  };
+
 
   // ── CRUD ──
   const saveEventToDB = async (ev: CalendarEvent, isEdit: boolean) => {
@@ -919,6 +960,94 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   const renderWeekView = () => {
     const ws = startOfWeek(cursor);
     const days = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
+    const dw = isMobile && hScrollerW > 0
+      ? Math.floor((hScrollerW - MOBILE_GUTTER_W) / VISIBLE_DAYS_MOBILE)
+      : 0;
+    const innerW = isMobile ? MOBILE_GUTTER_W + 7 * dw : 0;
+
+    if (isMobile) {
+      const stickyLeft: React.CSSProperties = {
+        position: "sticky", left: 0, zIndex: 6,
+        background: "rgba(8,16,32,0.98)",
+      };
+      return (
+        <div className="week-view" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+          <div
+            ref={weekHScrollRef}
+            className="week-hscroll"
+            onScroll={handleHScroll}
+            style={{ overflow: "auto", flex: 1, WebkitOverflowScrolling: "touch" as any, position: "relative" }}
+          >
+            {dw > 0 && (
+              <div style={{ width: innerW, display: "flex", flexDirection: "column" }}>
+                <div
+                  className="week-header-row"
+                  style={{ position: "sticky", top: 0, zIndex: 7, background: "rgba(8,16,32,0.98)" }}
+                >
+                  <div
+                    className="week-time-gutter"
+                    style={{ ...stickyLeft, width: MOBILE_GUTTER_W, flex: "0 0 auto" }}
+                  />
+                  {days.map(d => {
+                    const ds = isoDate(d);
+                    const isToday = ds === todayStr;
+                    return (
+                      <div
+                        key={ds}
+                        className={`week-day-header${isToday ? " today" : ""}`}
+                        style={{ width: dw, flex: "0 0 auto" }}
+                      >
+                        <div className="week-day-name">{DAY_NAMES_SHORT[d.getDay()]}</div>
+                        <div className="week-day-num">{d.getDate()}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {renderAllDayRow(days, dw, MOBILE_GUTTER_W)}
+                <div
+                  className="week-body"
+                  ref={weekBodyRef}
+                  style={{ display: "flex", overflow: "visible", flex: "0 0 auto" }}
+                >
+                  <div
+                    className="week-time-col"
+                    style={{ ...stickyLeft, width: MOBILE_GUTTER_W, flex: "0 0 auto" }}
+                  >
+                    {Array.from({ length: 24 }, (_, h) => (
+                      <div key={h} className="time-label">{h > 0 ? <span>{pad(h)}:00</span> : null}</div>
+                    ))}
+                  </div>
+                  <div
+                    className="week-days-area"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: `repeat(7, ${dw}px)`,
+                      width: 7 * dw,
+                      position: "relative",
+                    }}
+                  >
+                    {days.map(d => renderWeekDayCol(d))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          {dw > 0 && (
+            <div className="week-mobile-slider-wrap">
+              <input
+                type="range"
+                min={0}
+                max={1000}
+                value={sliderVal}
+                onChange={onSliderChange}
+                className="week-mobile-slider"
+                aria-label="Przewiń dni tygodnia"
+              />
+            </div>
+          )}
+        </div>
+      );
+    }
 
     return (
       <div className="week-view">
@@ -935,7 +1064,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
             );
           })}
         </div>
-        {renderAllDayRow(days)}
+        {renderAllDayRow(days, 0, 0)}
         <div className="week-body" ref={weekBodyRef}>
           <div className="week-time-col">
             {Array.from({ length: 24 }, (_, h) => (
@@ -950,7 +1079,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     );
   };
 
-  const renderAllDayRow = (days: Date[]) => {
+  const renderAllDayRow = (days: Date[], dayWidthPx = 0, gutterPxOverride = 0) => {
     const allDayEvents: { e: CalendarEvent; startIdx: number; endIdx: number; rowIdx?: number }[] = [];
     const seen = new Set<string>();
     days.forEach((d, i) => {
@@ -962,7 +1091,6 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
         allDayEvents.push({ e, startIdx: i, endIdx });
       });
     });
-    // Row assignment
     const rowSlots: { startIdx: number; endIdx: number }[][] = [];
     allDayEvents.forEach(item => {
       let rowIdx = 0;
@@ -978,16 +1106,28 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     const PILL_H = 20, PILL_GAP = 2, PAD = 4;
     const totalRows = Math.max(rowSlots.length, 1);
     const areaH = totalRows * (PILL_H + PILL_GAP) + PAD * 2;
+    const usePx = dayWidthPx > 0;
     const colPct = 100 / 7;
+    const pillLeft = (startIdx: number) => usePx ? `${startIdx * dayWidthPx + 2}px` : `calc(${startIdx * colPct}% + 2px)`;
+    const pillWidth = (startIdx: number, endIdx: number) => usePx
+      ? `${(endIdx - startIdx + 1) * dayWidthPx - 4}px`
+      : `calc(${(endIdx - startIdx + 1) * colPct}% - 4px)`;
 
     return (
       <div className="allday-row" style={{ minHeight: areaH + 6 }}>
-        <div className="allday-gutter" title="Cały dzień">cd.</div>
-        <div className="allday-events" style={{ height: areaH, position: "relative" }}
+        <div
+          className="allday-gutter"
+          title="Cały dzień"
+          style={usePx ? { position: "sticky", left: 0, zIndex: 6, background: "rgba(8,16,32,0.98)", width: gutterPxOverride, flex: "0 0 auto" } : undefined}
+        >cd.</div>
+        <div
+          className="allday-events"
+          style={{ height: areaH, position: "relative", ...(usePx ? { width: 7 * dayWidthPx, flex: "0 0 auto" } : {}) }}
           onClick={(e) => {
             const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
             const x = e.clientX - rect.left;
-            const colIdx = Math.floor(x / (rect.width / 7));
+            const w = usePx ? dayWidthPx : rect.width / 7;
+            const colIdx = Math.floor(x / w);
             const ds = isoDate(days[Math.max(0, Math.min(6, colIdx))]);
             handleAllDayClick(e, ds);
           }}>
@@ -996,8 +1136,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
             return (
               <div key={e.id} className="allday-pill"
                 style={{
-                  left: `calc(${startIdx * colPct}% + 2px)`,
-                  width: `calc(${(endIdx - startIdx + 1) * colPct}% - 4px)`,
+                  left: pillLeft(startIdx),
+                  width: pillWidth(startIdx, endIdx),
                   top: PAD + (rowIdx || 0) * (PILL_H + PILL_GAP),
                   height: PILL_H,
                   background: `linear-gradient(90deg,${col}50 0%,${col}28 100%)`,
@@ -1012,15 +1152,14 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
               </div>
             );
           })}
-          {/* All-day ghost */}
           {ghost?.allDay && (() => {
             const dayIdx = days.findIndex(dd => isoDate(dd) === ghost.date);
             if (dayIdx < 0) return null;
             const gcol = calendars[0]?.color || "#6366f1";
             return (
               <div className="allday-pill ghost-event" style={{
-                left: `calc(${dayIdx * colPct}% + 2px)`,
-                width: `calc(${colPct}% - 4px)`,
+                left: pillLeft(dayIdx),
+                width: pillWidth(dayIdx, dayIdx),
                 top: PAD + totalRows * (PILL_H + PILL_GAP),
                 height: PILL_H,
                 background: `${gcol}40`, border: `2px dashed ${gcol}88`,
@@ -1032,6 +1171,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
       </div>
     );
   };
+
 
   // ── Interaction handlers for week view ──
   const getRelativeY = (e: React.MouseEvent | MouseEvent, col: HTMLElement) => {
