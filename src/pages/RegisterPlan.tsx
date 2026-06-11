@@ -4,8 +4,9 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { Seo } from "@/components/Seo";
 
-const STRIPE_LINK_30_DNI = "https://buy.stripe.com/5kQ4gy4Qy3321DB24Bco000";
-const STRIPE_LINK_90_DNI = "https://buy.stripe.com/bJe8wO3MufPOeqncJfco001";
+// Płatność realizujemy DOPIERO po założeniu konta — tylko wtedy
+// edge-funkcja create-checkout może przekazać user_id w metadata Stripe,
+// dzięki czemu webhook poprawnie powiąże subskrypcję z kontem.
 
 const features = [
   "Zautomatyzowane notatki AI z lekcji",
