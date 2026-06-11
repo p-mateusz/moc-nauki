@@ -35,7 +35,15 @@ export default function Pricing() {
         successHandledRef.current = true;
         toast.success("Płatność zarejestrowana! Aktywujemy Twój dostęp…");
       }
-      return; // don't redirect, wait for access
+      // Webhook Stripe może mieć kilka sekund opóźnienia — odświeżamy sesję,
+      // co wywołuje onAuthStateChange i ponowny load w useAccessGuard.
+      let attempts = 0;
+      const id = window.setInterval(() => {
+        attempts += 1;
+        supabase.auth.refreshSession().catch(() => {});
+        if (attempts >= 12) window.clearInterval(id); // ~36s
+      }, 3000);
+      return () => window.clearInterval(id);
     }
     if (checkoutStatus === "cancelled" && !successHandledRef.current) {
       successHandledRef.current = true;
