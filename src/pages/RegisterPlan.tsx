@@ -4,8 +4,9 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { Seo } from "@/components/Seo";
 
-const STRIPE_LINK_30_DNI = "https://buy.stripe.com/5kQ4gy4Qy3321DB24Bco000";
-const STRIPE_LINK_90_DNI = "https://buy.stripe.com/bJe8wO3MufPOeqncJfco001";
+// Płatność realizujemy DOPIERO po założeniu konta — tylko wtedy
+// edge-funkcja create-checkout może przekazać user_id w metadata Stripe,
+// dzięki czemu webhook poprawnie powiąże subskrypcję z kontem.
 
 const features = [
   "Zautomatyzowane notatki AI z lekcji",
@@ -42,12 +43,12 @@ export default function RegisterPlan() {
   }, []);
 
   const plan = isYearly
-    ? { price: "89", period: "90 dni", saving: "Bez podpinania karty", link: STRIPE_LINK_90_DNI, key: "90" }
-    : { price: "29", period: "30 dni", saving: "Anuluj kiedy chcesz", link: STRIPE_LINK_30_DNI, key: "30" };
+    ? { price: "89", period: "90 dni", saving: "Bez podpinania karty", key: "90" }
+    : { price: "29", period: "30 dni", saving: "Anuluj kiedy chcesz", key: "30" };
 
   const handleCheckout = () => {
     try { localStorage.setItem("pendingPlan", plan.key); } catch {}
-    window.location.href = plan.link;
+    navigate(`/register/account?plan=${plan.key}`);
   };
 
   return (

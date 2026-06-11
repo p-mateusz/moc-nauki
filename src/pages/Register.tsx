@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -17,6 +17,8 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [termsDocument, setTermsDocument] = useState<DocumentType | null>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const pendingPlan = searchParams.get("plan") || (typeof localStorage !== "undefined" ? localStorage.getItem("pendingPlan") : null);
 
   const openTermsDocument = (docType: DocumentType) => setTermsDocument(docType);
 
@@ -64,7 +66,11 @@ const Register = () => {
       localStorage.setItem("userUsername", data.account.username);
       localStorage.setItem("userRole", "uczeń");
       toast.success("Konto utworzone! Witaj w Moc Nauki 🎉");
-      navigate("/dashboard");
+      if (pendingPlan === "30" || pendingPlan === "90") {
+        navigate(`/pricing?plan=${pendingPlan}&autostart=1`);
+      } else {
+        navigate("/pricing");
+      }
     } catch (e: any) {
       toast.error(e.message || "Błąd rejestracji");
     } finally {
