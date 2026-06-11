@@ -19,9 +19,29 @@ const features = [
 
 export default function Pricing() {
   const navigate = useNavigate();
-  const [isYearly, setIsYearly] = useState(false);
+  const [searchParams] = useSearchParams();
+  const initialPlan = searchParams.get("plan");
+  const checkoutStatus = searchParams.get("checkout");
+  const autostart = searchParams.get("autostart") === "1";
+  const [isYearly, setIsYearly] = useState(initialPlan === "90");
   const [loading, setLoading] = useState(false);
   const access = useAccessGuard();
+  const autoStartedRef = useRef(false);
+  const successHandledRef = useRef(false);
+
+  useEffect(() => {
+    if (checkoutStatus === "success") {
+      if (!successHandledRef.current) {
+        successHandledRef.current = true;
+        toast.success("Płatność zarejestrowana! Aktywujemy Twój dostęp…");
+      }
+      return; // don't redirect, wait for access
+    }
+    if (checkoutStatus === "cancelled" && !successHandledRef.current) {
+      successHandledRef.current = true;
+      toast.warning("Płatność anulowana — możesz spróbować ponownie.");
+    }
+  }, [checkoutStatus]);
 
   useEffect(() => {
     if (!access.loading && access.hasAccess) {
@@ -46,6 +66,7 @@ export default function Pricing() {
       });
       if (error) throw error;
       if (data?.url) {
+        try { localStorage.removeItem("pendingPlan"); } catch {}
         window.location.href = data.url;
       } else {
         throw new Error("Brak adresu sesji Stripe");
@@ -56,6 +77,15 @@ export default function Pricing() {
       setLoading(false);
     }
   };
+
+  // Po świeżej rejestracji z preselekcją planu — automatycznie startujemy checkout.
+  useEffect(() => {
+    if (!autostart || autoStartedRef.current) return;
+    if (access.loading || access.hasAccess) return;
+    autoStartedRef.current = true;
+    handleCheckout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autostart, access.loading, access.hasAccess]);
 
   return (
     <>
