@@ -43,12 +43,12 @@ export default function RegisterPlan() {
   }, []);
 
   const plan = isYearly
-    ? { price: "89", period: "90 dni", saving: "Bez podpinania karty", link: STRIPE_LINK_90_DNI, key: "90" }
-    : { price: "29", period: "30 dni", saving: "Anuluj kiedy chcesz", link: STRIPE_LINK_30_DNI, key: "30" };
+    ? { price: "89", period: "90 dni", saving: "Bez podpinania karty", key: "90" }
+    : { price: "29", period: "30 dni", saving: "Anuluj kiedy chcesz", key: "30" };
 
   const handleCheckout = () => {
     try { localStorage.setItem("pendingPlan", plan.key); } catch {}
-    window.location.href = plan.link;
+    navigate(`/register/account?plan=${plan.key}`);
   };
 
   return (
