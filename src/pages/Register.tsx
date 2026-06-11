@@ -17,6 +17,8 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [termsDocument, setTermsDocument] = useState<DocumentType | null>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const pendingPlan = searchParams.get("plan") || (typeof localStorage !== "undefined" ? localStorage.getItem("pendingPlan") : null);
 
   const openTermsDocument = (docType: DocumentType) => setTermsDocument(docType);
 
