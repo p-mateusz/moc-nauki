@@ -540,6 +540,30 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     requestAnimationFrame(() => { syncingScrollRef.current = false; });
   };
 
+  // Center the horizontal week scroller on a target day after switching to week view
+  useEffect(() => {
+    if (!pendingFocusDate) return;
+    if (!isMobile || view !== "week") return;
+    const el = weekHScrollRef.current;
+    if (!el) return;
+    const measuredW = el.clientWidth;
+    if (measuredW <= 0) return;
+    const dw = Math.floor((measuredW - MOBILE_GUTTER_W) / VISIBLE_DAYS_MOBILE);
+    if (dw <= 0) return;
+    const target = parseDate(pendingFocusDate);
+    const ws = startOfWeek(target);
+    const idx = Math.round((target.getTime() - ws.getTime()) / 86400000);
+    const visibleDaysW = VISIBLE_DAYS_MOBILE * dw;
+    const desired = idx * dw - (visibleDaysW - dw) / 2;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    const clamped = Math.max(0, Math.min(maxScroll, desired));
+    syncingScrollRef.current = true;
+    el.scrollLeft = clamped;
+    setSliderVal(maxScroll > 0 ? Math.round((clamped / maxScroll) * 1000) : 0);
+    requestAnimationFrame(() => { syncingScrollRef.current = false; });
+    setPendingFocusDate(null);
+  }, [pendingFocusDate, isMobile, view, hScrollerW, cursor]);
+
 
   // ── CRUD ──
   const saveEventToDB = async (ev: CalendarEvent, isEdit: boolean) => {
