@@ -78,9 +78,16 @@ const TeacherStudentsTab = ({
   }, [selectedUser]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
+    // Scroll only inside the messages container, not the whole document — otherwise
+    // on mobile the chat header gets pushed above the viewport.
+    const end = messagesEndRef.current;
+    if (!end) return;
+    const scroller = end.closest(".ts-messages-scroll") as HTMLElement | null;
+    if (scroller) {
+      scroller.scrollTop = scroller.scrollHeight;
+    } else {
+      end.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
   }, [messages]);
 
   const loadUsers = async () => {
