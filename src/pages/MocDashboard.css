@@ -2713,7 +2713,7 @@ body:has(.moc-dashboard) #root {
   .ts-back-btn{display:flex}
 
   /* ── Calendar ── */
-  .cal-sidebar-panel{position:fixed;top:0;left:0;bottom:0;width:260px;z-index:110;transform:translateX(-100%);transition:transform .3s ease}
+  .cal-sidebar-panel{position:fixed;top:0;left:0;bottom:0;width:260px;z-index:110;transform:translateX(-100%);transition:transform .3s ease;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);overflow-y:auto;-webkit-overflow-scrolling:touch}
   .cal-sidebar-panel.cal-sb-open{transform:translateX(0)}
   .cal-sb-toggle{display:flex}
   .cal-sidebar-overlay{display:block;position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(3px);z-index:105}
