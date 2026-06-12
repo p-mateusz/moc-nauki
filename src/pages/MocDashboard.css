@@ -1973,11 +1973,16 @@ body:has(.moc-dashboard) #root {
     backdrop-filter: blur(3px);
     z-index: 90;
   }
+  /* Tighter logo padding inside the open mobile drawer so "Moc Nauki" sits
+     close under the system bar without overlapping it. */
+  .md-sidebar .md-sb-logo {
+    padding: 10px 16px 12px;
+  }
   .md-mobile-header {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 16px;
+    padding: 8px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(6, 13, 26, 0.95);
     backdrop-filter: blur(12px);
@@ -2701,14 +2706,14 @@ body:has(.moc-dashboard) #root {
    ═══════════════════════════════════════════════ */
 @media (max-width: 768px) {
   /* ── Teacher/Students ── */
-  .ts-layout{flex-direction:column;height:auto;gap:0}
-  .ts-user-list{width:100%;border-radius:0;border:none;border-bottom:1px solid rgba(255,255,255,0.08);max-height:calc(100vh - 120px)}
-  .ts-chat-area{border-radius:0;border:none;flex:1;min-height:calc(100vh - 120px)}
+  .ts-layout{flex-direction:column;height:100% !important;min-height:0;gap:0}
+  .ts-user-list{width:100%;border-radius:0;border:none;border-bottom:1px solid rgba(255,255,255,0.08);flex:1 1 auto;min-height:0;max-height:none}
+  .ts-chat-area{border-radius:0;border:none;flex:1 1 auto;min-height:0}
   .ts-hidden-mobile{display:none !important}
   .ts-back-btn{display:flex}
 
   /* ── Calendar ── */
-  .cal-sidebar-panel{position:fixed;top:0;left:0;bottom:0;width:260px;z-index:110;transform:translateX(-100%);transition:transform .3s ease}
+  .cal-sidebar-panel{position:fixed;top:0;left:0;bottom:0;width:260px;z-index:110;transform:translateX(-100%);transition:transform .3s ease;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);overflow-y:auto;-webkit-overflow-scrolling:touch}
   .cal-sidebar-panel.cal-sb-open{transform:translateX(0)}
   .cal-sb-toggle{display:flex}
   .cal-sidebar-overlay{display:block;position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(3px);z-index:105}
@@ -2839,4 +2844,12 @@ body:has(.moc-dashboard) #root {
 @keyframes mdDeletePulse {
   0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248,113,113,0.5); }
   50% { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(248,113,113,0); }
+}
+
+/* ─── Mobile: profile header doesn't overlap banner edit button ─── */
+@media (max-width: 520px) {
+  .profile-header-row {
+    margin-top: 12px !important;
+    padding: 0 16px 16px !important;
+  }
 }

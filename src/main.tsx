@@ -42,23 +42,59 @@ const setupStandaloneKeyboardFix = () => {
   if (!isStandalone) return;
 
   let scrollY = 0;
+  let locked = false;
+
+  const lockBody = () => {
+    if (locked) return;
+    scrollY = window.scrollY;
+    locked = true;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+  };
+
+  const unlockBody = () => {
+    if (!locked) return;
+    locked = false;
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    document.body.style.width = "";
+    window.scrollTo(0, scrollY);
+    // Nudge layout so the residual "black bar" left by the keyboard collapses
+    window.dispatchEvent(new Event("resize"));
+    setupViewportHeight();
+  };
 
   document.addEventListener("focusin", (event) => {
     const target = event.target as HTMLElement;
     if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
-      scrollY = window.scrollY;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = "100%";
+      lockBody();
     }
   }, true);
 
   document.addEventListener("focusout", () => {
-    document.body.style.position = "";
-    document.body.style.top = "";
-    document.body.style.width = "";
-    window.scrollTo(0, scrollY);
+    // Defer so a focus that moves between fields doesn't unlock prematurely
+    setTimeout(() => {
+      const a = document.activeElement as HTMLElement | null;
+      if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.isContentEditable)) return;
+      unlockBody();
+    }, 60);
   });
+
+  // When the visual viewport returns to (almost) full height the keyboard has
+  // closed — force-unlock in case focusout never fired (iOS edge case).
+  if ("visualViewport" in window && window.visualViewport) {
+    const vv = window.visualViewport;
+    const checkKeyboardClosed = () => {
+      if (vv.height >= window.innerHeight - 80) unlockBody();
+    };
+    vv.addEventListener("resize", checkKeyboardClosed);
+    vv.addEventListener("scroll", checkKeyboardClosed);
+  }
 };
 
 const shouldRegisterServiceWorker = () => false;
