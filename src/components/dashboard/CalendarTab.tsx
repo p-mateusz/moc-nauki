@@ -235,6 +235,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   const [hScrollerW, setHScrollerW] = useState(0);
   const [sliderVal, setSliderVal] = useState(0);
   const syncingScrollRef = useRef(false);
+  const [pendingFocusDate, setPendingFocusDate] = useState<string | null>(null);
   
 
   // ── Drag / ghost interaction state ──
@@ -538,6 +539,30 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     el.scrollLeft = (v / 1000) * maxScroll;
     requestAnimationFrame(() => { syncingScrollRef.current = false; });
   };
+
+  // Center the horizontal week scroller on a target day after switching to week view
+  useEffect(() => {
+    if (!pendingFocusDate) return;
+    if (!isMobile || view !== "week") return;
+    const el = weekHScrollRef.current;
+    if (!el) return;
+    const measuredW = el.clientWidth;
+    if (measuredW <= 0) return;
+    const dw = Math.floor((measuredW - MOBILE_GUTTER_W) / VISIBLE_DAYS_MOBILE);
+    if (dw <= 0) return;
+    const target = parseDate(pendingFocusDate);
+    const ws = startOfWeek(target);
+    const idx = Math.round((target.getTime() - ws.getTime()) / 86400000);
+    const visibleDaysW = VISIBLE_DAYS_MOBILE * dw;
+    const desired = idx * dw - (visibleDaysW - dw) / 2;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    const clamped = Math.max(0, Math.min(maxScroll, desired));
+    syncingScrollRef.current = true;
+    el.scrollLeft = clamped;
+    setSliderVal(maxScroll > 0 ? Math.round((clamped / maxScroll) * 1000) : 0);
+    requestAnimationFrame(() => { syncingScrollRef.current = false; });
+    setPendingFocusDate(null);
+  }, [pendingFocusDate, isMobile, view, hScrollerW, cursor]);
 
 
   // ── CRUD ──
@@ -899,7 +924,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     return <div className="mini-grid">{cells}</div>;
   };
 
-  const jumpTo = (ds: string) => { setCursor(parseDate(ds)); };
+  const jumpTo = (ds: string) => { setCursor(parseDate(ds)); setView("week"); setPendingFocusDate(ds); };
 
   // ── RENDER: Month View ──
   const renderMonthView = () => {
@@ -934,8 +959,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
             const evs = eventsForDate(ds);
             return (
               <div key={ds} className={`month-cell${isToday ? " today" : ""}${!cur ? " other-month" : ""}`}
-                onClick={() => { setCursor(parseDate(ds)); setView("week"); }}
-                onDoubleClick={(ev) => { ev.stopPropagation(); setCursor(parseDate(ds)); setView("week"); }}>
+                onClick={() => { setCursor(parseDate(ds)); setView("week"); setPendingFocusDate(ds); }}
+                onDoubleClick={(ev) => { ev.stopPropagation(); setCursor(parseDate(ds)); setView("week"); setPendingFocusDate(ds); }}>
                 <div className="cell-day">{d.getDate()}</div>
                 {evs.slice(0, 3).map(e => {
                   const col = calColor_(e);
