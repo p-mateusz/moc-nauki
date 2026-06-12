@@ -2706,9 +2706,9 @@ body:has(.moc-dashboard) #root {
    ═══════════════════════════════════════════════ */
 @media (max-width: 768px) {
   /* ── Teacher/Students ── */
-  .ts-layout{flex-direction:column;height:auto;gap:0}
-  .ts-user-list{width:100%;border-radius:0;border:none;border-bottom:1px solid rgba(255,255,255,0.08);max-height:calc(100vh - 120px)}
-  .ts-chat-area{border-radius:0;border:none;flex:1;min-height:calc(100vh - 120px)}
+  .ts-layout{flex-direction:column;height:100% !important;min-height:0;gap:0}
+  .ts-user-list{width:100%;border-radius:0;border:none;border-bottom:1px solid rgba(255,255,255,0.08);flex:1 1 auto;min-height:0;max-height:none}
+  .ts-chat-area{border-radius:0;border:none;flex:1 1 auto;min-height:0}
   .ts-hidden-mobile{display:none !important}
   .ts-back-btn{display:flex}
 
