@@ -972,7 +972,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
         background: "rgba(8,16,32,0.98)",
       };
       return (
-        <div className="week-view" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+        <div className="week-view" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, position: "relative" }}>
           <div
             ref={weekHScrollRef}
             className="week-hscroll"
