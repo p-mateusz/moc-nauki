@@ -58,14 +58,29 @@ const Index = () => {
     const hash = location.hash;
     if (!hash) return;
     const sectionId = hash.slice(1);
-    const target = document.getElementById(sectionId);
-    const header = document.querySelector(".lp-nav");
-    const headerHeight = header?.clientHeight ?? 88;
-    if (target) {
-      const top = target.getBoundingClientRect().top + window.scrollY - headerHeight - 12;
-      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-    }
-  }, [location.hash]);
+    // Sections render via whileInView/motion — re-measure on retries so the
+    // final scroll target is correct even after late mounts/animations.
+    let attempts = 0;
+    let lastTop = -1;
+    const tick = () => {
+      const target = document.getElementById(sectionId);
+      if (!target) {
+        if (attempts++ < 20) return window.setTimeout(tick, 80);
+        return;
+      }
+      const header = document.querySelector(".lp-nav");
+      const headerHeight = header?.clientHeight ?? 88;
+      const top = Math.max(0, target.getBoundingClientRect().top + window.scrollY - headerHeight - 12);
+      window.scrollTo({ top, behavior: "smooth" });
+      // Keep nudging until the measurement stabilizes (handles late layout shifts)
+      if (Math.abs(top - lastTop) > 2 && attempts++ < 15) {
+        lastTop = top;
+        window.setTimeout(tick, 180);
+      }
+    };
+    tick();
+  }, [location.hash, location.key]);
+
 
   useEffect(() => {
     document.body.style.overflowX = "hidden";
