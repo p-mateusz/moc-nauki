@@ -2355,10 +2355,12 @@ body:has(.moc-dashboard) #root {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 10px 0 calc(8px + env(safe-area-inset-bottom));
+  padding: 8px 0 calc(6px + env(safe-area-inset-bottom));
   flex-shrink: 0;
-  background: linear-gradient(180deg, transparent, rgba(8,16,32,0.6));
+  background: transparent;
+  pointer-events: none;
 }
+.week-mobile-slider-wrap > * { pointer-events: auto; }
 .week-mobile-slider {
   -webkit-appearance: none;
   appearance: none;
