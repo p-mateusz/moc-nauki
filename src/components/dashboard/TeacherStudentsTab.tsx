@@ -534,6 +534,7 @@ const TeacherStudentsTab = ({
 
             {/* WIADOMOŚCI */}
             <div
+              className="ts-messages-scroll"
               style={{
                 flex: 1,
                 overflowY: "auto",
