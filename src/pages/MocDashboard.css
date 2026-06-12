@@ -1105,7 +1105,7 @@ body:has(.moc-dashboard) #root {
 .mini-day.other-month{opacity:.3}
 .mini-day.today{background:#6366f1;color:#fff;font-weight:800}
 .mini-day.selected{background:rgba(99,102,241,0.3);color:#c4b5fd;font-weight:700}
-.mini-day.has-event::after{content:'';display:block;width:3px;height:3px;background:#60a5fa;border-radius:50%;margin:0 auto;margin-top:-2px}
+/* event dots removed per user request */
 
 /* Calendars list */
 .cal-section-title{padding:10px 14px 4px;font-size:.62rem;font-weight:800;color:#8899b4;text-transform:uppercase;letter-spacing:1px;margin-top:6px}
