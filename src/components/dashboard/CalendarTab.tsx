@@ -959,8 +959,8 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
             const evs = eventsForDate(ds);
             return (
               <div key={ds} className={`month-cell${isToday ? " today" : ""}${!cur ? " other-month" : ""}`}
-                onClick={() => { setCursor(parseDate(ds)); setView("week"); }}
-                onDoubleClick={(ev) => { ev.stopPropagation(); setCursor(parseDate(ds)); setView("week"); }}>
+                onClick={() => { setCursor(parseDate(ds)); setView("week"); setPendingFocusDate(ds); }}
+                onDoubleClick={(ev) => { ev.stopPropagation(); setCursor(parseDate(ds)); setView("week"); setPendingFocusDate(ds); }}>
                 <div className="cell-day">{d.getDate()}</div>
                 {evs.slice(0, 3).map(e => {
                   const col = calColor_(e);
