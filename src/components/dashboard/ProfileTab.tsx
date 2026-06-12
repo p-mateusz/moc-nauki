@@ -299,7 +299,7 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
           </button>
         </div>
 
-        <div style={{ padding: "0 24px 20px", display: "flex", alignItems: "flex-end", gap: 16, position: "relative", marginTop: -40 }}>
+        <div className="profile-header-row" style={{ padding: "0 24px 20px", display: "flex", alignItems: "flex-end", gap: 16, position: "relative", marginTop: -40, flexWrap: "wrap" }}>
           <div style={{ position: "relative", flexShrink: 0 }}>
             <div onClick={openAvatarEdit} title={uploading ? "Przesyłanie..." : "Kliknij, aby zmienić zdjęcie"} style={{
               width: 80, height: 80, borderRadius: "50%",
@@ -333,17 +333,17 @@ const ProfileTab = ({ onNavigateToFriends }: ProfileTabProps) => {
               </button>
             )}
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
-              <span style={{ fontSize: "1.3rem", fontWeight: 900 }}>{userName}</span>
+          <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2, flexWrap: "wrap" }}>
+              <span style={{ fontSize: "1.3rem", fontWeight: 900, wordBreak: "break-word", minWidth: 0 }}>{userName}</span>
               <span style={{
                 fontSize: ".68rem", fontWeight: 800, padding: "2px 10px", borderRadius: 50,
-                background: roleBadge.bg, color: roleBadge.color,
+                background: roleBadge.bg, color: roleBadge.color, flexShrink: 0,
               }}>
                 {roleBadge.label}
               </span>
             </div>
-            <div style={{ fontSize: ".83rem", color: "#8899b4" }}>
+            <div style={{ fontSize: ".83rem", color: "#8899b4", wordBreak: "break-word" }}>
               @{localStorage.getItem("userUsername") || userName.toLowerCase()}{profile.location ? ` · 📍${profile.location}` : ""}
             </div>
           </div>
