@@ -28,7 +28,18 @@ export const invokeCloudFunction = async <T,>(
   const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!projectId || !publishableKey) throw new Error("Brak konfiguracji backendu.");
 
-  const accessToken = options.accessToken === undefined ? getStoredAccessToken() : options.accessToken;
+  let accessToken = options.accessToken === undefined ? getStoredAccessToken() : options.accessToken;
+  if (!accessToken && options.accessToken === undefined) {
+    // Fallback: storage może być chwilowo puste (np. tuż po odświeżeniu tokena
+    // przez gotrue, gdy wpis w localStorage jeszcze nie został zapisany).
+    // Spróbuj odczytać aktualną sesję bezpośrednio z auth clienta.
+    try {
+      const { data } = await authClient.auth.getSession();
+      accessToken = data.session?.access_token ?? null;
+    } catch {
+      accessToken = null;
+    }
+  }
   const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const headers: Record<string, string> = {
     apikey: publishableKey,
