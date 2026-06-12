@@ -99,10 +99,21 @@ const Index = () => {
   const scrollTo = (ref: React.RefObject<HTMLElement | HTMLDivElement | null>) => {
     setMobileMenuOpen(false);
     if (!ref.current) return;
-    const header = document.querySelector(".lp-nav");
-    const headerHeight = header?.clientHeight ?? 88;
-    const top = ref.current.getBoundingClientRect().top + window.scrollY - headerHeight - 12;
-    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    // Retry to stabilize against motion/whileInView mounts that change layout
+    let attempts = 0;
+    let lastTop = -1;
+    const step = () => {
+      if (!ref.current) return;
+      const header = document.querySelector(".lp-nav");
+      const headerHeight = header?.clientHeight ?? 88;
+      const top = Math.max(0, ref.current.getBoundingClientRect().top + window.scrollY - headerHeight - 12);
+      window.scrollTo({ top, behavior: "smooth" });
+      if (Math.abs(top - lastTop) > 2 && attempts++ < 8) {
+        lastTop = top;
+        window.setTimeout(step, 160);
+      }
+    };
+    step();
   };
 
   const scrollToAbout = () => {
