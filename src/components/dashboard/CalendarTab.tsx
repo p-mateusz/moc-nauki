@@ -972,7 +972,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
         background: "rgba(8,16,32,0.98)",
       };
       return (
-        <div className="week-view" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+        <div className="week-view" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, position: "relative" }}>
           <div
             ref={weekHScrollRef}
             className="week-hscroll"
@@ -1035,15 +1035,17 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
           </div>
           {dw > 0 && (
             <div className="week-mobile-slider-wrap">
-              <input
-                type="range"
-                min={0}
-                max={1000}
-                value={sliderVal}
-                onChange={onSliderChange}
-                className="week-mobile-slider"
-                aria-label="Przewiń dni tygodnia"
-              />
+              <div className="week-mobile-slider-pill">
+                <input
+                  type="range"
+                  min={0}
+                  max={1000}
+                  value={sliderVal}
+                  onChange={onSliderChange}
+                  className="week-mobile-slider"
+                  aria-label="Przewiń dni tygodnia"
+                />
+              </div>
             </div>
           )}
         </div>
