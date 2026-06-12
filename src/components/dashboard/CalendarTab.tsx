@@ -235,6 +235,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   const [hScrollerW, setHScrollerW] = useState(0);
   const [sliderVal, setSliderVal] = useState(0);
   const syncingScrollRef = useRef(false);
+  const [pendingFocusDate, setPendingFocusDate] = useState<string | null>(null);
   
 
   // ── Drag / ghost interaction state ──
