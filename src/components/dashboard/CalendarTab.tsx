@@ -924,7 +924,7 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     return <div className="mini-grid">{cells}</div>;
   };
 
-  const jumpTo = (ds: string) => { setCursor(parseDate(ds)); };
+  const jumpTo = (ds: string) => { setCursor(parseDate(ds)); setView("week"); setPendingFocusDate(ds); };
 
   // ── RENDER: Month View ──
   const renderMonthView = () => {
