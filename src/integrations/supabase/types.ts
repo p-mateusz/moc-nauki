@@ -524,6 +524,33 @@ export type Database = {
           },
         ]
       }
+      registration_attempts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          ip: string
+          success: boolean
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip: string
+          success?: boolean
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip?: string
+          success?: boolean
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       reminder_lists: {
         Row: {
           color: string
