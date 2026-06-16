@@ -37,6 +37,21 @@ type Tab =
   | "admin_users"
   | "settings";
 
+type ChatUserSummary = {
+  id: string;
+  name?: string | null;
+  username?: string | null;
+  role?: string | null;
+};
+
+const normalizeChatRole = (role?: string | null) => {
+  const value = (role || "").toString().toLowerCase();
+  if (value === "teacher" || value === "nauczyciel") return "teacher";
+  if (value === "student" || value === "uczeń" || value === "uczen") return "student";
+  if (value === "admin" || value === "administrator") return "teacher";
+  return null;
+};
+
 const MocDashboard = () => {
   const storedGuestMode = localStorage.getItem("guestMode") === "true";
   const storedUserId = localStorage.getItem("userId");
@@ -59,6 +74,7 @@ const MocDashboard = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const logoutRef = useRef<HTMLDivElement>(null);
+  const chatUsersCacheRef = useRef<Map<string, ChatUserSummary>>(new Map());
   const avatarCacheKey = storedUserId ? `userAvatarUrl:${storedUserId}` : null;
   const [avatarUrl, setAvatarUrl] = useState<string | null>(
     avatarCacheKey ? localStorage.getItem(avatarCacheKey) : null
@@ -101,6 +117,26 @@ const MocDashboard = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, [showLogout]);
 
+  const loadChatUsersById = async () => {
+    const results = await Promise.allSettled([
+      supabase.functions.invoke("list-chat-users", { body: { mode: "teacher" } }),
+      supabase.functions.invoke("list-chat-users", { body: { mode: "student" } }),
+    ]);
+
+    const usersById = new Map<string, ChatUserSummary>(chatUsersCacheRef.current);
+    results.forEach((result) => {
+      if (result.status !== "fulfilled") return;
+      const { data, error } = result.value as { data?: { users?: ChatUserSummary[]; error?: string }; error?: unknown };
+      if (error || data?.error) return;
+      (data?.users || []).forEach((user) => {
+        if (user?.id) usersById.set(user.id, user);
+      });
+    });
+
+    chatUsersCacheRef.current = usersById;
+    return usersById;
+  };
+
   const loadUnreadCounts = async () => {
     if (!userId) return;
 
@@ -127,24 +163,18 @@ const MocDashboard = () => {
       return;
     }
 
-    const { data: senders, error: sendersError } = await supabase
-      .from("user_accounts_public")
-      .select("id, role")
-      .in("id", senderIds);
-
-    if (sendersError) {
-      console.error("Unable to load sender roles for unread counts:", sendersError);
-      return;
-    }
-
+    const sendersById = await loadChatUsersById();
     const counts = { teacher: 0, student: 0 };
-    (senders || []).forEach((sender: any) => {
-      const role = (sender.role || "").toString().toLowerCase();
-      const count = senderCounts[sender.id] || 0;
-      if (role === "nauczyciel" || role === "teacher" || role === "admin") {
+    Object.entries(senderCounts).forEach(([senderId, count]) => {
+      const group = normalizeChatRole(sendersById.get(senderId)?.role);
+      if (group === "teacher") {
         counts.teacher += count;
-      } else if (role === "uczeń" || role === "student") {
+      } else if (group === "student") {
         counts.student += count;
+      } else if (isTeacher || isAdmin) {
+        counts.student += count;
+      } else {
+        counts.teacher += count;
       }
     });
 
@@ -281,18 +311,14 @@ const MocDashboard = () => {
               (activeTab === "teacher" || activeTab === "students");
             if (senderId && !isOnChatTab) {
               try {
-                const { data: sender } = await supabase
-                  .from("user_accounts_public")
-                  .select("name, username, role")
-                  .eq("id", senderId)
-                  .maybeSingle();
+                const sender = (await loadChatUsersById()).get(senderId);
                 const senderName =
-                  (sender as any)?.name ||
-                  (sender as any)?.username ||
+                  sender?.name ||
+                  sender?.username ||
                   "Ktoś";
-                const role = ((sender as any)?.role || "").toLowerCase();
+                const roleGroup = normalizeChatRole(sender?.role);
                 const targetTab: Tab =
-                  role === "nauczyciel" || role === "teacher" || role === "admin"
+                  roleGroup === "teacher"
                     ? "teacher"
                     : "students";
                 const preview = (msg.content || "").toString().slice(0, 80);
