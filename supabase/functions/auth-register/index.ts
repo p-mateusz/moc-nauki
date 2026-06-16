@@ -56,6 +56,25 @@ Deno.serve(async (req) => {
     const ip = getClientIp(req);
     const ua = (req.headers.get("user-agent") || "").slice(0, 300);
 
+    // --- Admin bypass: jeśli wywołujący jest zalogowanym adminem,
+    // pomijamy rate-limit i blokadę domen jednorazowych (panel admina
+    // legalnie tworzy konta seryjnie i z różnych e-maili).
+    let isAdminCaller = false;
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const token = authHeader.replace("Bearer ", "");
+        const { data: claims } = await supabase.auth.getClaims(token);
+        const callerId = claims?.claims?.sub;
+        if (callerId) {
+          const { data: caller } = await supabase
+            .from("user_accounts").select("role").eq("id", callerId).maybeSingle();
+          if (caller?.role === "admin") isAdminCaller = true;
+        }
+      } catch { /* ignore — traktuj jako anon */ }
+    }
+
+
     // --- Disposable email block ---
     const domain = trimmedEmail.split("@")[1] || "";
     if (DISPOSABLE_DOMAINS.has(domain)) {
