@@ -1262,13 +1262,14 @@ const NewUserModal = ({ onClose, onSave, allRoleNames, customRoles }: { onClose:
 
     setCreating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("auth-register", {
-        body: { email: email.trim(), name: name.trim(), username: username.trim(), password },
+      const data = await callAdminUsers({
+        action: "create",
+        email: email.trim(),
+        name: name.trim(),
+        username: username.trim(),
+        password,
+        role,
       });
-
-      if (error) {
-        throw error;
-      }
       if (data?.error) {
         toast.error(data.error);
         return;
@@ -1278,15 +1279,6 @@ const NewUserModal = ({ onClose, onSave, allRoleNames, customRoles }: { onClose:
       if (!accountId) {
         toast.error("Nie udało się utworzyć konta");
         return;
-      }
-
-      if (role !== "uczeń" && accountId) {
-        const updates: Record<string, any> = { role };
-        if (role === "nauczyciel") {
-          updates.fee_exempt = true;
-          updates.subscription_status = "exempt";
-        }
-        await adminUpdateUser(accountId, updates);
       }
 
       toast.success(`Konto „${username}" utworzone!`);
