@@ -358,21 +358,28 @@ const TeacherStudentsTab = ({
     }
   };
 
-  const sendMessage = async () => {
-    if (!msgText.trim() || !selectedUser) return;
+  const sendMessage = async (overrides?: { content?: string; imageUrl?: string | null }) => {
+    if (!selectedUser) return;
+    const content = (overrides?.content ?? msgText).trim();
+    const imageUrl = overrides?.imageUrl ?? null;
+    if (!content && !imageUrl) return;
 
     if (guestMode) {
       const newMsg: Message = {
         id: `local-${Date.now()}`,
         sender_id: userId,
         receiver_id: selectedUser.id,
-        content: msgText.trim(),
+        content: content || null,
         read: true,
         created_at: new Date().toISOString(),
+        reply_to_id: replyTo?.id ?? null,
+        image_url: imageUrl,
+        reactions: {},
+        deleted_for: [],
       };
-
       setMessages((prev) => [...prev, newMsg]);
-      setMsgText("");
+      if (!overrides) setMsgText("");
+      setReplyTo(null);
       return;
     }
 
@@ -381,7 +388,9 @@ const TeacherStudentsTab = ({
       .insert({
         sender_id: userId,
         receiver_id: selectedUser.id,
-        content: msgText.trim(),
+        content: content || null,
+        reply_to_id: replyTo?.id ?? null,
+        image_url: imageUrl,
       })
       .select()
       .single();
@@ -392,11 +401,82 @@ const TeacherStudentsTab = ({
     }
 
     if (data) {
-      setMessages((prev) => [...prev, data as Message]);
+      setMessages((prev) => (prev.some((x) => x.id === (data as Message).id) ? prev : [...prev, data as Message]));
     }
 
-    setMsgText("");
+    if (!overrides) setMsgText("");
+    setReplyTo(null);
   };
+
+  const onImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !selectedUser) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Wybierz plik graficzny");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Maks. 8 MB");
+      return;
+    }
+    setUploadingImage(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("chat-images").upload(path, file, {
+        upsert: false, contentType: file.type,
+      });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("chat-images").getPublicUrl(path);
+      await sendMessage({ content: msgText, imageUrl: pub.publicUrl });
+    } catch (err) {
+      console.error(err);
+      toast.error("Nie udało się wysłać zdjęcia");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const toggleReaction = async (m: Message, emoji: string) => {
+    setReactionPickerId(null);
+    setOpenMenuId(null);
+    const current = { ...(m.reactions || {}) } as Record<string, string[]>;
+    const list = current[emoji] ? [...current[emoji]] : [];
+    const idx = list.indexOf(userId);
+    if (idx >= 0) list.splice(idx, 1); else list.push(userId);
+    if (list.length === 0) delete current[emoji]; else current[emoji] = list;
+    setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, reactions: current } : x)));
+    if (guestMode) return;
+    const { error } = await supabase.from("messages").update({ reactions: current }).eq("id", m.id);
+    if (error) toast.error("Nie udało się dodać reakcji");
+  };
+
+  const deleteForMe = async (m: Message) => {
+    setOpenMenuId(null);
+    const current = Array.from(new Set([...(m.deleted_for || []), userId]));
+    setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, deleted_for: current } : x)));
+    if (guestMode) return;
+    const { error } = await supabase.from("messages").update({ deleted_for: current }).eq("id", m.id);
+    if (error) toast.error("Nie udało się usunąć");
+  };
+
+  const copyMessage = async (m: Message) => {
+    setOpenMenuId(null);
+    try {
+      await navigator.clipboard.writeText(m.content || m.image_url || "");
+      toast.success("Skopiowano");
+    } catch {
+      toast.error("Nie udało się skopiować");
+    }
+  };
+
+  const startReply = (m: Message) => {
+    setOpenMenuId(null);
+    setReplyTo(m);
+  };
+
+
 
   const filteredUsers = users.filter(
     (u) =>
