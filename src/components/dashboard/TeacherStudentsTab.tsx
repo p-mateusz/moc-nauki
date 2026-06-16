@@ -58,8 +58,14 @@ const TeacherStudentsTab = ({
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [unreadByUser, setUnreadByUser] = useState<Record<string, number>>({});
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [reactionPickerId, setReactionPickerId] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
 
   const userId = localStorage.getItem("userId") || "";
   const targetRole = mode;
