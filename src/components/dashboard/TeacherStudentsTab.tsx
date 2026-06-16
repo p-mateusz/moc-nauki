@@ -457,7 +457,7 @@ const TeacherStudentsTab = ({
     const current = Array.from(new Set([...(m.deleted_for || []), userId]));
     setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, deleted_for: current } : x)));
     if (guestMode) return;
-    const { error } = await supabase.from("messages").update({ deleted_for: current }).eq("id", m.id);
+    const { error } = await (supabase.from("messages") as any).update({ deleted_for: current }).eq("id", m.id);
     if (error) toast.error("Nie udało się usunąć");
   };
 
