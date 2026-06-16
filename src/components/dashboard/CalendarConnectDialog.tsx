@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { invokeCloudFunction } from "@/lib/supabase";
 
 type Props = {
   open: boolean;
@@ -26,11 +26,10 @@ const CalendarConnectDialog = ({ open, onClose }: Props) => {
     (async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase.functions.invoke("manage-calendar-feed", {
+        const data = await invokeCloudFunction<{ token: string | null }>("manage-calendar-feed", {
           body: { action: "get" },
         });
         if (cancelled) return;
-        if (error) throw error;
         setToken(data?.token || null);
       } catch (e: any) {
         toast.error("Nie udało się pobrać linku do kalendarza");
@@ -49,10 +48,9 @@ const CalendarConnectDialog = ({ open, onClose }: Props) => {
     if (!confirm("Wygenerować nowy link? Stary link przestanie działać.")) return;
     setRegenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("manage-calendar-feed", {
+      const data = await invokeCloudFunction<{ token: string | null }>("manage-calendar-feed", {
         body: { action: "regenerate" },
       });
-      if (error) throw error;
       setToken(data?.token || null);
       toast.success("Wygenerowano nowy link");
     } catch (e) {
