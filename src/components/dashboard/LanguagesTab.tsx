@@ -119,6 +119,16 @@ const LanguagesTab = ({ userId }: LanguagesTabProps) => {
     fetchLists();
   }, [lang]);
 
+  // If active language got hidden in preferences, switch to first visible one
+  useEffect(() => {
+    if (guestMode) return;
+    if (visibleOrder.length === 0) return;
+    if (!visibleOrder.includes(lang)) {
+      setLang(visibleOrder[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hiddenLangs.join(",")]);
+
   useEffect(() => {
     return () => {
       if (deleteTimerRef.current) window.clearTimeout(deleteTimerRef.current);
