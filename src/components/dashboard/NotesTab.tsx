@@ -886,18 +886,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   };
 
   const insertTable = () => {
-    const input = window.prompt(
-      "Rozmiar tabeli (wiersze x kolumny):\nnp. 3x4, 5x2, 6x6",
-      "2x3"
-    );
-    if (!input) return;
-    const m = input.trim().toLowerCase().match(/^(\d+)\s*[x×*,\s]\s*(\d+)$/);
-    if (!m) {
-      toast.error("Nieprawidłowy format. Użyj np. 3x4");
-      return;
-    }
-    const rows = Math.max(1, Math.min(50, parseInt(m[1], 10)));
-    const cols = Math.max(1, Math.min(20, parseInt(m[2], 10)));
+    const rows = 2, cols = 2;
     const cell = '<td style="border:1px solid rgba(255,255,255,0.15);padding:8px;min-width:40px">\u200B</td>';
     const rowHtml = `<tr>${cell.repeat(cols)}</tr>`;
     const html = `<table class="note-table" style="border-collapse:collapse;width:100%;margin:8px 0">${rowHtml.repeat(rows)}</table><p>\u200B</p>`;
@@ -1388,8 +1377,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                   }
                   tdNode = tdNode.parentNode;
                 }
-                if (td && (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey))) {
-                  e.preventDefault();
+                if (td && (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey) || e.key === "Backspace")) {
                   const tr = td.parentElement as HTMLTableRowElement;
                   const table = tr?.parentElement?.tagName === "TBODY"
                     ? (tr.parentElement!.parentElement as HTMLTableElement)
@@ -1401,6 +1389,13 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                   const colIdx = cells.indexOf(td);
                   const cols = cells.length;
 
+                  const CELL_STYLE = "border:1px solid rgba(255,255,255,0.15);padding:8px;min-width:40px";
+                  const makeCell = () => {
+                    const c = document.createElement("td");
+                    c.setAttribute("style", CELL_STYLE);
+                    c.appendChild(document.createTextNode("\u200B"));
+                    return c;
+                  };
                   const focusCell = (cell: HTMLTableCellElement) => {
                     const range = document.createRange();
                     range.selectNodeContents(cell);
@@ -1408,44 +1403,77 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                     sel.removeAllRanges();
                     sel.addRange(range);
                   };
+                  const cellEmpty = (c: HTMLTableCellElement) => {
+                    const t = (c.textContent || "").replace(/\u200B/g, "").trim();
+                    return t.length === 0;
+                  };
+                  const insertRowAfter = (idx: number) => {
+                    const newRow = document.createElement("tr");
+                    for (let i = 0; i < cols; i++) newRow.appendChild(makeCell());
+                    const tbody = tr.parentElement as HTMLElement;
+                    if (idx + 1 >= rows.length) tbody.appendChild(newRow);
+                    else tbody.insertBefore(newRow, rows[idx + 1]);
+                    return newRow;
+                  };
 
+                  if (e.key === "Backspace") {
+                    if (!cellEmpty(td)) return; // normal backspace
+                    e.preventDefault();
+                    // Top-left of 1x1: remove whole table
+                    if (rows.length === 1 && cols === 1) {
+                      table.remove();
+                      saveCurrentPage();
+                      return;
+                    }
+                    // Topmost cell → delete column, move left
+                    if (rowIdx === 0 && cols > 1) {
+                      rows.forEach((r) => {
+                        const c = r.children[colIdx];
+                        if (c) r.removeChild(c);
+                      });
+                      const target = rows[0].children[Math.max(0, colIdx - 1)] as HTMLTableCellElement;
+                      focusCell(target);
+                      saveCurrentPage();
+                      return;
+                    }
+                    // Leftmost cell → delete row, move up
+                    if (colIdx === 0 && rows.length > 1) {
+                      tr.remove();
+                      const target = rows[rowIdx - 1].children[0] as HTMLTableCellElement;
+                      focusCell(target);
+                      saveCurrentPage();
+                      return;
+                    }
+                    // Other empty cells → cofa do poprzedniej komórki w wierszu
+                    if (colIdx > 0) focusCell(cells[colIdx - 1]);
+                    else if (rowIdx > 0) {
+                      const prev = rows[rowIdx - 1].children;
+                      focusCell(prev[prev.length - 1] as HTMLTableCellElement);
+                    }
+                    return;
+                  }
+
+                  e.preventDefault();
                   if (e.key === "Tab" && e.shiftKey) {
-                    // Poprzednia komórka
                     if (colIdx > 0) focusCell(cells[colIdx - 1]);
                     else if (rowIdx > 0) {
                       const prevCells = rows[rowIdx - 1].children;
                       focusCell(prevCells[prevCells.length - 1] as HTMLTableCellElement);
                     }
                   } else if (e.key === "Tab") {
-                    // Następna komórka (lub nowy wiersz na końcu)
-                    if (colIdx < cols - 1) focusCell(cells[colIdx + 1]);
-                    else if (rowIdx < rows.length - 1) {
-                      focusCell(rows[rowIdx + 1].children[0] as HTMLTableCellElement);
-                    } else {
-                      const newRow = document.createElement("tr");
-                      for (let i = 0; i < cols; i++) {
-                        const c = document.createElement("td");
-                        c.setAttribute("style", "border:1px solid rgba(255,255,255,0.15);padding:8px;min-width:40px");
-                        c.appendChild(document.createTextNode("\u200B"));
-                        newRow.appendChild(c);
-                      }
-                      (tr.parentElement as HTMLElement).appendChild(newRow);
+                    // Rightmost column → ZAWSZE nowy wiersz wstawiony poniżej
+                    if (colIdx === cols - 1) {
+                      const newRow = insertRowAfter(rowIdx);
                       focusCell(newRow.children[0] as HTMLTableCellElement);
+                    } else {
+                      focusCell(cells[colIdx + 1]);
                     }
                   } else if (e.key === "Enter") {
-                    // Enter → komórka poniżej (nowy wiersz, jeśli ostatni)
                     if (rowIdx < rows.length - 1) {
                       const next = rows[rowIdx + 1].children[colIdx] as HTMLTableCellElement | undefined;
                       if (next) focusCell(next);
                     } else {
-                      const newRow = document.createElement("tr");
-                      for (let i = 0; i < cols; i++) {
-                        const c = document.createElement("td");
-                        c.setAttribute("style", "border:1px solid rgba(255,255,255,0.15);padding:8px;min-width:40px");
-                        c.appendChild(document.createTextNode("\u200B"));
-                        newRow.appendChild(c);
-                      }
-                      (tr.parentElement as HTMLElement).appendChild(newRow);
+                      const newRow = insertRowAfter(rowIdx);
                       focusCell(newRow.children[colIdx] as HTMLTableCellElement);
                     }
                   }
