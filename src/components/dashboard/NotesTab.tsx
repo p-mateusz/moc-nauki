@@ -931,6 +931,27 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     if (file) await uploadPastedImage(file);
   };
 
+  const INTERNAL_MIME = "application/x-mocnauki-note";
+
+  const handleEditorCopy = (e: React.ClipboardEvent<HTMLDivElement>, cut = false) => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    const range = sel.getRangeAt(0);
+    const container = document.createElement("div");
+    container.appendChild(range.cloneContents());
+    const html = container.innerHTML;
+    const text = sel.toString();
+    if (!html) return;
+    e.preventDefault();
+    e.clipboardData.setData("text/html", html);
+    e.clipboardData.setData("text/plain", text);
+    e.clipboardData.setData(INTERNAL_MIME, html);
+    if (cut) {
+      range.deleteContents();
+      saveCurrentPage();
+    }
+  };
+
   const handleEditorPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     const cd = e.clipboardData;
     if (!cd) return;
@@ -953,7 +974,14 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
         return;
       }
     }
-    // Plain text only — strip all formatting
+    // Internal copy (from our editor) → keep formatting
+    const internalHtml = cd.getData(INTERNAL_MIME);
+    if (internalHtml) {
+      e.preventDefault();
+      document.execCommand("insertHTML", false, internalHtml);
+      return;
+    }
+    // External paste → strip all formatting
     e.preventDefault();
     const text = cd.getData("text/plain");
     if (text) {
@@ -1359,7 +1387,9 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                   setPagesCollapsed(true);
                 }
               }}
-               onPaste={handleEditorPaste}
+                onPaste={handleEditorPaste}
+              onCopy={(e) => handleEditorCopy(e, false)}
+              onCut={(e) => handleEditorCopy(e, true)}
               onKeyDown={(e) => {
                 const sel = window.getSelection();
                 if (!sel || sel.rangeCount === 0) return;
