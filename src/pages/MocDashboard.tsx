@@ -12,7 +12,7 @@ import { getSessionSafe } from "@/lib/authSession";
 import LanguagesTab from "@/components/dashboard/LanguagesTab";
 import NotesTab from "@/components/dashboard/NotesTab";
 import CalendarTab, { type CalEvent } from "@/components/dashboard/CalendarTab";
-import RecordingWidget from "@/components/dashboard/RecordingWidget";
+
 import FriendsTab from "@/components/dashboard/FriendsTab";
 import SettingsTab from "@/components/dashboard/SettingsTab";
 import OverviewTab from "@/components/dashboard/OverviewTab";
@@ -66,6 +66,7 @@ const MocDashboard = () => {
   useEffect(() => {
     if (!guestMode) {
       localStorage.setItem("dashboardActiveTab", activeTab);
+      window.dispatchEvent(new CustomEvent("dashboardActiveTabChanged", { detail: activeTab }));
     }
   }, [activeTab, guestMode]);
   const [pendingEvents, setPendingEvents] = useState<CalEvent[]>([]);
@@ -749,7 +750,7 @@ const MocDashboard = () => {
         )}
       </div>
 
-      <RecordingWidget activeTab={activeTab} />
+      
     </div>
   );
 };

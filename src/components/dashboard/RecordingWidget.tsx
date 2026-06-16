@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { invokeCloudFunction, supabase } from "@/lib/supabase";
 
@@ -7,7 +8,7 @@ const MAX_RETRIES = 3;
 type RecState = "idle" | "recording" | "paused";
 
 type RecordingWidgetProps = {
- activeTab: string;
+ activeTab?: string;
  onRecordingStateChange?: (isActive: boolean) => void;
 };
 
@@ -27,7 +28,18 @@ function cleanTitle(raw: string): string {
  );
 }
 
-const RecordingWidget = ({ activeTab, onRecordingStateChange }: RecordingWidgetProps) => {
+const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: RecordingWidgetProps = {}) => {
+ const location = useLocation();
+ const [currentTab, setCurrentTab] = useState<string>(() => {
+   try { return activeTabProp || localStorage.getItem("dashboardActiveTab") || ""; } catch { return activeTabProp || ""; }
+ });
+ useEffect(() => {
+   const handler = (e: any) => setCurrentTab(e?.detail || localStorage.getItem("dashboardActiveTab") || "");
+   window.addEventListener("dashboardActiveTabChanged", handler as any);
+   return () => window.removeEventListener("dashboardActiveTabChanged", handler as any);
+ }, []);
+ const activeTab = activeTabProp ?? currentTab;
+ const onDashboard = location.pathname === "/dashboard";
  const [state, setState] = useState<RecState>("idle");
  const [seconds, setSeconds] = useState(0);
  const [collapsed, setCollapsed] = useState(false);
@@ -47,7 +59,7 @@ const RecordingWidget = ({ activeTab, onRecordingStateChange }: RecordingWidgetP
    } catch { return true; }
  })();
 
- const showWidget = !isGuest && (activeTab === "notes" || isActive || sending);
+ const showWidget = !isGuest && ((onDashboard && activeTab === "notes") || isActive || sending);
 
  useEffect(() => { onRecordingStateChange?.(isActive || sending); }, [isActive, sending]);
 

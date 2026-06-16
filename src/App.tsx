@@ -22,6 +22,7 @@ import ListDetail from "./pages/ListDetail";
 import ShareImport from "./pages/ShareImport";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
+import RecordingWidget from "./components/dashboard/RecordingWidget";
 
 
 
@@ -82,6 +83,7 @@ const App = () => {
           <Route path="/terms" element={<Terms />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <RecordingWidget />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
