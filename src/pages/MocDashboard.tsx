@@ -66,6 +66,7 @@ const MocDashboard = () => {
   useEffect(() => {
     if (!guestMode) {
       localStorage.setItem("dashboardActiveTab", activeTab);
+      window.dispatchEvent(new CustomEvent("dashboardActiveTabChanged", { detail: activeTab }));
     }
   }, [activeTab, guestMode]);
   const [pendingEvents, setPendingEvents] = useState<CalEvent[]>([]);
