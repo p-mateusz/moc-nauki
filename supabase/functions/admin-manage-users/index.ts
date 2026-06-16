@@ -91,6 +91,103 @@ Deno.serve(async (req) => {
       });
     }
 
+    // CREATE a user (admin-only, independent from public registration limits/settings)
+    if (action === "create") {
+      const email = String(body.email || "").trim().toLowerCase();
+      const name = String(body.name || "").trim();
+      const username = String(body.username || "").trim().toLowerCase();
+      const password = String(body.password || "");
+      const role = String(body.role || "uczeń");
+
+      if (!email || !name || !username || !password) {
+        return new Response(JSON.stringify({ error: "Wypełnij wszystkie pola" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (password.length < 6) {
+        return new Response(JSON.stringify({ error: "Hasło musi mieć min. 6 znaków" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: existingEmail } = await supabase
+        .from("user_accounts")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+      if (existingEmail) {
+        return new Response(JSON.stringify({ error: "Ten email jest już zajęty" }), {
+          status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: existingUsername } = await supabase
+        .from("user_accounts")
+        .select("id")
+        .eq("username", username)
+        .maybeSingle();
+      if (existingUsername) {
+        return new Response(JSON.stringify({ error: "Ta nazwa użytkownika jest już zajęta" }), {
+          status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: created, error: createError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { name, username },
+      });
+
+      if (createError || !created.user?.id) {
+        const message = createError?.message || "Nie udało się utworzyć konta";
+        const lower = message.toLowerCase();
+        const publicMessage = lower.includes("already") || lower.includes("registered")
+          ? "Ten email jest już zajęty"
+          : message;
+        return new Response(JSON.stringify({ error: publicMessage }), {
+          status: lower.includes("already") || lower.includes("registered") ? 409 : 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const userId = created.user.id;
+      const accountPayload: Record<string, unknown> = {
+        id: userId,
+        email,
+        name,
+        username,
+        role,
+      };
+      if (role === "nauczyciel") {
+        accountPayload.fee_exempt = true;
+        accountPayload.subscription_status = "exempt";
+      }
+
+      const { data: account, error: accountError } = await supabase
+        .from("user_accounts")
+        .insert(accountPayload)
+        .select("id, name, username")
+        .single();
+
+      if (accountError) {
+        await supabase.auth.admin.deleteUser(userId);
+        const duplicateUsername = accountError.code === "23505" &&
+          (accountError.message?.includes("username") || accountError.message?.includes("unique"));
+        return new Response(JSON.stringify({ error: duplicateUsername ? "Ta nazwa użytkownika jest już zajęta" : "Nie udało się zapisać konta" }), {
+          status: duplicateUsername ? 409 : 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      await supabase.from("users").insert({ id: userId, name });
+
+      return new Response(JSON.stringify({ account, userId, success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // UPDATE a user
     if (action === "update" && id) {
       const dbUpdates = { ...updates };
