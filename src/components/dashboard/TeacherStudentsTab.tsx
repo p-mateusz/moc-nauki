@@ -112,6 +112,62 @@ const TeacherStudentsTab = ({
     if (selectedUser) loadMessages(selectedUser.id);
   }, [selectedUser]);
 
+  // Realtime: append new messages from the currently open conversation
+  useEffect(() => {
+    if (guestMode || !userId || !selectedUser) return;
+    const otherId = selectedUser.id;
+
+    const channel = supabase
+      .channel(`chat_thread_${userId}_${otherId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `receiver_id=eq.${userId}`,
+        },
+        (payload) => {
+          const m = payload.new as Message;
+          if (m.sender_id !== otherId) return;
+          setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+          // mark as read immediately since the thread is open
+          supabase.functions
+            .invoke("mark-messages-read", { body: { sender_id: otherId } })
+            .then(({ error }) => {
+              if (!error) {
+                setUnreadByUser((prev) => {
+                  if (!prev[otherId]) return prev;
+                  const next = { ...prev };
+                  delete next[otherId];
+                  return next;
+                });
+                onMessagesRead?.();
+              }
+            });
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `sender_id=eq.${userId}`,
+        },
+        (payload) => {
+          const m = payload.new as Message;
+          if (m.receiver_id !== otherId) return;
+          setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [guestMode, userId, selectedUser, onMessagesRead]);
+
   useEffect(() => {
     // Scroll only inside the messages container, not the whole document — otherwise
     // on mobile the chat header gets pushed above the viewport.
