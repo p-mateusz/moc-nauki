@@ -876,12 +876,13 @@ const TeacherStudentsTab = ({
                         <button
                           onClick={(e) => { e.stopPropagation(); setOpenMenuId(menuOpen ? null : m.id); setReactionPickerId(null); }}
                           aria-label="Akcje wiadomości"
+                          className={`ts-msg-actions ${menuOpen || pickerOpen ? "active" : ""}`}
                           style={{
                             background: "rgba(255,255,255,0.05)", border: "none",
                             width: 28, height: 28, borderRadius: "50%",
                             color: "#cbd5e1", cursor: "pointer", flexShrink: 0,
                             display: "flex", alignItems: "center", justifyContent: "center",
-                            alignSelf: "center", opacity: menuOpen || pickerOpen ? 1 : 0.55,
+                            alignSelf: "center",
                           }}
                         >
                           <MoreVertical size={14} />
