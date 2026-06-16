@@ -129,11 +129,17 @@ Deno.serve(async (req) => {
       if (createError || !created.user?.id) {
         const message = createError?.message || "Nie udało się utworzyć konta";
         const lower = message.toLowerCase();
-        const publicMessage = lower.includes("already") || lower.includes("registered")
-          ? "Ten email jest już zajęty"
-          : message;
+        let status = 500;
+        let publicMessage = message;
+        if (lower.includes("already") || lower.includes("registered")) {
+          status = 409;
+          publicMessage = "Ten email jest już zajęty";
+        } else if (lower.includes("invalid format") || lower.includes("validate email")) {
+          status = 400;
+          publicMessage = "Supabase Auth odrzucił ten adres email (nieprawidłowy format lub domena bez MX). Spróbuj innego.";
+        }
         return new Response(JSON.stringify({ error: publicMessage }), {
-          status: lower.includes("already") || lower.includes("registered") ? 409 : 500,
+          status,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
