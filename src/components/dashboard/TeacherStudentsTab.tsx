@@ -844,63 +844,79 @@ const TeacherStudentsTab = ({
             </div>
 
             {/* INPUT */}
-            <div
-              style={{
-                padding: 18,
-                borderTop:
-                  "1px solid rgba(255,255,255,0.06)",
-                display: "flex",
-                gap: 12,
-                background: "rgba(255,255,255,0.02)",
-              }}
-            >
-              <input
-                value={msgText}
-                onChange={(e) =>
-                  setMsgText(e.target.value)
-                }
-                onKeyDown={(e) =>
-                  e.key === "Enter" && sendMessage()
-                }
-                placeholder="Napisz wiadomość..."
-                style={{
-                  flex: 1,
-                  background: "rgba(255,255,255,0.06)",
-                  border:
-                    "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 16,
-                  padding: "14px 16px",
-                  color: "#fff",
-                  fontSize: ".92rem",
-                  outline: "none",
-                }}
-              />
-
-              <button
-                onClick={sendMessage}
-                disabled={!msgText.trim()}
-                style={{
-                  width: 54,
-                  height: 54,
-                  borderRadius: 18,
-                  border: "none",
-                  background: msgText.trim()
-                    ? "linear-gradient(135deg,#3b82f6,#6366f1)"
-                    : "rgba(255,255,255,0.08)",
-                  color: "#fff",
-                  cursor: msgText.trim()
-                    ? "pointer"
-                    : "not-allowed",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: ".2s",
-                }}
-              >
-                <Send size={18} />
-              </button>
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
+              {replyTo && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "10px 18px",
+                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  background: "rgba(99,102,241,0.08)",
+                }}>
+                  <div style={{ width: 3, alignSelf: "stretch", background: "#6366f1", borderRadius: 2 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: ".68rem", color: "#a5b4fc", fontWeight: 700 }}>
+                      Odpowiadasz {replyTo.sender_id === userId ? "sobie" : selectedUser.name}
+                    </div>
+                    <div style={{
+                      fontSize: ".78rem", color: "#cbd5e1",
+                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                    }}>
+                      {replyTo.image_url && !replyTo.content ? "📷 Zdjęcie" : replyTo.content}
+                    </div>
+                  </div>
+                  <button onClick={() => setReplyTo(null)} style={{
+                    background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", padding: 4,
+                  }}><X size={16} /></button>
+                </div>
+              )}
+              <div style={{ padding: 18, display: "flex", gap: 10, alignItems: "center" }}>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onImageSelected}
+                  style={{ display: "none" }}
+                />
+                <button
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={uploadingImage || guestMode}
+                  title="Załącz zdjęcie"
+                  style={{
+                    width: 44, height: 44, borderRadius: 14, border: "none",
+                    background: "rgba(255,255,255,0.06)", color: "#fff",
+                    cursor: uploadingImage ? "wait" : "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  }}
+                >
+                  {uploadingImage ? <ImageIcon size={18} /> : <Paperclip size={18} />}
+                </button>
+                <input
+                  value={msgText}
+                  onChange={(e) => setMsgText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void sendMessage(); } }}
+                  placeholder="Napisz wiadomość..."
+                  style={{
+                    flex: 1, background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16,
+                    padding: "14px 16px", color: "#fff", fontSize: ".92rem", outline: "none",
+                  }}
+                />
+                <button
+                  onClick={() => void sendMessage()}
+                  disabled={!msgText.trim()}
+                  style={{
+                    width: 54, height: 54, borderRadius: 18, border: "none",
+                    background: msgText.trim() ? "linear-gradient(135deg,#3b82f6,#6366f1)" : "rgba(255,255,255,0.08)",
+                    color: "#fff", cursor: msgText.trim() ? "pointer" : "not-allowed",
+                    display: "flex", alignItems: "center", justifyContent: "center", transition: ".2s", flexShrink: 0,
+                  }}
+                >
+                  <Send size={18} />
+                </button>
+              </div>
             </div>
           </>
+
         ) : (
           <div
             className="ts-empty-state"
