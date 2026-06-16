@@ -448,7 +448,7 @@ const TeacherStudentsTab = ({
     if (list.length === 0) delete current[emoji]; else current[emoji] = list;
     setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, reactions: current } : x)));
     if (guestMode) return;
-    const { error } = await supabase.from("messages").update({ reactions: current }).eq("id", m.id);
+    const { error } = await (supabase.from("messages") as any).update({ reactions: current }).eq("id", m.id);
     if (error) toast.error("Nie udało się dodać reakcji");
   };
 
