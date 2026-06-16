@@ -270,9 +270,43 @@ const MocDashboard = () => {
           table: "messages",
           filter: `receiver_id=eq.${userId}`,
         },
-        (payload) => {
-          if ((payload.new as any)?.read === false) {
+        async (payload) => {
+          const msg = payload.new as any;
+          if (msg?.read === false) {
             loadUnreadCounts();
+
+            // Pokaż powiadomienie o nowej wiadomości
+            const senderId = msg.sender_id;
+            const isOnChatTab =
+              (activeTab === "teacher" || activeTab === "students");
+            if (senderId && !isOnChatTab) {
+              try {
+                const { data: sender } = await supabase
+                  .from("user_accounts_public")
+                  .select("name, username, role")
+                  .eq("id", senderId)
+                  .maybeSingle();
+                const senderName =
+                  (sender as any)?.name ||
+                  (sender as any)?.username ||
+                  "Ktoś";
+                const role = ((sender as any)?.role || "").toLowerCase();
+                const targetTab: Tab =
+                  role === "nauczyciel" || role === "teacher" || role === "admin"
+                    ? "teacher"
+                    : "students";
+                const preview = (msg.content || "").toString().slice(0, 80);
+                toast.message(`💬 Nowa wiadomość od ${senderName}`, {
+                  description: preview,
+                  action: {
+                    label: "Otwórz",
+                    onClick: () => setActiveTab(targetTab),
+                  },
+                });
+              } catch (err) {
+                console.error("notify new message error:", err);
+              }
+            }
           }
         }
       )
@@ -297,7 +331,7 @@ const MocDashboard = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [userId, activeTab]);
 
   useEffect(() => {
     if (!userId) return;
@@ -490,8 +524,13 @@ const MocDashboard = () => {
 
       <div className="md-main">
         <div className="md-mobile-header">
-          <button className="md-hamburger" onClick={() => setSidebarOpen(true)}>
+          <button className="md-hamburger" onClick={() => setSidebarOpen(true)} aria-label="Otwórz menu">
             <Menu size={22} />
+            {(unreadCounts.teacher + unreadCounts.student) > 0 && (
+              <span className="md-hamburger-badge">
+                {unreadCounts.teacher + unreadCounts.student}
+              </span>
+            )}
           </button>
           <div className="md-mobile-title">{tabMeta[activeTab]?.label || activeTab}</div>
         </div>
