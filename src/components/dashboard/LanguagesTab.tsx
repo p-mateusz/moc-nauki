@@ -417,7 +417,7 @@ const LanguagesTab = ({ userId }: LanguagesTabProps) => {
       {/* Language Selector — draggable to reorder */}
       {!guestMode && (
         <div className="md-lang-selector" style={{ flexWrap: "wrap" }}>
-          {langOrder.map((l) => {
+          {visibleOrder.map((l) => {
             const meta = LANGUAGE_META[l];
             const isDragging = dragLang === l;
             const isOver = dragOverLang === l;
