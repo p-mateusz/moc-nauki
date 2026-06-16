@@ -8,6 +8,14 @@ import { LoadingInline } from "@/components/ui/loading-state";
 
 const REACTION_EMOJIS = ["❤️", "😄", "😮", "😢", "😠", "👍"] as const;
 
+const menuBtn: React.CSSProperties = {
+  display: "flex", alignItems: "center", gap: 8,
+  padding: "8px 12px", background: "transparent", border: "none",
+  color: "#e2e8f0", cursor: "pointer", fontSize: ".8rem",
+  borderRadius: 8, textAlign: "left",
+};
+
+
 
 function avInitials(name: string) {
   const parts = name.trim().split(" ");
