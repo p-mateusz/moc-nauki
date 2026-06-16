@@ -886,18 +886,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   };
 
   const insertTable = () => {
-    const input = window.prompt(
-      "Rozmiar tabeli (wiersze x kolumny):\nnp. 3x4, 5x2, 6x6",
-      "2x3"
-    );
-    if (!input) return;
-    const m = input.trim().toLowerCase().match(/^(\d+)\s*[x×*,\s]\s*(\d+)$/);
-    if (!m) {
-      toast.error("Nieprawidłowy format. Użyj np. 3x4");
-      return;
-    }
-    const rows = Math.max(1, Math.min(50, parseInt(m[1], 10)));
-    const cols = Math.max(1, Math.min(20, parseInt(m[2], 10)));
+    const rows = 2, cols = 2;
     const cell = '<td style="border:1px solid rgba(255,255,255,0.15);padding:8px;min-width:40px">\u200B</td>';
     const rowHtml = `<tr>${cell.repeat(cols)}</tr>`;
     const html = `<table class="note-table" style="border-collapse:collapse;width:100%;margin:8px 0">${rowHtml.repeat(rows)}</table><p>\u200B</p>`;
