@@ -83,6 +83,14 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Strict email format check (mirrors GoTrue) — give friendly error instead of 500
+      const emailRe = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
+      if (!emailRe.test(email)) {
+        return new Response(JSON.stringify({ error: "Nieprawidłowy format adresu email" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       if (password.length < 6) {
         return new Response(JSON.stringify({ error: "Hasło musi mieć min. 6 znaków" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -121,11 +129,17 @@ Deno.serve(async (req) => {
       if (createError || !created.user?.id) {
         const message = createError?.message || "Nie udało się utworzyć konta";
         const lower = message.toLowerCase();
-        const publicMessage = lower.includes("already") || lower.includes("registered")
-          ? "Ten email jest już zajęty"
-          : message;
+        let status = 500;
+        let publicMessage = message;
+        if (lower.includes("already") || lower.includes("registered")) {
+          status = 409;
+          publicMessage = "Ten email jest już zajęty";
+        } else if (lower.includes("invalid format") || lower.includes("validate email")) {
+          status = 400;
+          publicMessage = "Supabase Auth odrzucił ten adres email (nieprawidłowy format lub domena bez MX). Spróbuj innego.";
+        }
         return new Response(JSON.stringify({ error: publicMessage }), {
-          status: lower.includes("already") || lower.includes("registered") ? 409 : 500,
+          status,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
