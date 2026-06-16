@@ -816,6 +816,7 @@ const TeacherStudentsTab = ({
                 return (
                   <div
                     key={m.id}
+                    className="ts-message-bubble"
                     style={{
                       display: "flex",
                       justifyContent: isMine ? "flex-end" : "flex-start",
