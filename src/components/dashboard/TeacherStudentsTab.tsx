@@ -208,6 +208,13 @@ const TeacherStudentsTab = ({
   }, [guestMode, userId, selectedUser, onMessagesRead]);
 
   useEffect(() => {
+    const close = () => { setOpenMenuId(null); setReactionPickerId(null); };
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, []);
+
+
+  useEffect(() => {
     // Scroll only inside the messages container, not the whole document — otherwise
     // on mobile the chat header gets pushed above the viewport.
     const end = messagesEndRef.current;
