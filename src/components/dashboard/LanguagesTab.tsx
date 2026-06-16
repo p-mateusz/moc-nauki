@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Trash2, AlertTriangle } from "lucide-react";
 import { t, type Language, LANGUAGE_META, DEFAULT_LANGUAGE_ORDER } from "@/lib/i18n";
+import { usePreferences } from "@/hooks/use-preferences";
 
 type WordList = {
   id: string;
@@ -57,10 +58,15 @@ const loadLangOrder = (): Language[] => {
 const LanguagesTab = ({ userId }: LanguagesTabProps) => {
   const guestMode = localStorage.getItem("guestMode") === "true";
   const guestListId = localStorage.getItem("guestListId");
+  const { prefs } = usePreferences();
+  const hiddenLangs = prefs.hiddenLanguages || [];
   const [lang, setLang] = useState<Language>(
     (localStorage.getItem("language") as Language) || "en"
   );
   const [langOrder, setLangOrder] = useState<Language[]>(loadLangOrder);
+  const visibleOrder = guestMode
+    ? langOrder
+    : langOrder.filter((l) => !hiddenLangs.includes(l));
   const [dragLang, setDragLang] = useState<Language | null>(null);
   const [dragOverLang, setDragOverLang] = useState<Language | null>(null);
   const [lists, setLists] = useState<WordList[]>([]);
