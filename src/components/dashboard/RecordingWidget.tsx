@@ -28,7 +28,18 @@ function cleanTitle(raw: string): string {
  );
 }
 
-const RecordingWidget = ({ activeTab, onRecordingStateChange }: RecordingWidgetProps) => {
+const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: RecordingWidgetProps = {}) => {
+ const location = useLocation();
+ const [currentTab, setCurrentTab] = useState<string>(() => {
+   try { return activeTabProp || localStorage.getItem("dashboardActiveTab") || ""; } catch { return activeTabProp || ""; }
+ });
+ useEffect(() => {
+   const handler = (e: any) => setCurrentTab(e?.detail || localStorage.getItem("dashboardActiveTab") || "");
+   window.addEventListener("dashboardActiveTabChanged", handler as any);
+   return () => window.removeEventListener("dashboardActiveTabChanged", handler as any);
+ }, []);
+ const activeTab = activeTabProp ?? currentTab;
+ const onDashboard = location.pathname === "/dashboard";
  const [state, setState] = useState<RecState>("idle");
  const [seconds, setSeconds] = useState(0);
  const [collapsed, setCollapsed] = useState(false);
