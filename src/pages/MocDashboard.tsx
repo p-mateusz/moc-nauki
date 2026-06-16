@@ -750,7 +750,7 @@ const MocDashboard = () => {
         )}
       </div>
 
-      <RecordingWidget activeTab={activeTab} />
+      
     </div>
   );
 };
