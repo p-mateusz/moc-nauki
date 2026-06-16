@@ -75,64 +75,68 @@ Deno.serve(async (req) => {
     }
 
 
-    // --- Disposable email block ---
-    const domain = trimmedEmail.split("@")[1] || "";
-    if (DISPOSABLE_DOMAINS.has(domain)) {
+    if (!isAdminCaller) {
+      // --- Disposable email block ---
+      const domain = trimmedEmail.split("@")[1] || "";
+      if (DISPOSABLE_DOMAINS.has(domain)) {
+        await supabase.from("registration_attempts").insert({
+          ip, email: trimmedEmail, user_agent: ua, success: false,
+        });
+        return new Response(JSON.stringify({ error: "Adresy tymczasowe nie są dozwolone — użyj stałego e-maila." }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // --- Per-IP / per-email rate limit ---
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+      if (ip && ip !== "unknown") {
+        const { count: ipHourCount } = await supabase
+          .from("registration_attempts")
+          .select("id", { count: "exact", head: true })
+          .eq("ip", ip)
+          .gte("created_at", oneHourAgo);
+
+        if ((ipHourCount ?? 0) >= MAX_PER_IP_PER_HOUR) {
+          return new Response(JSON.stringify({ error: "Zbyt wiele prób rejestracji z tego adresu. Spróbuj ponownie za godzinę." }), {
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" },
+          });
+        }
+
+        const { count: ipDayCount } = await supabase
+          .from("registration_attempts")
+          .select("id", { count: "exact", head: true })
+          .eq("ip", ip)
+          .gte("created_at", oneDayAgo);
+
+        if ((ipDayCount ?? 0) >= MAX_PER_IP_PER_DAY) {
+          return new Response(JSON.stringify({ error: "Dzienny limit rejestracji z tego adresu został osiągnięty." }), {
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "86400" },
+          });
+        }
+      }
+
+      const { count: emailDayCount } = await supabase
+        .from("registration_attempts")
+        .select("id", { count: "exact", head: true })
+        .eq("email", trimmedEmail)
+        .gte("created_at", oneDayAgo);
+
+      if ((emailDayCount ?? 0) >= MAX_PER_EMAIL_PER_DAY) {
+        return new Response(JSON.stringify({ error: "Zbyt wiele prób dla tego e-maila. Spróbuj ponownie później." }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Record attempt early so abusive volume counts even when later checks fail.
       await supabase.from("registration_attempts").insert({
         ip, email: trimmedEmail, user_agent: ua, success: false,
       });
-      return new Response(JSON.stringify({ error: "Adresy tymczasowe nie są dozwolone — użyj stałego e-maila." }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
 
-    // --- Per-IP / per-email rate limit ---
     const nowIso = new Date().toISOString();
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-    if (ip && ip !== "unknown") {
-      const { count: ipHourCount } = await supabase
-        .from("registration_attempts")
-        .select("id", { count: "exact", head: true })
-        .eq("ip", ip)
-        .gte("created_at", oneHourAgo);
-
-      if ((ipHourCount ?? 0) >= MAX_PER_IP_PER_HOUR) {
-        return new Response(JSON.stringify({ error: "Zbyt wiele prób rejestracji z tego adresu. Spróbuj ponownie za godzinę." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" },
-        });
-      }
-
-      const { count: ipDayCount } = await supabase
-        .from("registration_attempts")
-        .select("id", { count: "exact", head: true })
-        .eq("ip", ip)
-        .gte("created_at", oneDayAgo);
-
-      if ((ipDayCount ?? 0) >= MAX_PER_IP_PER_DAY) {
-        return new Response(JSON.stringify({ error: "Dzienny limit rejestracji z tego adresu został osiągnięty." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "86400" },
-        });
-      }
-    }
-
-    const { count: emailDayCount } = await supabase
-      .from("registration_attempts")
-      .select("id", { count: "exact", head: true })
-      .eq("email", trimmedEmail)
-      .gte("created_at", oneDayAgo);
-
-    if ((emailDayCount ?? 0) >= MAX_PER_EMAIL_PER_DAY) {
-      return new Response(JSON.stringify({ error: "Zbyt wiele prób dla tego e-maila. Spróbuj ponownie później." }), {
-        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Record attempt early so abusive volume counts even when later checks fail.
-    await supabase.from("registration_attempts").insert({
-      ip, email: trimmedEmail, user_agent: ua, success: false,
-    });
 
     const { data: registrationSetting } = await supabase
       .from("app_settings")
