@@ -873,7 +873,7 @@ const TeacherStudentsTab = ({
 
                         {/* 3-dots menu trigger */}
                         <button
-                          onClick={() => { setOpenMenuId(menuOpen ? null : m.id); setReactionPickerId(null); }}
+                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(menuOpen ? null : m.id); setReactionPickerId(null); }}
                           aria-label="Akcje wiadomości"
                           style={{
                             background: "rgba(255,255,255,0.05)", border: "none",
