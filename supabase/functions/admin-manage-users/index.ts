@@ -2,6 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts";
 import { encode as hexEncode } from "https://deno.land/std@0.168.0/encoding/hex.ts";
 import Stripe from "https://esm.sh/stripe@17.7.0?target=deno";
+import { getUserIdFromRequest } from "../_shared/auth.ts";
+import { createAdminClient } from "../_shared/appSettings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,35 +22,21 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabase = createAdminClient();
 
-    // Verify caller via JWT instead of trusting x-user-id header
-    const authHeader = req.headers.get("Authorization");
-    const token = authHeader?.replace("Bearer ", "");
-
-    if (!token) {
+    // Verify caller via JWT from the app auth backend.
+    const callerId = await getUserIdFromRequest(req);
+    if (!callerId) {
       return new Response(JSON.stringify({ error: "Missing authorization" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { data: claimsData, error: authError } = await supabase.auth.getClaims(token);
-    if (authError || !claimsData?.claims?.sub) {
-      return new Response(JSON.stringify({ error: "Invalid session" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const userId = claimsData.claims.sub;
-
     // Verify admin role
     const { data: caller } = await supabase
       .from("user_accounts")
       .select("role")
-      .eq("id", userId)
+      .eq("id", callerId)
       .single();
 
     if (!caller || caller.role !== "admin") {
