@@ -1,6 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts";
-import { encode as hexEncode } from "https://deno.land/std@0.168.0/encoding/hex.ts";
 import Stripe from "https://esm.sh/stripe@17.7.0?target=deno";
 import { getUserIdFromRequest } from "../_shared/auth.ts";
 import { createAdminClient } from "../_shared/appSettings.ts";
@@ -10,13 +7,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hash = await crypto.subtle.digest("SHA-256", data);
-  return new TextDecoder().decode(hexEncode(new Uint8Array(hash)));
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
