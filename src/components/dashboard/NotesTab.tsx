@@ -1387,7 +1387,9 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                   setPagesCollapsed(true);
                 }
               }}
-               onPaste={handleEditorPaste}
+                onPaste={handleEditorPaste}
+              onCopy={(e) => handleEditorCopy(e, false)}
+              onCut={(e) => handleEditorCopy(e, true)}
               onKeyDown={(e) => {
                 const sel = window.getSelection();
                 if (!sel || sel.rangeCount === 0) return;
