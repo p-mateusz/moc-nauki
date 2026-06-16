@@ -524,8 +524,13 @@ const MocDashboard = () => {
 
       <div className="md-main">
         <div className="md-mobile-header">
-          <button className="md-hamburger" onClick={() => setSidebarOpen(true)}>
+          <button className="md-hamburger" onClick={() => setSidebarOpen(true)} aria-label="Otwórz menu">
             <Menu size={22} />
+            {(unreadCounts.teacher + unreadCounts.student) > 0 && (
+              <span className="md-hamburger-badge">
+                {unreadCounts.teacher + unreadCounts.student}
+              </span>
+            )}
           </button>
           <div className="md-mobile-title">{tabMeta[activeTab]?.label || activeTab}</div>
         </div>
