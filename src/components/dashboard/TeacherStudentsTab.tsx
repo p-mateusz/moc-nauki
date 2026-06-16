@@ -791,54 +791,164 @@ const TeacherStudentsTab = ({
                   "radial-gradient(circle at top, rgba(59,130,246,0.06), transparent 30%)",
               }}
             >
-              {messages.map((m) => {
+              {messages.filter((m) => !(m.deleted_for || []).includes(userId)).map((m) => {
                 const isMine = m.sender_id === userId;
-
+                const replied = m.reply_to_id ? messages.find((x) => x.id === m.reply_to_id) : null;
+                const reactions = m.reactions || {};
+                const reactionEntries = Object.entries(reactions).filter(([, arr]) => (arr as string[]).length > 0);
+                const menuOpen = openMenuId === m.id;
+                const pickerOpen = reactionPickerId === m.id;
                 return (
                   <div
                     key={m.id}
                     style={{
                       display: "flex",
-                      justifyContent: isMine
-                        ? "flex-end"
-                        : "flex-start",
+                      justifyContent: isMine ? "flex-end" : "flex-start",
+                      position: "relative",
                     }}
                   >
-                    <div
-                      style={{
-                        maxWidth: "72%",
-                        padding: "12px 16px",
-                        borderRadius: 20,
-                        background: isMine
-                          ? "linear-gradient(135deg,#3b82f6,#6366f1)"
-                          : "rgba(255,255,255,0.06)",
-                        color: "#fff",
-                        fontSize: ".88rem",
-                        lineHeight: 1.5,
-                        boxShadow:
-                          "0 8px 24px rgba(0,0,0,0.2)",
-                      }}
-                    >
-                      {m.content}
+                    <div style={{ maxWidth: "75%", display: "flex", flexDirection: "column", alignItems: isMine ? "flex-end" : "flex-start", gap: 4 }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 6, flexDirection: isMine ? "row-reverse" : "row" }}>
+                        <div
+                          style={{
+                            padding: m.image_url && !m.content ? 6 : "10px 14px",
+                            borderRadius: 20,
+                            background: isMine
+                              ? "linear-gradient(135deg,#3b82f6,#6366f1)"
+                              : "rgba(255,255,255,0.06)",
+                            color: "#fff",
+                            fontSize: ".88rem",
+                            lineHeight: 1.5,
+                            boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                            position: "relative",
+                          }}
+                        >
+                          {replied && (
+                            <div style={{
+                              borderLeft: "3px solid rgba(255,255,255,0.5)",
+                              padding: "4px 8px",
+                              marginBottom: 6,
+                              background: "rgba(0,0,0,0.18)",
+                              borderRadius: 8,
+                              fontSize: ".72rem",
+                              opacity: 0.85,
+                              maxWidth: 260,
+                              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                            }}>
+                              ↩ {replied.image_url && !replied.content ? "📷 Zdjęcie" : replied.content}
+                            </div>
+                          )}
+                          {m.image_url && (
+                            <img
+                              src={m.image_url}
+                              alt="załącznik"
+                              onClick={() => window.open(m.image_url!, "_blank")}
+                              style={{
+                                maxWidth: 280, maxHeight: 280, borderRadius: 14,
+                                display: "block", cursor: "zoom-in",
+                                marginBottom: m.content ? 8 : 0,
+                              }}
+                            />
+                          )}
+                          {m.content && <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{m.content}</div>}
+                          <div style={{ fontSize: ".62rem", opacity: 0.65, marginTop: 6, textAlign: isMine ? "right" : "left" }}>
+                            {new Date(m.created_at).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                        </div>
 
-                      <div
-                        style={{
-                          fontSize: ".65rem",
-                          opacity: 0.65,
-                          marginTop: 6,
-                        }}
-                      >
-                        {new Date(
-                          m.created_at
-                        ).toLocaleTimeString("pl-PL", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {/* 3-dots menu trigger */}
+                        <button
+                          onClick={() => { setOpenMenuId(menuOpen ? null : m.id); setReactionPickerId(null); }}
+                          aria-label="Akcje wiadomości"
+                          style={{
+                            background: "rgba(255,255,255,0.05)", border: "none",
+                            width: 28, height: 28, borderRadius: "50%",
+                            color: "#cbd5e1", cursor: "pointer", flexShrink: 0,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            alignSelf: "center", opacity: menuOpen || pickerOpen ? 1 : 0.55,
+                          }}
+                        >
+                          <MoreVertical size={14} />
+                        </button>
                       </div>
+
+                      {/* Reaction chips */}
+                      {reactionEntries.length > 0 && (
+                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                          {reactionEntries.map(([emoji, users]) => {
+                            const mine = (users as string[]).includes(userId);
+                            return (
+                              <button
+                                key={emoji}
+                                onClick={() => toggleReaction(m, emoji)}
+                                style={{
+                                  background: mine ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.08)",
+                                  border: mine ? "1px solid rgba(99,102,241,0.6)" : "1px solid rgba(255,255,255,0.08)",
+                                  borderRadius: 999, padding: "2px 8px",
+                                  fontSize: ".75rem", color: "#fff", cursor: "pointer",
+                                  display: "flex", alignItems: "center", gap: 4,
+                                }}
+                              >
+                                <span>{emoji}</span>
+                                <span style={{ fontSize: ".7rem", opacity: 0.8 }}>{(users as string[]).length}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Action menu */}
+                      {menuOpen && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)",
+                            borderRadius: 14, padding: 6, display: "flex", flexDirection: "column",
+                            boxShadow: "0 12px 32px rgba(0,0,0,0.4)", minWidth: 180, zIndex: 50,
+                          }}
+                        >
+                          <button onClick={() => { setReactionPickerId(m.id); setOpenMenuId(null); }} style={menuBtn}>
+                            <SmilePlus size={14} /> Zareaguj
+                          </button>
+                          <button onClick={() => startReply(m)} style={menuBtn}>
+                            <Reply size={14} /> Odpowiedz
+                          </button>
+                          <button onClick={() => copyMessage(m)} style={menuBtn}>
+                            <Copy size={14} /> Kopiuj
+                          </button>
+                          <button onClick={() => deleteForMe(m)} style={{ ...menuBtn, color: "#f87171" }}>
+                            <Trash2 size={14} /> Usuń u mnie
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Reaction picker */}
+                      {pickerOpen && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)",
+                            borderRadius: 999, padding: "6px 10px", display: "flex", gap: 6,
+                            boxShadow: "0 12px 32px rgba(0,0,0,0.4)", zIndex: 50,
+                          }}
+                        >
+                          {REACTION_EMOJIS.map((emoji) => (
+                            <button
+                              key={emoji}
+                              onClick={() => toggleReaction(m, emoji)}
+                              style={{
+                                background: "transparent", border: "none", cursor: "pointer",
+                                fontSize: "1.3rem", padding: 2, lineHeight: 1,
+                              }}
+                            >{emoji}</button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
               })}
+
 
               <div ref={messagesEndRef} />
             </div>
