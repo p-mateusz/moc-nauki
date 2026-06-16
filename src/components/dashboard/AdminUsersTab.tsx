@@ -5,12 +5,9 @@ import { useRoles, type Role } from "@/hooks/use-roles";
 
 // Helper to call admin-manage-users edge function
 const adminUpdateUser = async (id: string, updates: Record<string, any>) => {
-  const res = await supabase.functions.invoke("admin-manage-users", {
+  return invokeCloudFunction("admin-manage-users", {
     body: { action: "update", id, updates },
   });
-  if (res.error) throw new Error(res.error.message);
-  if (res.data?.error) throw new Error(res.data.error);
-  return res.data;
 };
 
 interface UserAccount {
@@ -52,12 +49,9 @@ interface UserAccount {
     const userId = localStorage.getItem("userId");
 
     const callAdminUsers = useCallback(async (body: any) => {
-      const res = await supabase.functions.invoke("admin-manage-users", {
+      return invokeCloudFunction("admin-manage-users", {
         body,
       });
-      if (res.error) throw new Error(res.error.message);
-      if (res.data?.error) throw new Error(res.data.error);
-      return res.data;
     }, []);
 
     const fetchUsers = useCallback(async () => {
