@@ -172,18 +172,18 @@ body:has(.moc-dashboard) #root {
   font-size: 0.68rem;
   font-weight: 800;
   border-radius: 999px;
-  background: #ef4444;
+  background: #3b82f6;
   color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25), 0 2px 8px rgba(239, 68, 68, 0.45);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25), 0 2px 8px rgba(59, 130, 246, 0.45);
   animation: md-badge-pulse 1.8s ease-in-out infinite;
 }
 
 @keyframes md-badge-pulse {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25), 0 2px 8px rgba(239, 68, 68, 0.45); }
-  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15), 0 2px 12px rgba(239, 68, 68, 0.7); }
+  0%, 100% { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25), 0 2px 8px rgba(59, 130, 246, 0.45); }
+  50% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), 0 2px 12px rgba(59, 130, 246, 0.7); }
 }
 
 .md-hamburger {
