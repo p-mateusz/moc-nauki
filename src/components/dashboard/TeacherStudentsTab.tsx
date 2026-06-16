@@ -49,6 +49,7 @@ const TeacherStudentsTab = ({
   const [loading, setLoading] = useState(true);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [unreadByUser, setUnreadByUser] = useState<Record<string, number>>({});
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -69,9 +70,43 @@ const TeacherStudentsTab = ({
 
   useEffect(() => {
     loadUsers();
+    loadUnreadCounts();
     setSelectedUser(null);
     setMessages([]);
   }, [mode]);
+
+  useEffect(() => {
+    if (guestMode || !userId) return;
+
+    const refreshUnread = () => loadUnreadCounts();
+    const channel = supabase
+      .channel(`chat_user_unread_${mode}_${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `receiver_id=eq.${userId}`,
+        },
+        refreshUnread
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `receiver_id=eq.${userId}`,
+        },
+        refreshUnread
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [guestMode, mode, userId]);
 
   useEffect(() => {
     if (selectedUser) loadMessages(selectedUser.id);
@@ -163,6 +198,34 @@ const TeacherStudentsTab = ({
     setLoading(false);
   };
 
+  const loadUnreadCounts = async () => {
+    if (guestMode || !userId) {
+      setUnreadByUser({});
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("messages")
+      .select("sender_id")
+      .eq("receiver_id", userId)
+      .eq("read", false);
+
+    if (error) {
+      console.error("Unable to load per-user unread message counts:", error);
+      return;
+    }
+
+    const nextCounts = ((data || []) as Pick<Message, "sender_id">[]).reduce<Record<string, number>>(
+      (acc, message) => {
+        if (message.sender_id) acc[message.sender_id] = (acc[message.sender_id] || 0) + 1;
+        return acc;
+      },
+      {}
+    );
+
+    setUnreadByUser(nextCounts);
+  };
+
   const loadMessages = async (otherUserId: string) => {
     if (guestMode) {
       const demoMsgs: Message[] = [
@@ -198,6 +261,12 @@ const TeacherStudentsTab = ({
     );
 
     if (!error) {
+      setUnreadByUser((prev) => {
+        if (!prev[otherUserId]) return prev;
+        const next = { ...prev };
+        delete next[otherUserId];
+        return next;
+      });
       onMessagesRead?.();
     }
   };
@@ -340,11 +409,13 @@ const TeacherStudentsTab = ({
             padding: 12,
           }}
         >
-          {filteredUsers.map((u) => (
-            <div
-              key={u.id}
-              onClick={() => setSelectedUser(u)}
-              style={{
+          {filteredUsers.map((u) => {
+            const unreadCount = unreadByUser[u.id] || 0;
+            return (
+              <div
+                key={u.id}
+                onClick={() => setSelectedUser(u)}
+                style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 14,
@@ -361,8 +432,8 @@ const TeacherStudentsTab = ({
                   selectedUser?.id === u.id
                     ? "1px solid rgba(59,130,246,0.35)"
                     : "1px solid rgba(255,255,255,0.04)",
-              }}
-            >
+                }}
+              >
               <div
                 onClick={(e) => {
                   e.stopPropagation();
@@ -419,24 +490,31 @@ const TeacherStudentsTab = ({
                 </div>
               </div>
 
-              <span
-                style={{
-                  marginLeft: "auto",
-                  fontSize: ".62rem",
-                  fontWeight: 800,
-                  padding: "4px 10px",
-                  borderRadius: 999,
-                  background: `${
-                    getRoleColor(u.role) || "#60a5fa"
-                  }20`,
-                  color:
-                    getRoleColor(u.role) || "#60a5fa",
-                }}
-              >
-                {getRoleLabel(u.role)}
-              </span>
-            </div>
-          ))}
+                <div className="ts-user-meta-actions">
+                  {unreadCount > 0 && (
+                    <span className="ts-user-unread-badge" aria-label={`${unreadCount} nieprzeczytanych wiadomości`}>
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                  <span
+                    style={{
+                      fontSize: ".62rem",
+                      fontWeight: 800,
+                      padding: "4px 10px",
+                      borderRadius: 999,
+                      background: `${
+                        getRoleColor(u.role) || "#60a5fa"
+                      }20`,
+                      color:
+                        getRoleColor(u.role) || "#60a5fa",
+                    }}
+                  >
+                    {getRoleLabel(u.role)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
