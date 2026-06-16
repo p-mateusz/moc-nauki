@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { invokeCloudFunction, supabase } from "@/lib/supabase";
+import { getCachedPreferences, notePreferenceHint } from "@/hooks/use-preferences";
 
 const MAX_RETRIES = 3;
 
@@ -180,7 +181,10 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
        const formData = new FormData();
        formData.append("file", blob, "recording.webm");
        formData.append("duration", duration);
-        const resultText = await invokeCloudFunction<string>("proxy-n8n-audio", { body: formData, responseType: "text" });
+       const userPrefs = getCachedPreferences();
+       formData.append("noteLanguageMode", userPrefs.noteLanguageMode);
+       formData.append("noteLanguageHint", notePreferenceHint(userPrefs.noteLanguageMode));
+       const resultText = await invokeCloudFunction<string>("proxy-n8n-audio", { body: formData, responseType: "text" });
        let title = "Notatka z lekcji";
        let content = resultText;
        try {

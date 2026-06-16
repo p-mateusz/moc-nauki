@@ -1,3 +1,6 @@
 project_id = "yjlelwsmmrqvlsfcnxru"
 [functions.admin-create-legacy-bucket]
 verify_jwt = false
+
+[functions.calendar-ics]
+verify_jwt = false
