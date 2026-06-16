@@ -199,6 +199,7 @@ interface UserAccount {
         <NewUserModal
           onClose={() => setNewModal(false)}
           onSave={fetchUsers}
+          callAdminUsers={callAdminUsers}
           allRoleNames={allRoleNames}
           customRoles={customRoles}
         />
@@ -1240,7 +1241,7 @@ const EditUserModal = ({ user, onClose, onSave, allRoleNames, customRoles }: { u
 /* ═══════════════════════════════════════════════
    NEW USER MODAL
    ═══════════════════════════════════════════════ */
-const NewUserModal = ({ onClose, onSave, allRoleNames, customRoles }: { onClose: () => void; onSave: () => void; allRoleNames: string[]; customRoles: Role[] }) => {
+const NewUserModal = ({ onClose, onSave, callAdminUsers, allRoleNames, customRoles }: { onClose: () => void; onSave: () => void; callAdminUsers: (body: any) => Promise<any>; allRoleNames: string[]; customRoles: Role[] }) => {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
