@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { invokeCloudFunction, supabase } from "@/lib/supabase";
 
@@ -7,7 +8,7 @@ const MAX_RETRIES = 3;
 type RecState = "idle" | "recording" | "paused";
 
 type RecordingWidgetProps = {
- activeTab: string;
+ activeTab?: string;
  onRecordingStateChange?: (isActive: boolean) => void;
 };
 
