@@ -29,10 +29,15 @@ type Message = {
   id: string;
   sender_id: string;
   receiver_id: string;
-  content: string;
+  content: string | null;
   read: boolean;
   created_at: string;
+  reply_to_id?: string | null;
+  image_url?: string | null;
+  deleted_for?: string[] | null;
+  reactions?: Record<string, string[]> | null;
 };
+
 
 interface Props {
   mode: "teacher" | "student";
