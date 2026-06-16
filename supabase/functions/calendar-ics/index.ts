@@ -83,32 +83,34 @@ serve(async (req) => {
 
     for (const ev of events || []) {
       const e = ev as Record<string, any>;
-      const startRaw = e.start_at || e.start || e.starts_at || e.start_time || e.date;
-      const endRaw = e.end_at || e.end || e.ends_at || e.end_time;
-      const allDay = !!(e.all_day || e.is_all_day);
-      if (!startRaw) continue;
+      const dateStr: string | undefined = e.date;
+      if (!dateStr) continue;
+      const allDay = !!e.all_day || !e.time;
+      const timeStr: string = e.time || "00:00";
+      const endDateStr: string = e.end_date || dateStr;
+      const endTimeStr: string = e.end_time || (allDay ? "00:00" : timeStr);
 
-      const start = new Date(startRaw);
+      // Parse as local Europe/Warsaw -> use as floating local time via TZID-less UTC.
+      // We treat input as local wall-clock; emit UTC stamps using server interpretation.
+      const start = new Date(`${dateStr}T${timeStr}:00`);
+      let end = new Date(`${endDateStr}T${endTimeStr}:00`);
       if (isNaN(start.getTime())) continue;
-      let end: Date;
-      if (endRaw) {
-        end = new Date(endRaw);
-        if (isNaN(end.getTime())) end = new Date(start.getTime() + 60 * 60 * 1000);
-      } else {
+      if (isNaN(end.getTime()) || end <= start) {
         end = new Date(start.getTime() + 60 * 60 * 1000);
       }
 
       const uid = `${e.id}@mocnauki`;
-      const summary = escapeText(e.title || e.name || "Wydarzenie");
-      const description = escapeText(e.description || e.notes || "");
+      const summary = escapeText(e.name || "Wydarzenie");
+      const description = escapeText(e.description || e.note || "");
       const location = escapeText(e.location || "");
 
       lines.push("BEGIN:VEVENT");
       lines.push(foldLine(`UID:${uid}`));
       lines.push(`DTSTAMP:${toIcsUtc(now)}`);
       if (allDay) {
+        const endAllDay = new Date(end.getTime() + 24 * 60 * 60 * 1000);
         lines.push(`DTSTART;VALUE=DATE:${toIcsDate(start)}`);
-        lines.push(`DTEND;VALUE=DATE:${toIcsDate(end)}`);
+        lines.push(`DTEND;VALUE=DATE:${toIcsDate(endAllDay)}`);
       } else {
         lines.push(`DTSTART:${toIcsUtc(start)}`);
         lines.push(`DTEND:${toIcsUtc(end)}`);
