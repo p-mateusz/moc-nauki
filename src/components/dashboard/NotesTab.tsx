@@ -1372,9 +1372,88 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               }}
                onPaste={handleEditorPaste}
               onKeyDown={(e) => {
-                // Tab / Shift+Tab inside a list item: change nesting level, max 3 levels
                 const sel = window.getSelection();
                 if (!sel || sel.rangeCount === 0) return;
+
+                // --- Tabela: Tab/Shift+Tab/Enter nawigacja po komórkach ---
+                let tdNode: Node | null = sel.anchorNode;
+                let td: HTMLTableCellElement | null = null;
+                while (tdNode && tdNode !== editorRef.current) {
+                  if ((tdNode as HTMLElement).nodeType === 1) {
+                    const tag = (tdNode as HTMLElement).tagName;
+                    if (tag === "TD" || tag === "TH") {
+                      td = tdNode as HTMLTableCellElement;
+                      break;
+                    }
+                  }
+                  tdNode = tdNode.parentNode;
+                }
+                if (td && (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey))) {
+                  e.preventDefault();
+                  const tr = td.parentElement as HTMLTableRowElement;
+                  const table = tr?.parentElement?.tagName === "TBODY"
+                    ? (tr.parentElement!.parentElement as HTMLTableElement)
+                    : (tr?.parentElement as HTMLTableElement);
+                  if (!tr || !table) return;
+                  const rows = Array.from(table.querySelectorAll("tr"));
+                  const rowIdx = rows.indexOf(tr);
+                  const cells = Array.from(tr.children) as HTMLTableCellElement[];
+                  const colIdx = cells.indexOf(td);
+                  const cols = cells.length;
+
+                  const focusCell = (cell: HTMLTableCellElement) => {
+                    const range = document.createRange();
+                    range.selectNodeContents(cell);
+                    range.collapse(false);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                  };
+
+                  if (e.key === "Tab" && e.shiftKey) {
+                    // Poprzednia komórka
+                    if (colIdx > 0) focusCell(cells[colIdx - 1]);
+                    else if (rowIdx > 0) {
+                      const prevCells = rows[rowIdx - 1].children;
+                      focusCell(prevCells[prevCells.length - 1] as HTMLTableCellElement);
+                    }
+                  } else if (e.key === "Tab") {
+                    // Następna komórka (lub nowy wiersz na końcu)
+                    if (colIdx < cols - 1) focusCell(cells[colIdx + 1]);
+                    else if (rowIdx < rows.length - 1) {
+                      focusCell(rows[rowIdx + 1].children[0] as HTMLTableCellElement);
+                    } else {
+                      const newRow = document.createElement("tr");
+                      for (let i = 0; i < cols; i++) {
+                        const c = document.createElement("td");
+                        c.setAttribute("style", "border:1px solid rgba(255,255,255,0.15);padding:8px;min-width:40px");
+                        c.appendChild(document.createTextNode("\u200B"));
+                        newRow.appendChild(c);
+                      }
+                      (tr.parentElement as HTMLElement).appendChild(newRow);
+                      focusCell(newRow.children[0] as HTMLTableCellElement);
+                    }
+                  } else if (e.key === "Enter") {
+                    // Enter → komórka poniżej (nowy wiersz, jeśli ostatni)
+                    if (rowIdx < rows.length - 1) {
+                      const next = rows[rowIdx + 1].children[colIdx] as HTMLTableCellElement | undefined;
+                      if (next) focusCell(next);
+                    } else {
+                      const newRow = document.createElement("tr");
+                      for (let i = 0; i < cols; i++) {
+                        const c = document.createElement("td");
+                        c.setAttribute("style", "border:1px solid rgba(255,255,255,0.15);padding:8px;min-width:40px");
+                        c.appendChild(document.createTextNode("\u200B"));
+                        newRow.appendChild(c);
+                      }
+                      (tr.parentElement as HTMLElement).appendChild(newRow);
+                      focusCell(newRow.children[colIdx] as HTMLTableCellElement);
+                    }
+                  }
+                  saveCurrentPage();
+                  return;
+                }
+
+                // Tab / Shift+Tab inside a list item: change nesting level, max 3 levels
                 let node: Node | null = sel.anchorNode;
                 let li: HTMLElement | null = null;
                 while (node && node !== editorRef.current) {
