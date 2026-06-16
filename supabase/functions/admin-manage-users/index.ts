@@ -83,6 +83,14 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Strict email format check (mirrors GoTrue) — give friendly error instead of 500
+      const emailRe = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
+      if (!emailRe.test(email)) {
+        return new Response(JSON.stringify({ error: "Nieprawidłowy format adresu email" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       if (password.length < 6) {
         return new Response(JSON.stringify({ error: "Hasło musi mieć min. 6 znaków" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
