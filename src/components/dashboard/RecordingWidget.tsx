@@ -59,7 +59,7 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
    } catch { return true; }
  })();
 
- const showWidget = !isGuest && (activeTab === "notes" || isActive || sending);
+ const showWidget = !isGuest && ((onDashboard && activeTab === "notes") || isActive || sending);
 
  useEffect(() => { onRecordingStateChange?.(isActive || sending); }, [isActive, sending]);
 
