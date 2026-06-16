@@ -7,6 +7,8 @@ import { logoutUser } from "@/lib/authCleanup";
 
 import { setAvatarCache } from "@/lib/avatarCache";
 import { LoadingInline } from "@/components/ui/loading-state";
+import PreferencesDialog from "@/components/dashboard/PreferencesDialog";
+import CalendarConnectDialog from "@/components/dashboard/CalendarConnectDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,6 +85,8 @@ const SettingsTab = ({
 
   const [changePasswordDialogOpen, setChangePasswordDialogOpen] =
     useState(false);
+  const [preferencesDialogOpen, setPreferencesDialogOpen] = useState(false);
+  const [calendarDialogOpen, setCalendarDialogOpen] = useState(false);
 
   const [newPassword, setNewPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -796,13 +800,17 @@ const SettingsTab = ({
             },
 
             {
-              icon: "🔔",
-              title: "Powiadomienia",
-              sub: "Zarządzaj alertami i przypomnieniami",
-              action: () =>
-                toast.info(
-                  "Powiadomienia będą dostępne wkrótce"
-                ),
+              icon: "⚙️",
+              title: "Preferencje",
+              sub: "Język notatek, widoczne języki, potwierdzenia",
+              action: () => setPreferencesDialogOpen(true),
+            },
+
+            {
+              icon: "📅",
+              title: "Połącz kalendarz",
+              sub: "Subskrybuj wydarzenia w Apple Calendar / iCloud",
+              action: () => setCalendarDialogOpen(true),
             },
 
           ].map((item, i) => (
@@ -1127,6 +1135,9 @@ const SettingsTab = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PreferencesDialog open={preferencesDialogOpen} onClose={() => setPreferencesDialogOpen(false)} />
+      <CalendarConnectDialog open={calendarDialogOpen} onClose={() => setCalendarDialogOpen(false)} />
 
     </div>
   );
