@@ -175,7 +175,24 @@ const TeacherStudentsTab = ({
           setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+        },
+        (payload) => {
+          const m = payload.new as Message;
+          const involvesThread =
+            (m.sender_id === userId && m.receiver_id === otherId) ||
+            (m.sender_id === otherId && m.receiver_id === userId);
+          if (!involvesThread) return;
+          setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, ...m } : x)));
+        }
+      )
       .subscribe();
+
 
     return () => {
       supabase.removeChannel(channel);
