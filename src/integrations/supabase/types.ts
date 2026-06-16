@@ -846,10 +846,12 @@ export type Database = {
           avatar_url: string | null
           banner_color: string | null
           bio: string | null
+          calendar_feed_token: string | null
           created_at: string | null
           id: string
           interests: string[] | null
           location: string | null
+          preferences: Json
           updated_at: string | null
           user_id: string
           website: string | null
@@ -859,10 +861,12 @@ export type Database = {
           avatar_url?: string | null
           banner_color?: string | null
           bio?: string | null
+          calendar_feed_token?: string | null
           created_at?: string | null
           id?: string
           interests?: string[] | null
           location?: string | null
+          preferences?: Json
           updated_at?: string | null
           user_id: string
           website?: string | null
@@ -872,10 +876,12 @@ export type Database = {
           avatar_url?: string | null
           banner_color?: string | null
           bio?: string | null
+          calendar_feed_token?: string | null
           created_at?: string | null
           id?: string
           interests?: string[] | null
           location?: string | null
+          preferences?: Json
           updated_at?: string | null
           user_id?: string
           website?: string | null
