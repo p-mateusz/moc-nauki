@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Trash2, AlertTriangle } from "lucide-react";
 import { t, type Language, LANGUAGE_META, DEFAULT_LANGUAGE_ORDER } from "@/lib/i18n";
+import { usePreferences } from "@/hooks/use-preferences";
 
 type WordList = {
   id: string;
@@ -57,10 +58,15 @@ const loadLangOrder = (): Language[] => {
 const LanguagesTab = ({ userId }: LanguagesTabProps) => {
   const guestMode = localStorage.getItem("guestMode") === "true";
   const guestListId = localStorage.getItem("guestListId");
+  const { prefs } = usePreferences();
+  const hiddenLangs = prefs.hiddenLanguages || [];
   const [lang, setLang] = useState<Language>(
     (localStorage.getItem("language") as Language) || "en"
   );
   const [langOrder, setLangOrder] = useState<Language[]>(loadLangOrder);
+  const visibleOrder = guestMode
+    ? langOrder
+    : langOrder.filter((l) => !hiddenLangs.includes(l));
   const [dragLang, setDragLang] = useState<Language | null>(null);
   const [dragOverLang, setDragOverLang] = useState<Language | null>(null);
   const [lists, setLists] = useState<WordList[]>([]);
@@ -112,6 +118,16 @@ const LanguagesTab = ({ userId }: LanguagesTabProps) => {
     localStorage.setItem("language", lang);
     fetchLists();
   }, [lang]);
+
+  // If active language got hidden in preferences, switch to first visible one
+  useEffect(() => {
+    if (guestMode) return;
+    if (visibleOrder.length === 0) return;
+    if (!visibleOrder.includes(lang)) {
+      setLang(visibleOrder[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hiddenLangs.join(",")]);
 
   useEffect(() => {
     return () => {
@@ -411,7 +427,7 @@ const LanguagesTab = ({ userId }: LanguagesTabProps) => {
       {/* Language Selector — draggable to reorder */}
       {!guestMode && (
         <div className="md-lang-selector" style={{ flexWrap: "wrap" }}>
-          {langOrder.map((l) => {
+          {visibleOrder.map((l) => {
             const meta = LANGUAGE_META[l];
             const isDragging = dragLang === l;
             const isOver = dragOverLang === l;

@@ -886,7 +886,11 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   };
 
   const insertTable = () => {
-    const html = '<table style="border-collapse:collapse;width:100%;margin:8px 0"><tr><td style="border:1px solid rgba(255,255,255,0.15);padding:8px">​</td><td style="border:1px solid rgba(255,255,255,0.15);padding:8px">​</td><td style="border:1px solid rgba(255,255,255,0.15);padding:8px">​</td></tr><tr><td style="border:1px solid rgba(255,255,255,0.15);padding:8px">​</td><td style="border:1px solid rgba(255,255,255,0.15);padding:8px">​</td><td style="border:1px solid rgba(255,255,255,0.15);padding:8px">​</td></tr></table><p>​</p>';
+    const rows = 2, cols = 2;
+    const cell = '<td style="border:1px solid rgba(255,255,255,0.15);padding:8px;min-width:40px">\u200B</td>';
+    const rowHtml = `<tr>${cell.repeat(cols)}</tr>`;
+    const html = `<table class="note-table" style="border-collapse:collapse;width:100%;margin:8px 0">${rowHtml.repeat(rows)}</table><p>\u200B</p>`;
+    editorRef.current?.focus();
     document.execCommand("insertHTML", false, html);
     saveCurrentPage();
   };
@@ -927,6 +931,27 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     if (file) await uploadPastedImage(file);
   };
 
+  const INTERNAL_MIME = "application/x-mocnauki-note";
+
+  const handleEditorCopy = (e: React.ClipboardEvent<HTMLDivElement>, cut = false) => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    const range = sel.getRangeAt(0);
+    const container = document.createElement("div");
+    container.appendChild(range.cloneContents());
+    const html = container.innerHTML;
+    const text = sel.toString();
+    if (!html) return;
+    e.preventDefault();
+    e.clipboardData.setData("text/html", html);
+    e.clipboardData.setData("text/plain", text);
+    e.clipboardData.setData(INTERNAL_MIME, html);
+    if (cut) {
+      range.deleteContents();
+      saveCurrentPage();
+    }
+  };
+
   const handleEditorPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     const cd = e.clipboardData;
     if (!cd) return;
@@ -949,7 +974,14 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
         return;
       }
     }
-    // Plain text only — strip all formatting
+    // Internal copy (from our editor) → keep formatting
+    const internalHtml = cd.getData(INTERNAL_MIME);
+    if (internalHtml) {
+      e.preventDefault();
+      document.execCommand("insertHTML", false, internalHtml);
+      return;
+    }
+    // External paste → strip all formatting
     e.preventDefault();
     const text = cd.getData("text/plain");
     if (text) {
@@ -1355,11 +1387,131 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                   setPagesCollapsed(true);
                 }
               }}
-               onPaste={handleEditorPaste}
+                onPaste={handleEditorPaste}
+              onCopy={(e) => handleEditorCopy(e, false)}
+              onCut={(e) => handleEditorCopy(e, true)}
               onKeyDown={(e) => {
-                // Tab / Shift+Tab inside a list item: change nesting level, max 3 levels
                 const sel = window.getSelection();
                 if (!sel || sel.rangeCount === 0) return;
+
+                // --- Tabela: Tab/Shift+Tab/Enter nawigacja po komórkach ---
+                let tdNode: Node | null = sel.anchorNode;
+                let td: HTMLTableCellElement | null = null;
+                while (tdNode && tdNode !== editorRef.current) {
+                  if ((tdNode as HTMLElement).nodeType === 1) {
+                    const tag = (tdNode as HTMLElement).tagName;
+                    if (tag === "TD" || tag === "TH") {
+                      td = tdNode as HTMLTableCellElement;
+                      break;
+                    }
+                  }
+                  tdNode = tdNode.parentNode;
+                }
+                if (td && (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey) || e.key === "Backspace")) {
+                  const tr = td.parentElement as HTMLTableRowElement;
+                  const table = tr?.parentElement?.tagName === "TBODY"
+                    ? (tr.parentElement!.parentElement as HTMLTableElement)
+                    : (tr?.parentElement as HTMLTableElement);
+                  if (!tr || !table) return;
+                  const rows = Array.from(table.querySelectorAll("tr"));
+                  const rowIdx = rows.indexOf(tr);
+                  const cells = Array.from(tr.children) as HTMLTableCellElement[];
+                  const colIdx = cells.indexOf(td);
+                  const cols = cells.length;
+
+                  const CELL_STYLE = "border:1px solid rgba(255,255,255,0.15);padding:8px;min-width:40px";
+                  const makeCell = () => {
+                    const c = document.createElement("td");
+                    c.setAttribute("style", CELL_STYLE);
+                    c.appendChild(document.createTextNode("\u200B"));
+                    return c;
+                  };
+                  const focusCell = (cell: HTMLTableCellElement) => {
+                    const range = document.createRange();
+                    range.selectNodeContents(cell);
+                    range.collapse(false);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                  };
+                  const cellEmpty = (c: HTMLTableCellElement) => {
+                    const t = (c.textContent || "").replace(/\u200B/g, "").trim();
+                    return t.length === 0;
+                  };
+                  const insertRowAfter = (idx: number) => {
+                    const newRow = document.createElement("tr");
+                    for (let i = 0; i < cols; i++) newRow.appendChild(makeCell());
+                    const tbody = tr.parentElement as HTMLElement;
+                    if (idx + 1 >= rows.length) tbody.appendChild(newRow);
+                    else tbody.insertBefore(newRow, rows[idx + 1]);
+                    return newRow;
+                  };
+
+                  if (e.key === "Backspace") {
+                    if (!cellEmpty(td)) return; // normal backspace
+                    e.preventDefault();
+                    // Top-left of 1x1: remove whole table
+                    if (rows.length === 1 && cols === 1) {
+                      table.remove();
+                      saveCurrentPage();
+                      return;
+                    }
+                    // Topmost cell → delete column, move left
+                    if (rowIdx === 0 && cols > 1) {
+                      rows.forEach((r) => {
+                        const c = r.children[colIdx];
+                        if (c) r.removeChild(c);
+                      });
+                      const target = rows[0].children[Math.max(0, colIdx - 1)] as HTMLTableCellElement;
+                      focusCell(target);
+                      saveCurrentPage();
+                      return;
+                    }
+                    // Leftmost cell → delete row, move up
+                    if (colIdx === 0 && rows.length > 1) {
+                      tr.remove();
+                      const target = rows[rowIdx - 1].children[0] as HTMLTableCellElement;
+                      focusCell(target);
+                      saveCurrentPage();
+                      return;
+                    }
+                    // Other empty cells → cofa do poprzedniej komórki w wierszu
+                    if (colIdx > 0) focusCell(cells[colIdx - 1]);
+                    else if (rowIdx > 0) {
+                      const prev = rows[rowIdx - 1].children;
+                      focusCell(prev[prev.length - 1] as HTMLTableCellElement);
+                    }
+                    return;
+                  }
+
+                  e.preventDefault();
+                  if (e.key === "Tab" && e.shiftKey) {
+                    if (colIdx > 0) focusCell(cells[colIdx - 1]);
+                    else if (rowIdx > 0) {
+                      const prevCells = rows[rowIdx - 1].children;
+                      focusCell(prevCells[prevCells.length - 1] as HTMLTableCellElement);
+                    }
+                  } else if (e.key === "Tab") {
+                    // Rightmost column → ZAWSZE nowy wiersz wstawiony poniżej
+                    if (colIdx === cols - 1) {
+                      const newRow = insertRowAfter(rowIdx);
+                      focusCell(newRow.children[0] as HTMLTableCellElement);
+                    } else {
+                      focusCell(cells[colIdx + 1]);
+                    }
+                  } else if (e.key === "Enter") {
+                    if (rowIdx < rows.length - 1) {
+                      const next = rows[rowIdx + 1].children[colIdx] as HTMLTableCellElement | undefined;
+                      if (next) focusCell(next);
+                    } else {
+                      const newRow = insertRowAfter(rowIdx);
+                      focusCell(newRow.children[colIdx] as HTMLTableCellElement);
+                    }
+                  }
+                  saveCurrentPage();
+                  return;
+                }
+
+                // Tab / Shift+Tab inside a list item: change nesting level, max 3 levels
                 let node: Node | null = sel.anchorNode;
                 let li: HTMLElement | null = null;
                 while (node && node !== editorRef.current) {

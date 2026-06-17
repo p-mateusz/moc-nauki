@@ -1,7 +1,6 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts";
-import { encode as hexEncode } from "https://deno.land/std@0.168.0/encoding/hex.ts";
 import Stripe from "https://esm.sh/stripe@17.7.0?target=deno";
+import { getUserIdFromRequest } from "../_shared/auth.ts";
+import { createAdminClient } from "../_shared/appSettings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,46 +8,25 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hash = await crypto.subtle.digest("SHA-256", data);
-  return new TextDecoder().decode(hexEncode(new Uint8Array(hash)));
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabase = createAdminClient();
 
-    // Verify caller via JWT instead of trusting x-user-id header
-    const authHeader = req.headers.get("Authorization");
-    const token = authHeader?.replace("Bearer ", "");
-
-    if (!token) {
+    // Verify caller via JWT from the app auth backend.
+    const callerId = await getUserIdFromRequest(req);
+    if (!callerId) {
       return new Response(JSON.stringify({ error: "Missing authorization" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { data: claimsData, error: authError } = await supabase.auth.getClaims(token);
-    if (authError || !claimsData?.claims?.sub) {
-      return new Response(JSON.stringify({ error: "Invalid session" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const userId = claimsData.claims.sub;
-
     // Verify admin role
     const { data: caller } = await supabase
       .from("user_accounts")
       .select("role")
-      .eq("id", userId)
+      .eq("id", callerId)
       .single();
 
     if (!caller || caller.role !== "admin") {
@@ -87,6 +65,117 @@ Deno.serve(async (req) => {
       }));
 
       return new Response(JSON.stringify(withUsage), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // CREATE a user (admin-only, independent from public registration limits/settings)
+    if (action === "create") {
+      const email = String(body.email || "").trim().toLowerCase();
+      const name = String(body.name || "").trim();
+      const username = String(body.username || "").trim().toLowerCase();
+      const password = String(body.password || "");
+      const role = String(body.role || "uczeń");
+
+      if (!email || !name || !username || !password) {
+        return new Response(JSON.stringify({ error: "Wypełnij wszystkie pola" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Strict email format check (mirrors GoTrue) — give friendly error instead of 500
+      const emailRe = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
+      if (!emailRe.test(email)) {
+        return new Response(JSON.stringify({ error: "Nieprawidłowy format adresu email" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (password.length < 6) {
+        return new Response(JSON.stringify({ error: "Hasło musi mieć min. 6 znaków" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: existingEmail } = await supabase
+        .from("user_accounts")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+      if (existingEmail) {
+        return new Response(JSON.stringify({ error: "Ten email jest już zajęty" }), {
+          status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: existingUsername } = await supabase
+        .from("user_accounts")
+        .select("id")
+        .eq("username", username)
+        .maybeSingle();
+      if (existingUsername) {
+        return new Response(JSON.stringify({ error: "Ta nazwa użytkownika jest już zajęta" }), {
+          status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: created, error: createError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { name, username },
+      });
+
+      if (createError || !created.user?.id) {
+        const message = createError?.message || "Nie udało się utworzyć konta";
+        const lower = message.toLowerCase();
+        let status = 500;
+        let publicMessage = message;
+        if (lower.includes("already") || lower.includes("registered")) {
+          status = 409;
+          publicMessage = "Ten email jest już zajęty";
+        } else if (lower.includes("invalid format") || lower.includes("validate email")) {
+          status = 400;
+          publicMessage = "Supabase Auth odrzucił ten adres email (nieprawidłowy format lub domena bez MX). Spróbuj innego.";
+        }
+        return new Response(JSON.stringify({ error: publicMessage }), {
+          status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const userId = created.user.id;
+      const accountPayload: Record<string, unknown> = {
+        id: userId,
+        email,
+        name,
+        username,
+        role,
+      };
+      if (role === "nauczyciel") {
+        accountPayload.fee_exempt = true;
+        accountPayload.subscription_status = "exempt";
+      }
+
+      const { data: account, error: accountError } = await supabase
+        .from("user_accounts")
+        .insert(accountPayload)
+        .select("id, name, username")
+        .single();
+
+      if (accountError) {
+        await supabase.auth.admin.deleteUser(userId);
+        const duplicateUsername = accountError.code === "23505" &&
+          (accountError.message?.includes("username") || accountError.message?.includes("unique"));
+        return new Response(JSON.stringify({ error: duplicateUsername ? "Ta nazwa użytkownika jest już zajęta" : "Nie udało się zapisać konta" }), {
+          status: duplicateUsername ? 409 : 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      await supabase.from("users").insert({ id: userId, name });
+
+      return new Response(JSON.stringify({ account, userId, success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

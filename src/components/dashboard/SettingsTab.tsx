@@ -7,6 +7,8 @@ import { logoutUser } from "@/lib/authCleanup";
 
 import { setAvatarCache } from "@/lib/avatarCache";
 import { LoadingInline } from "@/components/ui/loading-state";
+import PreferencesDialog from "@/components/dashboard/PreferencesDialog";
+import CalendarConnectDialog from "@/components/dashboard/CalendarConnectDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,6 +85,8 @@ const SettingsTab = ({
 
   const [changePasswordDialogOpen, setChangePasswordDialogOpen] =
     useState(false);
+  const [preferencesDialogOpen, setPreferencesDialogOpen] = useState(false);
+  const [calendarDialogOpen, setCalendarDialogOpen] = useState(false);
 
   const [newPassword, setNewPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -325,6 +329,7 @@ const SettingsTab = ({
       {/* PROFILE CARD */}
 
       <div
+        className="settings-profile-card"
         style={{
           background:
             "linear-gradient(180deg, rgba(15,23,42,0.96), rgba(10,18,34,0.92))",
@@ -349,6 +354,7 @@ const SettingsTab = ({
         {/* BANNER */}
 
         <div
+          className="settings-profile-banner"
           style={{
             height: 210,
 
@@ -377,6 +383,7 @@ const SettingsTab = ({
           />
 
           <button
+            className="settings-profile-edit-btn"
             onClick={openEdit}
             style={{
               position: "absolute",
@@ -413,6 +420,7 @@ const SettingsTab = ({
         {/* USER */}
 
         <div
+          className="profile-header-row settings-profile-header-row"
           style={{
             padding: "0 28px 28px",
 
@@ -430,7 +438,7 @@ const SettingsTab = ({
 
           {/* AVATAR */}
 
-          <div style={{ position: "relative", flexShrink: 0 }}>
+          <div className="settings-profile-avatar-wrap" style={{ position: "relative", flexShrink: 0 }}>
             <div
               onClick={openAvatarEdit}
               onMouseEnter={(e) => {
@@ -561,9 +569,10 @@ const SettingsTab = ({
 
           {/* USER INFO */}
 
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="settings-profile-info" style={{ flex: 1, minWidth: 0 }}>
 
             <div
+              className="settings-profile-name-row"
               style={{
                 display: "flex",
 
@@ -577,6 +586,7 @@ const SettingsTab = ({
               }}
             >
               <span
+                className="settings-profile-name"
                 style={{
                   fontSize: "1.55rem",
 
@@ -589,6 +599,7 @@ const SettingsTab = ({
               </span>
 
               <span
+                className="settings-profile-role"
                 style={{
                   fontSize: ".68rem",
 
@@ -796,13 +807,17 @@ const SettingsTab = ({
             },
 
             {
-              icon: "🔔",
-              title: "Powiadomienia",
-              sub: "Zarządzaj alertami i przypomnieniami",
-              action: () =>
-                toast.info(
-                  "Powiadomienia będą dostępne wkrótce"
-                ),
+              icon: "⚙️",
+              title: "Preferencje",
+              sub: "Język notatek, widoczne języki, potwierdzenia",
+              action: () => setPreferencesDialogOpen(true),
+            },
+
+            {
+              icon: "📅",
+              title: "Połącz kalendarz",
+              sub: "Subskrybuj wydarzenia w Apple Calendar / iCloud",
+              action: () => setCalendarDialogOpen(true),
             },
 
           ].map((item, i) => (
@@ -1127,6 +1142,9 @@ const SettingsTab = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PreferencesDialog open={preferencesDialogOpen} onClose={() => setPreferencesDialogOpen(false)} />
+      <CalendarConnectDialog open={calendarDialogOpen} onClose={() => setCalendarDialogOpen(false)} />
 
     </div>
   );

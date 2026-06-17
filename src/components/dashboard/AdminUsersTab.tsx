@@ -5,12 +5,9 @@ import { useRoles, type Role } from "@/hooks/use-roles";
 
 // Helper to call admin-manage-users edge function
 const adminUpdateUser = async (id: string, updates: Record<string, any>) => {
-  const res = await supabase.functions.invoke("admin-manage-users", {
+  return invokeCloudFunction("admin-manage-users", {
     body: { action: "update", id, updates },
   });
-  if (res.error) throw new Error(res.error.message);
-  if (res.data?.error) throw new Error(res.data.error);
-  return res.data;
 };
 
 interface UserAccount {
@@ -52,12 +49,9 @@ interface UserAccount {
     const userId = localStorage.getItem("userId");
 
     const callAdminUsers = useCallback(async (body: any) => {
-      const res = await supabase.functions.invoke("admin-manage-users", {
+      return invokeCloudFunction("admin-manage-users", {
         body,
       });
-      if (res.error) throw new Error(res.error.message);
-      if (res.data?.error) throw new Error(res.data.error);
-      return res.data;
     }, []);
 
     const fetchUsers = useCallback(async () => {
@@ -199,6 +193,7 @@ interface UserAccount {
         <NewUserModal
           onClose={() => setNewModal(false)}
           onSave={fetchUsers}
+          callAdminUsers={callAdminUsers}
           allRoleNames={allRoleNames}
           customRoles={customRoles}
         />
@@ -1240,7 +1235,7 @@ const EditUserModal = ({ user, onClose, onSave, allRoleNames, customRoles }: { u
 /* ═══════════════════════════════════════════════
    NEW USER MODAL
    ═══════════════════════════════════════════════ */
-const NewUserModal = ({ onClose, onSave, allRoleNames, customRoles }: { onClose: () => void; onSave: () => void; allRoleNames: string[]; customRoles: Role[] }) => {
+const NewUserModal = ({ onClose, onSave, callAdminUsers, allRoleNames, customRoles }: { onClose: () => void; onSave: () => void; callAdminUsers: (body: any) => Promise<any>; allRoleNames: string[]; customRoles: Role[] }) => {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -1262,13 +1257,14 @@ const NewUserModal = ({ onClose, onSave, allRoleNames, customRoles }: { onClose:
 
     setCreating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("auth-register", {
-        body: { email: email.trim(), name: name.trim(), username: username.trim(), password },
+      const data = await callAdminUsers({
+        action: "create",
+        email: email.trim(),
+        name: name.trim(),
+        username: username.trim(),
+        password,
+        role,
       });
-
-      if (error) {
-        throw error;
-      }
       if (data?.error) {
         toast.error(data.error);
         return;
@@ -1278,15 +1274,6 @@ const NewUserModal = ({ onClose, onSave, allRoleNames, customRoles }: { onClose:
       if (!accountId) {
         toast.error("Nie udało się utworzyć konta");
         return;
-      }
-
-      if (role !== "uczeń" && accountId) {
-        const updates: Record<string, any> = { role };
-        if (role === "nauczyciel") {
-          updates.fee_exempt = true;
-          updates.subscription_status = "exempt";
-        }
-        await adminUpdateUser(accountId, updates);
       }
 
       toast.success(`Konto „${username}" utworzone!`);

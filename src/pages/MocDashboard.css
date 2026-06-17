@@ -167,15 +167,47 @@ body:has(.moc-dashboard) #root {
 .md-sb-tab-badge {
   margin-left: auto;
   min-width: 20px;
-  padding: 2px 7px;
+  height: 20px;
+  padding: 0 6px;
   font-size: 0.68rem;
   font-weight: 800;
   border-radius: 999px;
-  background: #2563eb;
+  background: #3b82f6;
   color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25), 0 2px 8px rgba(59, 130, 246, 0.45);
+  animation: md-badge-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes md-badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25), 0 2px 8px rgba(59, 130, 246, 0.45); }
+  50% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), 0 2px 12px rgba(59, 130, 246, 0.7); }
+}
+
+.md-hamburger {
+  position: relative;
+}
+
+.md-hamburger-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  border-radius: 999px;
+  background: #3b82f6;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px #0b1226, 0 2px 8px rgba(59, 130, 246, 0.55);
+  pointer-events: none;
+  animation: md-badge-pulse 1.8s ease-in-out infinite;
 }
 
 .md-sb-item.guest-disabled {
@@ -1105,7 +1137,7 @@ body:has(.moc-dashboard) #root {
 .mini-day.other-month{opacity:.3}
 .mini-day.today{background:#6366f1;color:#fff;font-weight:800}
 .mini-day.selected{background:rgba(99,102,241,0.3);color:#c4b5fd;font-weight:700}
-.mini-day.has-event::after{content:'';display:block;width:3px;height:3px;background:#60a5fa;border-radius:50%;margin:0 auto;margin-top:-2px}
+/* event dots removed per user request */
 
 /* Calendars list */
 .cal-section-title{padding:10px 14px 4px;font-size:.62rem;font-weight:800;color:#8899b4;text-transform:uppercase;letter-spacing:1px;margin-top:6px}
@@ -1973,11 +2005,16 @@ body:has(.moc-dashboard) #root {
     backdrop-filter: blur(3px);
     z-index: 90;
   }
+  /* Tighter logo padding inside the open mobile drawer so "Moc Nauki" sits
+     close under the system bar without overlapping it. */
+  .md-sidebar .md-sb-logo {
+    padding: 10px 16px 12px;
+  }
   .md-mobile-header {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 16px;
+    padding: 8px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(6, 13, 26, 0.95);
     backdrop-filter: blur(12px);
@@ -2338,7 +2375,83 @@ body:has(.moc-dashboard) #root {
     padding: 16px 14px;
     width: calc(100vw - 20px);
   }
+
+  /* Mobile week view: horizontal scroller hides native scrollbar */
+  .week-hscroll::-webkit-scrollbar { display: none; }
+  .week-hscroll { scrollbar-width: none; }
+  .week-day-header { border-right: 1px solid rgba(255,255,255,0.08); }
 }
+
+/* ── Mobile week slider (floating pill over calendar) ── */
+.week-mobile-slider-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(8px + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  z-index: 5;
+}
+.week-mobile-slider-pill {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 14px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(15,23,42,0.78), rgba(30,20,60,0.78));
+  border: 1px solid rgba(139,92,246,0.55);
+  box-shadow:
+    0 8px 28px rgba(0,0,0,0.55),
+    0 0 22px rgba(139,92,246,0.28),
+    0 0 0 1px rgba(255,255,255,0.05) inset;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.week-mobile-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 120px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(99,102,241,0.5), rgba(139,92,246,0.5));
+  box-shadow: 0 0 8px rgba(139,92,246,0.4);
+  outline: none;
+  cursor: pointer;
+  padding: 0;
+  border: none;
+}
+.week-mobile-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #a78bfa, #6366f1 60%, #4338ca);
+  border: 1.5px solid rgba(255,255,255,0.9);
+  box-shadow:
+    0 0 0 3px rgba(139,92,246,0.18),
+    0 0 14px rgba(139,92,246,0.7),
+    0 3px 10px rgba(0,0,0,0.5);
+  cursor: pointer;
+  transition: transform .15s;
+}
+.week-mobile-slider::-webkit-slider-thumb:active { transform: scale(1.18); }
+.week-mobile-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #a78bfa, #6366f1 60%, #4338ca);
+  border: 1.5px solid rgba(255,255,255,0.9);
+  box-shadow:
+    0 0 0 3px rgba(139,92,246,0.18),
+    0 0 14px rgba(139,92,246,0.7),
+    0 3px 10px rgba(0,0,0,0.5);
+  cursor: pointer;
+}
+
 
 /* ═══════════════════════════
    TESTS & RANKING STYLES
@@ -2638,6 +2751,14 @@ body:has(.moc-dashboard) #root {
 .ts-chat-area{flex:1;background:rgba(14,24,48,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:14px;display:flex;flex-direction:column;overflow:hidden}
 .ts-back-btn{display:none;align-items:center;gap:8px;padding:10px 16px;font-size:.85rem;font-weight:700;color:#60a5fa;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.08);transition:.2s}
 .ts-back-btn:hover{background:rgba(59,130,246,0.08)}
+.ts-user-meta-actions{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.ts-user-unread-badge{min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:#3b82f6;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:900;line-height:1;box-shadow:0 0 0 2px rgba(59,130,246,0.22),0 4px 14px rgba(59,130,246,0.48);animation:md-badge-pulse 1.8s ease-in-out infinite}
+
+/* Message actions: show only on hover (or when menu open) on pointer devices; always visible on touch */
+.ts-message-bubble .ts-msg-actions{opacity:0;transition:opacity .15s ease;pointer-events:none}
+.ts-message-bubble:hover .ts-msg-actions,.ts-message-bubble .ts-msg-actions.active{opacity:1;pointer-events:auto}
+@media (hover:none){.ts-message-bubble .ts-msg-actions{opacity:.55;pointer-events:auto}}
+
 
 /* Empty chat state (centered message inside chat area) */
 .ts-empty-state{display:flex;align-items:center;justify-content:center;height:100%;width:100%;color:#8899b4;font-size:.9rem;text-align:center;padding:12px}
@@ -2653,14 +2774,14 @@ body:has(.moc-dashboard) #root {
    ═══════════════════════════════════════════════ */
 @media (max-width: 768px) {
   /* ── Teacher/Students ── */
-  .ts-layout{flex-direction:column;height:auto;gap:0}
-  .ts-user-list{width:100%;border-radius:0;border:none;border-bottom:1px solid rgba(255,255,255,0.08);max-height:calc(100vh - 120px)}
-  .ts-chat-area{border-radius:0;border:none;flex:1;min-height:calc(100vh - 120px)}
+  .ts-layout{flex-direction:column;height:100% !important;min-height:0;gap:0}
+  .ts-user-list{width:100%;border-radius:0;border:none;border-bottom:1px solid rgba(255,255,255,0.08);flex:1 1 auto;min-height:0;max-height:none}
+  .ts-chat-area{border-radius:0;border:none;flex:1 1 auto;min-height:0}
   .ts-hidden-mobile{display:none !important}
   .ts-back-btn{display:flex}
 
   /* ── Calendar ── */
-  .cal-sidebar-panel{position:fixed;top:0;left:0;bottom:0;width:260px;z-index:110;transform:translateX(-100%);transition:transform .3s ease}
+  .cal-sidebar-panel{position:fixed;top:0;left:0;bottom:0;width:260px;z-index:110;transform:translateX(-100%);transition:transform .3s ease;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);overflow-y:auto;-webkit-overflow-scrolling:touch}
   .cal-sidebar-panel.cal-sb-open{transform:translateX(0)}
   .cal-sb-toggle{display:flex}
   .cal-sidebar-overlay{display:block;position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(3px);z-index:105}
@@ -2791,4 +2912,78 @@ body:has(.moc-dashboard) #root {
 @keyframes mdDeletePulse {
   0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248,113,113,0.5); }
   50% { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(248,113,113,0); }
+}
+
+/* ─── Mobile: profile header doesn't overlap banner edit button ─── */
+@media (max-width: 520px) {
+  .profile-header-row {
+    margin-top: -40px !important;
+    padding: 0 16px 16px !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  /* Avatar (first child) keeps overlap into the banner */
+  .profile-header-row > div:first-child {
+    margin-top: 0 !important;
+  }
+  /* Text column drops below banner so it can't collide with the
+     "Edytuj profil" button or the role badge */
+  .profile-header-row > div:nth-child(2) {
+    flex-basis: 100% !important;
+    width: 100% !important;
+    margin-top: 48px !important;
+  }
+
+  .settings-profile-card {
+    border-radius: 18px !important;
+  }
+
+  .settings-profile-banner {
+    height: 168px !important;
+    border-radius: 18px 18px 0 0 !important;
+  }
+
+  .settings-profile-edit-btn {
+    top: 12px !important;
+    right: 12px !important;
+    bottom: auto !important;
+    max-width: calc(100% - 24px) !important;
+  }
+
+  .settings-profile-header-row {
+    display: block !important;
+    margin-top: -44px !important;
+    padding: 0 16px 18px !important;
+  }
+
+  .settings-profile-header-row > .settings-profile-avatar-wrap {
+    width: 104px !important;
+    margin: 0 0 14px !important;
+  }
+
+  .settings-profile-header-row > .settings-profile-info {
+    width: 100% !important;
+    margin-top: 0 !important;
+    flex-basis: auto !important;
+    clear: both !important;
+  }
+
+  .settings-profile-name-row {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .settings-profile-name {
+    max-width: 100% !important;
+    font-size: 1.35rem !important;
+    line-height: 1.15 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .settings-profile-role {
+    flex-shrink: 0 !important;
+    margin-top: 2px !important;
+  }
 }

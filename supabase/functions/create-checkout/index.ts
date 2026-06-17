@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       customer: customerId ?? undefined,
       customer_email: customerId ? undefined : account?.email,
       line_items: [{ price: plan === "30" ? PRICE_30 : PRICE_90, quantity: 1 }],
-      success_url: `${origin}/dashboard?checkout=success`,
+      success_url: `${origin}/pricing?checkout=success`,
       cancel_url: `${origin}/pricing?checkout=cancelled`,
       metadata: { user_id: userId, plan },
       subscription_data: plan === "30" ? { metadata: { user_id: userId, plan: "30" } } : undefined,
