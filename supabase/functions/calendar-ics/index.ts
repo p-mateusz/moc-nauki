@@ -54,9 +54,9 @@ serve(async (req) => {
 
     const adminSb = createAdminClient();
     const { data: profile, error: profileError } = await adminSb
-      .from("user_profiles")
+      .from("user_calendar_feeds")
       .select("user_id")
-      .eq("calendar_feed_token", token)
+      .eq("token", token)
       .maybeSingle();
 
     if (profileError || !profile) {
