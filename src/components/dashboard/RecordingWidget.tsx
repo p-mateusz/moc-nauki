@@ -272,6 +272,29 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
 
  useEffect(() => { return () => stopTimer(); }, []);
 
+ // Wznów Wake Lock po powrocie z tła (OS automatycznie go zwalnia).
+ useEffect(() => {
+   const onVis = () => {
+     if (document.visibilityState === "visible" && (isActive || sending) && !wakeLockRef.current) {
+       requestWakeLock();
+     }
+   };
+   document.addEventListener("visibilitychange", onVis);
+   return () => document.removeEventListener("visibilitychange", onVis);
+ }, [isActive, sending]);
+
+ // Ostrzeżenie przed zamknięciem karty w trakcie nagrywania/wysyłki.
+ useEffect(() => {
+   if (!isActive && !sending) return;
+   const onBeforeUnload = (e: BeforeUnloadEvent) => {
+     e.preventDefault();
+     e.returnValue = "Trwa nagrywanie lekcji — opuszczenie strony przerwie nagranie.";
+     return e.returnValue;
+   };
+   window.addEventListener("beforeunload", onBeforeUnload);
+   return () => window.removeEventListener("beforeunload", onBeforeUnload);
+ }, [isActive, sending]);
+
  if (!showWidget) return null;
 
  const recTime = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
