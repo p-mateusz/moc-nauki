@@ -810,6 +810,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_calendar_feeds: {
+        Row: {
+          created_at: string
+          token: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          token?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          token?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_calendars: {
         Row: {
           color: string
@@ -846,7 +867,6 @@ export type Database = {
           avatar_url: string | null
           banner_color: string | null
           bio: string | null
-          calendar_feed_token: string | null
           created_at: string | null
           id: string
           interests: string[] | null
@@ -861,7 +881,6 @@ export type Database = {
           avatar_url?: string | null
           banner_color?: string | null
           bio?: string | null
-          calendar_feed_token?: string | null
           created_at?: string | null
           id?: string
           interests?: string[] | null
@@ -876,7 +895,6 @@ export type Database = {
           avatar_url?: string | null
           banner_color?: string | null
           bio?: string | null
-          calendar_feed_token?: string | null
           created_at?: string | null
           id?: string
           interests?: string[] | null
