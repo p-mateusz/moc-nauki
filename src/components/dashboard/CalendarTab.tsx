@@ -412,6 +412,13 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Reload when external sources (e.g. lesson recording webhook) add new events
+  useEffect(() => {
+    const handler = () => loadData();
+    window.addEventListener("calendarEventsExternallyAdded", handler);
+    return () => window.removeEventListener("calendarEventsExternallyAdded", handler);
+  }, [loadData]);
+
   // ── External events (from notes) ──
   useEffect(() => {
     if (!externalEvents?.length || !calendars.length) return;

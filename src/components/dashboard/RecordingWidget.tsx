@@ -229,7 +229,71 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
    }
  };
 
- const sendToN8n = async (blob: Blob, recSeconds: number) => {
+  const insertEventsFromWebhook = async (json: any, fallbackTitle: string) => {
+    const userId = localStorage.getItem("userId");
+    if (!userId || userId === "guest") return;
+
+    const normalize = (e: any) => {
+      if (!e || typeof e !== "object") return null;
+      const name = (e.name || e.title || e.eventName || "").toString().trim();
+      const date = (e.eventDate || e.date || e.startDate || "").toString().trim();
+      if (!name || !date) return null;
+      // accept YYYY-MM-DD or DD.MM.YYYY
+      let isoDate = date;
+      const m = date.match(/^(\d{2})[.\-\/](\d{2})[.\-\/](\d{4})$/);
+      if (m) isoDate = `${m[3]}-${m[2]}-${m[1]}`;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return null;
+      const time = (e.eventTime || e.time || e.startTime || "").toString().trim();
+      const description = (e.description || e.descripiton || e.desc || "").toString().trim();
+      return { name, date: isoDate, time, description };
+    };
+
+    const candidates: any[] = [];
+    if (Array.isArray(json.events)) candidates.push(...json.events);
+    if (json.event) candidates.push(json.event);
+    if (Array.isArray(json)) candidates.push(...json);
+    // single top-level event shape
+    if (json.eventDate || json.eventTime || (json.name && json.date)) candidates.push(json);
+
+    const events = candidates.map(normalize).filter(Boolean) as Array<{ name: string; date: string; time: string; description: string }>;
+    if (events.length === 0) return;
+
+    // Get default calendar
+    const { data: cals } = await supabase.from("user_calendars").select("id").eq("user_id", userId).order("sort_order").limit(1);
+    const calendarId = cals?.[0]?.id || null;
+
+    const rows = events.map(e => ({
+      user_id: userId,
+      name: e.name,
+      type: "",
+      subject: "",
+      date: e.date,
+      time: e.time || "",
+      end_date: e.date,
+      end_time: "",
+      all_day: !e.time,
+      location: "",
+      description: e.description,
+      note: "",
+      repeat_type: "none",
+      repeat_end: "",
+      source: "lesson-recording",
+      source_title: fallbackTitle,
+      auto_added: true,
+      calendar_id: calendarId,
+    }));
+
+    const { error } = await supabase.from("calendar_events").insert(rows);
+    if (error) {
+      console.error("calendar_events insert error:", error);
+      toast.warning("Notatka zapisana, ale nie udało się dodać wydarzenia do kalendarza");
+      return;
+    }
+    window.dispatchEvent(new CustomEvent("calendarEventsExternallyAdded"));
+    toast.success(events.length > 1 ? `📅 Dodano ${events.length} wydarzeń do kalendarza` : "📅 Dodano wydarzenie do kalendarza");
+  };
+
+  const sendToN8n = async (blob: Blob, recSeconds: number) => {
    setSending(true);
    const duration = `${Math.floor(recSeconds / 60)}:${String(recSeconds % 60).padStart(2, "0")}`;
    toast.info("⏳ Wysyłam nagranie…");
@@ -243,22 +307,26 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
        formData.append("noteLanguageMode", userPrefs.noteLanguageMode);
        formData.append("noteLanguageHint", notePreferenceHint(userPrefs.noteLanguageMode));
        const resultText = await invokeCloudFunction<string>("proxy-n8n-audio", { body: formData, responseType: "text" });
-       let title = "Notatka z lekcji";
-       let content = resultText;
-       try {
-         const json = JSON.parse(resultText);
-         if (json.title && json.title.trim()) title = cleanTitle(json.title);
-         if (json.content) content = json.content;
-       } catch {}
-       const finalHtml = content;
-        const addNote = (window as any).__notesTab_addNote;
-        const snap = targetSelectionRef.current;
-        if (addNote) await addNote(title, finalHtml, snap?.nbId, snap?.secId);
-        else await persistNoteDirectly(title, finalHtml);
-        targetSelectionRef.current = null;
-       setSending(false);
-       toast.success("✓ Notatka gotowa!");
-       return;
+        let title = "Notatka z lekcji";
+        let content = resultText;
+        let parsedJson: any = null;
+        try {
+          parsedJson = JSON.parse(resultText);
+          if (parsedJson.title && parsedJson.title.trim()) title = cleanTitle(parsedJson.title);
+          if (parsedJson.content) content = parsedJson.content;
+        } catch {}
+        const finalHtml = content;
+         const addNote = (window as any).__notesTab_addNote;
+         const snap = targetSelectionRef.current;
+         if (addNote) await addNote(title, finalHtml, snap?.nbId, snap?.secId);
+         else await persistNoteDirectly(title, finalHtml);
+         targetSelectionRef.current = null;
+        if (parsedJson) {
+          try { await insertEventsFromWebhook(parsedJson, title); } catch (e) { console.error("insertEventsFromWebhook failed:", e); }
+        }
+        setSending(false);
+        toast.success("✓ Notatka gotowa!");
+        return;
      } catch (err: any) {
        lastError = err;
        console.error(err);
