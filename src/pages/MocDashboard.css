@@ -2917,7 +2917,20 @@ body:has(.moc-dashboard) #root {
 /* ─── Mobile: profile header doesn't overlap banner edit button ─── */
 @media (max-width: 520px) {
   .profile-header-row {
-    margin-top: 12px !important;
+    margin-top: -40px !important;
     padding: 0 16px 16px !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  /* Avatar (first child) keeps overlap into the banner */
+  .profile-header-row > div:first-child {
+    margin-top: 0 !important;
+  }
+  /* Text column drops below banner so it can't collide with the
+     "Edytuj profil" button or the role badge */
+  .profile-header-row > div:nth-child(2) {
+    flex-basis: 100% !important;
+    width: 100% !important;
+    margin-top: 48px !important;
   }
 }
