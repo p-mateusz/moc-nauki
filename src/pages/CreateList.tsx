@@ -208,6 +208,8 @@ const CreateList = () => {
         });
         toast.success(`${data.definitions.length} ${t("wordsAdded", lang)}`);
         setBulkText("");
+        // Auto-przełącz na zakładkę ręcznej edycji, aby pokazać wygenerowaną listę słów
+        setActiveTab("manual");
       }
     } catch (e: any) {
       clearInterval(progressInterval);
