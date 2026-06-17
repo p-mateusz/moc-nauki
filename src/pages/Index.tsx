@@ -218,7 +218,7 @@ const Index = () => {
             style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24, maxWidth: 900, margin: "0 auto" }}
           >
             {[
-              { icon: "✉️", label: "E-mail", val: "kontakt@mocnauki.site", href: null },
+              { icon: "✉️", label: "E-mail", val: "kontakt@moc-nauki.pl", href: null },
               { icon: "📱", label: "Instagram", val: "@mocnauki_official", href: "https://www.instagram.com/mocnauki_official?igsh=cTBrMW50am5wdXR6&utm_source=qr" },
               { icon: "⏳", label: "Czat w aplikacji", val: "Dostępny 24/7", href: null },
             ].map((item, i) => (
