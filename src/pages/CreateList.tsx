@@ -185,14 +185,20 @@ const CreateList = () => {
     setBulkLoading(true);
     setGenProgress(0);
     setGenMessage("Wysyłanie słów do AI...");
+    // Estymowany czas: ~2.5s na słowo, min 25s, max 110s (limit edge function = 120s)
+    const estimatedMs = Math.min(110000, Math.max(25000, lines.length * 2500));
+    const startedAt = Date.now();
     const progressInterval = setInterval(() => {
-      setGenProgress((prev) => {
-        if (prev < 30) { setGenMessage("Wysyłanie słów do AI..."); return prev + 2; }
-        if (prev < 60) { setGenMessage("AI generuje definicje..."); return prev + 1; }
-        if (prev < 85) { setGenMessage("Prawie gotowe, jeszcze chwilka..."); return prev + 0.3; }
-        return prev;
-      });
-    }, 1000);
+      const elapsed = Date.now() - startedAt;
+      // Funkcja asymptotyczna — szybko do ~70%, potem coraz wolniej, nigdy nie przekracza 95%
+      const ratio = 1 - Math.exp(-2.2 * (elapsed / estimatedMs));
+      const target = Math.min(95, ratio * 95);
+      setGenProgress((prev) => (target > prev ? target : prev));
+      if (elapsed < estimatedMs * 0.15) setGenMessage("Wysyłanie słów do AI...");
+      else if (elapsed < estimatedMs * 0.85) setGenMessage("AI generuje definicje...");
+      else setGenMessage("Prawie gotowe, jeszcze chwilka...");
+    }, 400);
+
     try {
       const data = await invokeCloudFunction<{ definitions?: { word: string; definition: string }[] }>(
         "generate-definitions",
