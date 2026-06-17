@@ -29,8 +29,8 @@ const pageStyle: React.CSSProperties = {
   color: "#f1f5f9",
   position: "relative",
   overflow: "hidden",
-  paddingTop: "env(safe-area-inset-top)",
 };
+
 
 const blob1Style: React.CSSProperties = {
   position: "fixed",
@@ -964,6 +964,7 @@ const Practice = () => {
       <div style={{ position: "relative", zIndex: 1 }}>
         {/* HEADER */}
         <header
+          className="safe-area-top"
           style={{
             borderBottom: "1px solid rgba(255,255,255,0.06)",
             background: "rgba(6,13,26,0.82)",
@@ -974,6 +975,7 @@ const Practice = () => {
             zIndex: 10,
           }}
         >
+
           <div
             style={{
               maxWidth: 760,

@@ -110,7 +110,12 @@
       /* padding-top intentionally omitted — each page handles its own
          safe-area-inset-top to avoid stacking with fixed headers/sidebars */
     }
+
+    .safe-area-top {
+      padding-top: env(safe-area-inset-top) !important;
+    }
   }
+
 
   @media (max-width: 768px) {
     html::-webkit-scrollbar,

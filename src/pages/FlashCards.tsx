@@ -431,7 +431,8 @@ const FlashCards = () => {
   if (!mode) {
     return (
       <div className="min-h-screen bg-[#070b14] text-white">
-        <header className="sticky top-0 z-30 border-b border-white/10 bg-[#070b14]/80 backdrop-blur-xl">
+        <header className="safe-area-top sticky top-0 z-30 border-b border-white/10 bg-[#070b14]/80 backdrop-blur-xl">
+
           <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-4">
             <Button
               variant="ghost"
@@ -609,7 +610,7 @@ const FlashCards = () => {
 
   return (
     <div className="min-h-screen bg-[#070b14] text-white">
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#070b14]/80 backdrop-blur-xl">
+      <header className="safe-area-top sticky top-0 z-30 border-b border-white/10 bg-[#070b14]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-4">
           <Button
             variant="ghost"

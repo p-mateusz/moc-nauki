@@ -351,8 +351,8 @@ const Quiz = () => {
     color: "#f1f5f9",
     position: "relative",
     overflow: "hidden",
-    paddingTop: "env(safe-area-inset-top)",
   };
+
 
   const blob1Style: React.CSSProperties = {
     position: "fixed",
@@ -473,7 +473,7 @@ const Quiz = () => {
         <div style={blob1Style} />
         <div style={blob2Style} />
         <div style={{ position: "relative", zIndex: 1 }}>
-          <header style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(6,13,26,0.8)", backdropFilter: "blur(12px)", padding: "0 20px" }}>
+          <header className="safe-area-top" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(6,13,26,0.8)", backdropFilter: "blur(12px)", padding: "0 20px", position: "sticky", top: 0, zIndex: 10 }}>
             <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", alignItems: "center", gap: 12, padding: "16px 0" }}>
               <button style={backBtnStyle} onClick={() => navigate("/dashboard")}>
                 <ArrowLeft size={18} />
@@ -514,13 +514,18 @@ const Quiz = () => {
 
         <div style={{ position: "relative", zIndex: 1 }}>
           <header
+            className="safe-area-top"
             style={{
               borderBottom: "1px solid rgba(255,255,255,0.06)",
               background: "rgba(6,13,26,0.8)",
               backdropFilter: "blur(12px)",
               padding: "0 20px",
+              position: "sticky",
+              top: 0,
+              zIndex: 10,
             }}
           >
+
             <div
               style={{
                 maxWidth: 680,
@@ -874,6 +879,7 @@ const Quiz = () => {
 
       <div style={{ position: "relative", zIndex: 1 }}>
         <header
+          className="safe-area-top"
           style={{
             borderBottom: "1px solid rgba(255,255,255,0.06)",
             background: "rgba(6,13,26,0.8)",
@@ -884,6 +890,7 @@ const Quiz = () => {
             zIndex: 10,
           }}
         >
+
           <div
             style={{
               maxWidth: 680,

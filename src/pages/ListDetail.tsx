@@ -391,6 +391,7 @@ const ListDetail = () => {
       <div style={{ position: "relative", zIndex: 1 }}>
         {/* HEADER */}
         <header
+          className="safe-area-top"
           style={{
             position: "sticky",
             top: 0,
@@ -400,6 +401,7 @@ const ListDetail = () => {
             borderBottom: "1px solid rgba(255,255,255,0.06)",
           }}
         >
+
           <div
             style={{
               maxWidth: 900,
