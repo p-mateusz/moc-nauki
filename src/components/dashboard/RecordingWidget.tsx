@@ -243,22 +243,26 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
        formData.append("noteLanguageMode", userPrefs.noteLanguageMode);
        formData.append("noteLanguageHint", notePreferenceHint(userPrefs.noteLanguageMode));
        const resultText = await invokeCloudFunction<string>("proxy-n8n-audio", { body: formData, responseType: "text" });
-       let title = "Notatka z lekcji";
-       let content = resultText;
-       try {
-         const json = JSON.parse(resultText);
-         if (json.title && json.title.trim()) title = cleanTitle(json.title);
-         if (json.content) content = json.content;
-       } catch {}
-       const finalHtml = content;
-        const addNote = (window as any).__notesTab_addNote;
-        const snap = targetSelectionRef.current;
-        if (addNote) await addNote(title, finalHtml, snap?.nbId, snap?.secId);
-        else await persistNoteDirectly(title, finalHtml);
-        targetSelectionRef.current = null;
-       setSending(false);
-       toast.success("✓ Notatka gotowa!");
-       return;
+        let title = "Notatka z lekcji";
+        let content = resultText;
+        let parsedJson: any = null;
+        try {
+          parsedJson = JSON.parse(resultText);
+          if (parsedJson.title && parsedJson.title.trim()) title = cleanTitle(parsedJson.title);
+          if (parsedJson.content) content = parsedJson.content;
+        } catch {}
+        const finalHtml = content;
+         const addNote = (window as any).__notesTab_addNote;
+         const snap = targetSelectionRef.current;
+         if (addNote) await addNote(title, finalHtml, snap?.nbId, snap?.secId);
+         else await persistNoteDirectly(title, finalHtml);
+         targetSelectionRef.current = null;
+        if (parsedJson) {
+          try { await insertEventsFromWebhook(parsedJson, title); } catch (e) { console.error("insertEventsFromWebhook failed:", e); }
+        }
+        setSending(false);
+        toast.success("✓ Notatka gotowa!");
+        return;
      } catch (err: any) {
        lastError = err;
        console.error(err);
