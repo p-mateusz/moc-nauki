@@ -2933,4 +2933,57 @@ body:has(.moc-dashboard) #root {
     width: 100% !important;
     margin-top: 48px !important;
   }
+
+  .settings-profile-card {
+    border-radius: 18px !important;
+  }
+
+  .settings-profile-banner {
+    height: 168px !important;
+    border-radius: 18px 18px 0 0 !important;
+  }
+
+  .settings-profile-edit-btn {
+    top: 12px !important;
+    right: 12px !important;
+    bottom: auto !important;
+    max-width: calc(100% - 24px) !important;
+  }
+
+  .settings-profile-header-row {
+    display: block !important;
+    margin-top: -44px !important;
+    padding: 0 16px 18px !important;
+  }
+
+  .settings-profile-header-row > .settings-profile-avatar-wrap {
+    width: 104px !important;
+    margin: 0 0 14px !important;
+  }
+
+  .settings-profile-header-row > .settings-profile-info {
+    width: 100% !important;
+    margin-top: 0 !important;
+    flex-basis: auto !important;
+    clear: both !important;
+  }
+
+  .settings-profile-name-row {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .settings-profile-name {
+    max-width: 100% !important;
+    font-size: 1.35rem !important;
+    line-height: 1.15 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .settings-profile-role {
+    flex-shrink: 0 !important;
+    margin-top: 2px !important;
+  }
 }
