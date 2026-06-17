@@ -861,6 +861,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_profile_private: {
+        Row: {
+          created_at: string
+          preferences: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          preferences?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          preferences?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           avatar_color: string | null
@@ -871,7 +892,6 @@ export type Database = {
           id: string
           interests: string[] | null
           location: string | null
-          preferences: Json
           updated_at: string | null
           user_id: string
           website: string | null
@@ -885,7 +905,6 @@ export type Database = {
           id?: string
           interests?: string[] | null
           location?: string | null
-          preferences?: Json
           updated_at?: string | null
           user_id: string
           website?: string | null
@@ -899,7 +918,6 @@ export type Database = {
           id?: string
           interests?: string[] | null
           location?: string | null
-          preferences?: Json
           updated_at?: string | null
           user_id?: string
           website?: string | null
