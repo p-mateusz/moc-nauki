@@ -243,7 +243,13 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
       const m = date.match(/^(\d{2})[.\-\/](\d{2})[.\-\/](\d{4})$/);
       if (m) isoDate = `${m[3]}-${m[2]}-${m[1]}`;
       if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return null;
-      const time = (e.eventTime || e.time || e.startTime || "").toString().trim();
+      let time = (e.eventTime || e.time || e.startTime || "").toString().trim();
+      // Treat all-day markers ("cd", "cały dzień", "all-day", "całodniowe", "-") as no time
+      const lower = time.toLowerCase();
+      const allDayMarkers = ["cd", "c.d.", "cały dzień", "caly dzien", "all-day", "all day", "allday", "całodniowe", "calodniowe", "całodzienne", "calodzienne", "-", "—", "brak"];
+      if (allDayMarkers.includes(lower)) time = "";
+      // Also blank out anything that's not HH:MM(:SS) format
+      if (time && !/^\d{1,2}:\d{2}(:\d{2})?$/.test(time)) time = "";
       const description = (e.description || e.descripiton || e.desc || "").toString().trim();
       return { name, date: isoDate, time, description };
     };
