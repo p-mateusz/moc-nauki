@@ -51,6 +51,8 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
   const chunksRef = useRef<Blob[]>([]);
   const intervalRef = useRef<any>(null);
   const targetSelectionRef = useRef<{ nbId: string; secId: string; nbName?: string; secName?: string } | null>(null);
+  const wakeLockRef = useRef<any>(null);
+  const keepAliveAudioRef = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode } | null>(null);
  const isActive = state !== "idle";
 
  const isGuest = (() => {
