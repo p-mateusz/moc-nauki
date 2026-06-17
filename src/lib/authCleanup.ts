@@ -36,19 +36,7 @@ export async function logoutUser() {
   //    poprzedniego użytkownika do nowo zalogowanego konta na tym urządzeniu.
   try { resetQueryCache(); } catch (e) { console.warn("resetQueryCache failed", e); }
 
-  // 2. Usuń wpis bieżącego urządzenia z user_sessions (zwalnia 1 z 2 slotów).
-  try {
-    const userId = localStorage.getItem("userId");
-    const deviceId = localStorage.getItem("mocnauki_device_id");
-    if (userId && userId !== "guest" && deviceId) {
-      await Promise.race([
-        supabase.from("user_sessions").delete().eq("user_id", userId).eq("device_id", deviceId),
-        new Promise(r => setTimeout(r, 1500)),
-      ]);
-    }
-  } catch (e) { console.warn("user_sessions cleanup failed", e); }
-
-  // 3. Czyść localStorage natychmiast — nie czekaj na serwer
+  // 2. Czyść localStorage natychmiast — nie czekaj na serwer
   clearAuthStorage();
 
   // Wyloguj z Supabase w tle z krótkim timeout

@@ -2,10 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
-import { supabase, invokeCloudFunction } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { getSessionSafe } from "@/lib/authSession";
-import { getDeviceId } from "@/lib/deviceId";
-import { clearAuthStorage } from "@/lib/authCleanup";
 import { toast } from "sonner";
 import { Seo } from "@/components/Seo";
 
@@ -59,21 +57,6 @@ const Login = () => {
           refresh_token: data.session.refresh_token,
         });
       }
-
-      // Rejestracja urządzenia — limit 2 jednoczesnych sesji per konto.
-      try {
-        await invokeCloudFunction("register-device-session", {
-          body: { device_id: getDeviceId(), user_agent: navigator.userAgent },
-        });
-      } catch (devErr: any) {
-        const msg = devErr?.message || "";
-        // Limit przekroczony — wyloguj i pokaż komunikat, nie wpuszczaj do aplikacji.
-        await supabase.auth.signOut().catch(() => {});
-        clearAuthStorage();
-        toast.error(msg.includes("limit") ? msg : "Przekroczono limit 2 urządzeń zalogowanych jednocześnie. Wyloguj się z innego urządzenia, aby kontynuować.");
-        return;
-      }
-
       localStorage.removeItem("guestMode");
       localStorage.removeItem("guestListId");
       localStorage.setItem("userId", data.userId);

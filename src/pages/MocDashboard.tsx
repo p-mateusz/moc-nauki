@@ -236,25 +236,6 @@ const MocDashboard = () => {
       .catch(() => {});
   }, []);
 
-  // Heartbeat sesji urządzenia — odświeża last_seen_at w user_sessions co 10 min,
-  // dzięki czemu aktywne urządzenia nie wypadają z limitu 2 jednoczesnych logowań.
-  useEffect(() => {
-    if (guestMode || !userId) return;
-    let cancelled = false;
-    const ping = async () => {
-      try {
-        const { getDeviceId } = await import("@/lib/deviceId");
-        const { invokeCloudFunction } = await import("@/lib/supabase");
-        await invokeCloudFunction("register-device-session", {
-          body: { device_id: getDeviceId(), user_agent: navigator.userAgent },
-        });
-      } catch (e) { /* ignore transient errors */ }
-    };
-    ping();
-    const interval = setInterval(() => { if (!cancelled) ping(); }, 10 * 60 * 1000);
-    return () => { cancelled = true; clearInterval(interval); };
-  }, [userId, guestMode]);
-
   // Paywall — admin/nauczyciel zawsze, uczeń tylko z aktywnym dostępem
   const access = useAccessGuard();
   useEffect(() => {
