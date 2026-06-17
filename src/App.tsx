@@ -42,6 +42,9 @@ const App = () => {
     // zapytania i pozwolić klientowi samemu odświeżyć token przy requestach.
     const reviveSession = () => {
       if (document.visibilityState !== "visible") return;
+      // Nie ruszaj niczego, gdy trwa nagrywanie lekcji — żeby nie zerwać
+      // strumienia mikrofonu ani nie wywołać refetcha, który zatrzyma audio.
+      if ((window as any).__recordingActive) return;
       window.setTimeout(() => {
         queryClient.resumePausedMutations().catch(() => {});
         queryClient.invalidateQueries({ refetchType: "active" });
