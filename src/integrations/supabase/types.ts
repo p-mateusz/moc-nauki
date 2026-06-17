@@ -1079,6 +1079,56 @@ export type Database = {
         }
         Relationships: []
       }
+      user_profiles_public: {
+        Row: {
+          avatar_color: string | null
+          avatar_url: string | null
+          banner_color: string | null
+          bio: string | null
+          created_at: string | null
+          id: string | null
+          interests: string[] | null
+          location: string | null
+          updated_at: string | null
+          user_id: string | null
+          website: string | null
+        }
+        Insert: {
+          avatar_color?: string | null
+          avatar_url?: string | null
+          banner_color?: string | null
+          bio?: string | null
+          created_at?: string | null
+          id?: string | null
+          interests?: string[] | null
+          location?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          website?: string | null
+        }
+        Update: {
+          avatar_color?: string | null
+          avatar_url?: string | null
+          banner_color?: string | null
+          bio?: string | null
+          created_at?: string | null
+          id?: string | null
+          interests?: string[] | null
+          location?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       add_test_solution: {
