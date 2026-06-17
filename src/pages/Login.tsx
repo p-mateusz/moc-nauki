@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
-import { supabase } from "@/lib/supabase";
+import { supabase, invokeCloudFunction } from "@/lib/supabase";
 import { getSessionSafe } from "@/lib/authSession";
+import { getDeviceId } from "@/lib/deviceId";
+import { clearAuthStorage } from "@/lib/authCleanup";
 import { toast } from "sonner";
 import { Seo } from "@/components/Seo";
 
