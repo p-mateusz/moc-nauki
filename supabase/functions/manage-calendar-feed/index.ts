@@ -39,17 +39,17 @@ serve(async (req) => {
     }
 
     const { data: existing } = await adminSb
-      .from("user_profiles")
-      .select("calendar_feed_token")
+      .from("user_calendar_feeds")
+      .select("token")
       .eq("user_id", userId)
       .maybeSingle();
 
-    let token: string | null = existing?.calendar_feed_token ?? null;
+    let token: string | null = existing?.token ?? null;
 
     if (action === "revoke") {
       await adminSb
-        .from("user_profiles")
-        .upsert({ user_id: userId, calendar_feed_token: null }, { onConflict: "user_id" });
+        .from("user_calendar_feeds")
+        .upsert({ user_id: userId, token: null, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
       return new Response(JSON.stringify({ token: null }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -58,8 +58,8 @@ serve(async (req) => {
     if (action === "regenerate" || !token) {
       token = generateToken();
       const { error } = await adminSb
-        .from("user_profiles")
-        .upsert({ user_id: userId, calendar_feed_token: token }, { onConflict: "user_id" });
+        .from("user_calendar_feeds")
+        .upsert({ user_id: userId, token, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
       if (error) throw error;
     }
 
