@@ -65,7 +65,7 @@ export function usePreferences() {
         return;
       }
       const { data } = await supabase
-        .from("user_profiles")
+        .from("user_profile_private")
         .select("preferences")
         .eq("user_id", userId)
         .maybeSingle();
@@ -89,7 +89,7 @@ export function usePreferences() {
       window.dispatchEvent(new CustomEvent(EVENT, { detail: next }));
       if (!userId || userId === "guest") return { error: null };
       const { error } = await supabase
-        .from("user_profiles")
+        .from("user_profile_private")
         .upsert({ user_id: userId, preferences: next }, { onConflict: "user_id" });
       return { error };
     },
