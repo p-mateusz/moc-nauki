@@ -173,6 +173,9 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
    chunksRef.current = [];
    setState("idle");
    setSeconds(0);
+   (window as any).__recordingActive = false;
+   releaseWakeLock();
+   stopKeepAliveAudio();
    toast.info("Nagranie anulowane.");
  };
 
@@ -189,6 +192,9 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
      chunksRef.current = [];
      setState("idle");
      setSeconds(0);
+     (window as any).__recordingActive = false;
+     releaseWakeLock();
+     stopKeepAliveAudio();
      if (finalSeconds < 3) { toast.warning("Nagranie za krótkie."); return; }
      await sendToN8n(blob, finalSeconds);
    };
