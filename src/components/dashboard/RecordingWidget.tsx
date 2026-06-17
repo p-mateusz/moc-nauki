@@ -69,6 +69,51 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
  const startTimer = () => { intervalRef.current = setInterval(() => setSeconds((s) => s + 1), 1000); };
  const stopTimer = () => clearInterval(intervalRef.current);
 
+ // Wake Lock — utrzymuje aktywny tab/ekran, gdy użytkownik wraca lub gdy
+ // przeglądarka nasłuchuje aktywności. Po przejściu do tła OS zwalnia lock,
+ // dlatego wznawiamy go automatycznie po powrocie do widoczności.
+ const requestWakeLock = async () => {
+   try {
+     // @ts-ignore
+     if (navigator.wakeLock?.request) {
+       // @ts-ignore
+       wakeLockRef.current = await navigator.wakeLock.request("screen");
+     }
+   } catch {}
+ };
+ const releaseWakeLock = async () => {
+   try { await wakeLockRef.current?.release?.(); } catch {}
+   wakeLockRef.current = null;
+ };
+
+ // Bezgłośny strumień audio — zapętlona pusta próbka odtwarzana z
+ // gain=0. Trzyma kontekst audio aktywny, dzięki czemu mobilne przeglądarki
+ // (zwłaszcza iOS Safari) nie zawieszają tabu po przejściu do innej aplikacji
+ // i MediaRecorder dalej dostaje dane z mikrofonu. Brzmi cicho — gain 0.
+ const startKeepAliveAudio = () => {
+   try {
+     const AC: any = (window as any).AudioContext || (window as any).webkitAudioContext;
+     if (!AC) return;
+     const ctx: AudioContext = new AC();
+     const buffer = ctx.createBuffer(1, ctx.sampleRate * 1, ctx.sampleRate);
+     const src = ctx.createBufferSource();
+     src.buffer = buffer;
+     src.loop = true;
+     const gain = ctx.createGain();
+     gain.gain.value = 0;
+     src.connect(gain).connect(ctx.destination);
+     src.start(0);
+     keepAliveAudioRef.current = { ctx, src };
+   } catch {}
+ };
+ const stopKeepAliveAudio = () => {
+   try {
+     keepAliveAudioRef.current?.src.stop();
+     keepAliveAudioRef.current?.ctx.close();
+   } catch {}
+   keepAliveAudioRef.current = null;
+ };
+
  const startRecording = async () => {
    if (isGuest) { toast.warning("Zaloguj się, aby nagrywać lekcje."); return; }
    const hasSelection = (window as any).__notesTab_hasSelection;
@@ -91,6 +136,11 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
      setSeconds(0);
      setCollapsed(false);
      startTimer();
+     // Flaga globalna — App.tsx pomija reviveSession (invalidate/refetch),
+     // a inne moduły mogą sprawdzić, że trwa nagrywanie.
+     (window as any).__recordingActive = true;
+     await requestWakeLock();
+     startKeepAliveAudio();
      toast.success("🎤 Nagrywanie rozpoczęte!");
      setTimeout(() => setCollapsed(true), 10000);
    } catch (err: any) {
