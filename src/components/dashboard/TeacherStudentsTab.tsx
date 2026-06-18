@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { ArrowLeft, Send, Search, MoreVertical, Reply, Copy, Trash2, SmilePlus, Paperclip, X, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Send, Search, Reply, Copy, Trash2, SmilePlus, Paperclip, X, Image as ImageIcon } from "lucide-react";
 import { useRoles } from "@/hooks/use-roles";
 import UserProfileModal from "./UserProfileModal";
 import { LoadingInline } from "@/components/ui/loading-state";
@@ -813,6 +813,18 @@ const TeacherStudentsTab = ({
                 const reactionEntries = Object.entries(reactions).filter(([, arr]) => (arr as string[]).length > 0);
                 const menuOpen = openMenuId === m.id;
                 const pickerOpen = reactionPickerId === m.id;
+                const longPressTimer = { current: null as ReturnType<typeof setTimeout> | null };
+                const startLongPress = (e: React.SyntheticEvent) => {
+                  if (longPressTimer.current) clearTimeout(longPressTimer.current);
+                  longPressTimer.current = setTimeout(() => {
+                    setOpenMenuId(m.id);
+                    setReactionPickerId(null);
+                    if (navigator.vibrate) navigator.vibrate(15);
+                  }, 350);
+                };
+                const cancelLongPress = () => {
+                  if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+                };
                 return (
                   <div
                     key={m.id}
@@ -826,6 +838,14 @@ const TeacherStudentsTab = ({
                     <div style={{ maxWidth: "75%", display: "flex", flexDirection: "column", alignItems: isMine ? "flex-end" : "flex-start", gap: 4 }}>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 6, flexDirection: isMine ? "row-reverse" : "row" }}>
                         <div
+                          onDoubleClick={(e) => { e.stopPropagation(); cancelLongPress(); toggleReaction(m, "❤️"); }}
+                          onMouseDown={startLongPress}
+                          onMouseUp={cancelLongPress}
+                          onMouseLeave={cancelLongPress}
+                          onTouchStart={startLongPress}
+                          onTouchEnd={cancelLongPress}
+                          onTouchMove={cancelLongPress}
+                          onContextMenu={(e) => { e.preventDefault(); setOpenMenuId(m.id); setReactionPickerId(null); }}
                           style={{
                             padding: m.image_url && !m.content ? 6 : "10px 14px",
                             borderRadius: 20,
@@ -837,6 +857,10 @@ const TeacherStudentsTab = ({
                             lineHeight: 1.5,
                             boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
                             position: "relative",
+                            cursor: "pointer",
+                            userSelect: "none",
+                            WebkitUserSelect: "none",
+                            WebkitTouchCallout: "none",
                           }}
                         >
                           {replied && (
@@ -858,7 +882,7 @@ const TeacherStudentsTab = ({
                             <img
                               src={m.image_url}
                               alt="załącznik"
-                              onClick={() => window.open(m.image_url!, "_blank")}
+                              onClick={(e) => { e.stopPropagation(); window.open(m.image_url!, "_blank"); }}
                               style={{
                                 maxWidth: 280, maxHeight: 280, borderRadius: 14,
                                 display: "block", cursor: "zoom-in",
@@ -871,23 +895,8 @@ const TeacherStudentsTab = ({
                             {new Date(m.created_at).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}
                           </div>
                         </div>
-
-                        {/* 3-dots menu trigger */}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(menuOpen ? null : m.id); setReactionPickerId(null); }}
-                          aria-label="Akcje wiadomości"
-                          className={`ts-msg-actions ${menuOpen || pickerOpen ? "active" : ""}`}
-                          style={{
-                            background: "rgba(255,255,255,0.05)", border: "none",
-                            width: 28, height: 28, borderRadius: "50%",
-                            color: "#cbd5e1", cursor: "pointer", flexShrink: 0,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            alignSelf: "center",
-                          }}
-                        >
-                          <MoreVertical size={14} />
-                        </button>
                       </div>
+
 
                       {/* Reaction chips */}
                       {reactionEntries.length > 0 && (
@@ -996,7 +1005,7 @@ const TeacherStudentsTab = ({
                   }}><X size={16} /></button>
                 </div>
               )}
-              <div style={{ padding: 18, display: "flex", gap: 10, alignItems: "center" }}>
+              <div style={{ padding: "14px 16px", display: "flex", gap: 8, alignItems: "center", minWidth: 0 }}>
                 <input
                   ref={imageInputRef}
                   type="file"
@@ -1023,16 +1032,16 @@ const TeacherStudentsTab = ({
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void sendMessage(); } }}
                   placeholder="Napisz wiadomość..."
                   style={{
-                    flex: 1, background: "rgba(255,255,255,0.06)",
+                    flex: 1, minWidth: 0, background: "rgba(255,255,255,0.06)",
                     border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16,
-                    padding: "14px 16px", color: "#fff", fontSize: ".92rem", outline: "none",
+                    padding: "12px 14px", color: "#fff", fontSize: ".92rem", outline: "none",
                   }}
                 />
                 <button
                   onClick={() => void sendMessage()}
                   disabled={!msgText.trim()}
                   style={{
-                    width: 54, height: 54, borderRadius: 18, border: "none",
+                    width: 44, height: 44, borderRadius: 14, border: "none",
                     background: msgText.trim() ? "linear-gradient(135deg,#3b82f6,#6366f1)" : "rgba(255,255,255,0.08)",
                     color: "#fff", cursor: msgText.trim() ? "pointer" : "not-allowed",
                     display: "flex", alignItems: "center", justifyContent: "center", transition: ".2s", flexShrink: 0,
@@ -1041,6 +1050,7 @@ const TeacherStudentsTab = ({
                   <Send size={18} />
                 </button>
               </div>
+
             </div>
           </>
 
