@@ -299,7 +299,7 @@ const CreateList = () => {
           setSentenceProgress(100);
           setSentenceMessage("Gotowe!");
           submittedRef.current = true;
-          setTimeout(() => { setSentenceLoading(false); toast.success(t("listCreated", lang)); navigate("/dashboard"); }, 500);
+          setTimeout(() => { setSentenceLoading(false); toast.success(t("listCreated", lang)); localStorage.setItem("dashboardActiveTab", "languages"); navigate("/dashboard"); }, 500);
         } catch (sentErr: any) {
           clearInterval(progressInterval);
           // Mark as draft so the user can resume later
