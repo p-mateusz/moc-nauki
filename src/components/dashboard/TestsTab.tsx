@@ -569,8 +569,16 @@ const TestsTab = ({ userName, guestMode }: Props) => {
                   </div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div><label style={s.label}>Nazwa szkoły</label><input value={ntSname} onChange={e => setNtSname(e.target.value)} placeholder="np. ZS nr 3 Warszawa" maxLength={60} style={s.input} /></div>
-                  <div><label style={s.label}>Nauczyciel</label><input value={ntTeacher} onChange={e => setNtTeacher(e.target.value)} placeholder="np. mgr Kowalski" maxLength={50} style={s.input} /></div>
+                  <div>
+                    <label style={s.label}>Nazwa szkoły</label>
+                    <input list="schools-list" value={ntSname} onChange={e => setNtSname(e.target.value)} placeholder="np. ZS nr 3 Warszawa" maxLength={60} style={s.input} />
+                    <datalist id="schools-list">{allSchools.map(v => <option key={v} value={v} />)}</datalist>
+                  </div>
+                  <div>
+                    <label style={s.label}>Nauczyciel</label>
+                    <input list="teachers-list" value={ntTeacher} onChange={e => setNtTeacher(e.target.value)} placeholder="np. mgr Kowalski" maxLength={50} style={s.input} />
+                    <datalist id="teachers-list">{allTeachers.map(v => <option key={v} value={v} />)}</datalist>
+                  </div>
                 </div>
                 <div><label style={s.label}>Opis / zakres materiału</label><textarea value={ntDesc} onChange={e => setNtDesc(e.target.value)} rows={2} placeholder="np. Działy 4–6, funkcje trygonometryczne..." maxLength={220} style={s.textarea} /></div>
 
