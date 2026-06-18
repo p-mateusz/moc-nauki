@@ -2,9 +2,9 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Filter, Plus, Trash2, Upload, X, Heart, Star, BookOpen, PenLine, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Filter, Plus, Trash2, Upload, X, Heart, Star, BookOpen, PenLine, ChevronDown, ChevronUp, Pencil } from "lucide-react";
 import {
-  fetchTests, fetchSaves, createTest, deleteTest as deleteTestApi,
+  fetchTests, fetchSaves, createTest, updateTest, deleteTest as deleteTestApi,
   toggleLike, toggleSave, incrementUses, addSolution, deleteSolution as deleteSolApi,
   uploadTestImage, Test, SUBJECTS, SCOPE_LABEL, SYMS, avInitials, ago,
 } from "@/lib/testsStore";
@@ -90,6 +90,8 @@ const TestsTab = ({ userName, guestMode }: Props) => {
   const [ntDesc, setNtDesc] = useState("");
   const [ntImgPreviews, setNtImgPreviews] = useState<string[]>([]);
   const [ntImgFiles, setNtImgFiles] = useState<File[]>([]);
+  const [ntExistingImgs, setNtExistingImgs] = useState<string[]>([]);
+  const [editingTestId, setEditingTestId] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -178,12 +180,57 @@ const TestsTab = ({ userName, guestMode }: Props) => {
     e.target.value = "";
   };
 
+  const resetTestForm = () => {
+    setNtTitle(""); setNtSubject(""); setNtKlasa(""); setNtScope("");
+    setNtSname(""); setNtTeacher(""); setNtDesc("");
+    setNtImgPreviews([]); setNtImgFiles([]); setNtExistingImgs([]);
+    setEditingTestId(null);
+  };
+
+  const openEdit = (t: Test) => {
+    setEditingTestId(t.id);
+    setNtTitle(t.title || "");
+    setNtSubject(t.subject || "");
+    setNtKlasa(t.klasa || "");
+    setNtScope(t.scope || "");
+    setNtSname(t.school_name || "");
+    setNtTeacher(t.teacher || "");
+    setNtDesc(t.description || "");
+    setNtExistingImgs(t.images || []);
+    setNtImgPreviews([]);
+    setNtImgFiles([]);
+    setShowCreate(true);
+  };
+
   const publishTest = async () => {
     if (!ntTitle) { toast.warning("Podaj temat testu!"); return; }
     if (!ntSubject) { toast.warning("Wybierz przedmiot!"); return; }
     if (!ntKlasa) { toast.warning("Wybierz klasę!"); return; }
     if (!ntScope) { toast.warning("Wybierz zakres!"); return; }
     setPublishing(true);
+
+    if (editingTestId) {
+      // Upload any new files
+      const newUrls: string[] = [];
+      for (const file of ntImgFiles) {
+        const url = await uploadTestImage(file, editingTestId, userId);
+        if (url) newUrls.push(url);
+        else toast.error(`Nie udało się zapisać zdjęcia: ${file.name}`);
+      }
+      const ok = await updateTest(editingTestId, {
+        title: ntTitle, subject: ntSubject, klasa: ntKlasa, scope: ntScope,
+        school_name: ntSname, teacher: ntTeacher, description: ntDesc,
+        images: [...ntExistingImgs, ...newUrls],
+      });
+      setPublishing(false);
+      if (!ok) { toast.error("Nie udało się zapisać zmian"); return; }
+      setShowCreate(false);
+      resetTestForm();
+      toast.success("✅ Zmiany zapisane!");
+      reload();
+      return;
+    }
+
     const test = await createTest({ title: ntTitle, subject: ntSubject, klasa: ntKlasa, scope: ntScope, school_name: ntSname, teacher: ntTeacher, description: ntDesc, images: [], author_id: userId, author_name: userName });
     if (!test) { toast.error("Błąd tworzenia testu"); setPublishing(false); return; }
     if (ntImgFiles.length > 0) {
@@ -199,8 +246,7 @@ const TestsTab = ({ userName, guestMode }: Props) => {
       }
     }
     setShowCreate(false);
-    setNtTitle(""); setNtSubject(""); setNtKlasa(""); setNtScope("");
-    setNtSname(""); setNtTeacher(""); setNtDesc(""); setNtImgPreviews([]); setNtImgFiles([]);
+    resetTestForm();
     setPublishing(false);
     toast.success("🚀 Test opublikowany!");
     reload();
@@ -451,12 +497,22 @@ const TestsTab = ({ userName, guestMode }: Props) => {
                       <Heart size={15} fill={liked ? "#ef4444" : "none"} /> {(t.likes || []).length}
                     </button>
                     {subtab === "mine" && isMe && (
-                      <button
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#334155", padding: 4, transition: ".2s" }}
-                        onClick={() => { if (confirm("Na pewno usunąć test?")) handleDeleteTest(t.id); }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <>
+                        <button
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "#60a5fa", padding: 4, transition: ".2s" }}
+                          onClick={() => openEdit(t)}
+                          title="Edytuj test"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "#334155", padding: 4, transition: ".2s" }}
+                          onClick={() => { if (confirm("Na pewno usunąć test?")) handleDeleteTest(t.id); }}
+                          title="Usuń test"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -469,14 +525,16 @@ const TestsTab = ({ userName, guestMode }: Props) => {
       {/* ── Create Modal ── */}
       <AnimatePresence>
         {showCreate && (
-          <motion.div style={s.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={e => { if (e.target === e.currentTarget) setShowCreate(false); }}>
+          <motion.div style={s.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={e => { if (e.target === e.currentTarget) { setShowCreate(false); resetTestForm(); } }}>
             <motion.div style={s.modal} initial={{ scale: 0.95, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 16 }} transition={{ duration: 0.25 }}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg, #3b82f6, #6366f1, #a78bfa)", borderRadius: "20px 20px 0 0" }} />
 
               {/* Modal header */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#fff" }}>📝 Dodaj test</div>
-                <button onClick={() => setShowCreate(false)} style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#8899b4", width: 32, height: 32, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#fff" }}>
+                  {editingTestId ? "✏️ Edytuj test" : "📝 Dodaj test"}
+                </div>
+                <button onClick={() => { setShowCreate(false); resetTestForm(); }} style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#8899b4", width: 32, height: 32, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <X size={16} />
                 </button>
               </div>
@@ -518,13 +576,15 @@ const TestsTab = ({ userName, guestMode }: Props) => {
 
                 <div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                    <label style={{ ...s.label, marginBottom: 0 }}>Zdjęcia testu {ntImgPreviews.length > 0 && <span style={{ color: "#475569" }}>({ntImgPreviews.length})</span>}</label>
+                    <label style={{ ...s.label, marginBottom: 0 }}>
+                      Zdjęcia testu {(ntExistingImgs.length + ntImgPreviews.length) > 0 && <span style={{ color: "#475569" }}>({ntExistingImgs.length + ntImgPreviews.length})</span>}
+                    </label>
                     <button onClick={() => fileInputRef.current?.click()} style={{ ...s.btnGhost, padding: "5px 12px", fontSize: ".78rem" }}>
                       <Plus size={13} /> Dodaj
                     </button>
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => handleImgUpload(e, "test")} />
-                  {ntImgPreviews.length === 0 ? (
+                  {ntExistingImgs.length === 0 && ntImgPreviews.length === 0 ? (
                     <div
                       onClick={() => fileInputRef.current?.click()}
                       style={{ border: "2px dashed rgba(255,255,255,0.08)", borderRadius: 12, padding: "28px", textAlign: "center", cursor: "pointer", transition: ".2s" }}
@@ -535,10 +595,19 @@ const TestsTab = ({ userName, guestMode }: Props) => {
                     </div>
                   ) : (
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 8 }}>
-                      {ntImgPreviews.map((src, i) => (
-                        <div key={i} style={{ position: "relative", aspectRatio: "1", borderRadius: 10, overflow: "hidden" }}>
+                      {ntExistingImgs.map((src, i) => (
+                        <div key={`ex-${i}`} style={{ position: "relative", aspectRatio: "1", borderRadius: 10, overflow: "hidden" }}>
                           <img alt="" src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                           <div style={{ position: "absolute", top: 4, left: 4, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: ".6rem", fontWeight: 800, padding: "2px 6px", borderRadius: 4 }}>{i + 1}</div>
+                          <button onClick={() => setNtExistingImgs(prev => prev.filter((_, j) => j !== i))} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", width: 20, height: 20, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <X size={11} />
+                          </button>
+                        </div>
+                      ))}
+                      {ntImgPreviews.map((src, i) => (
+                        <div key={`new-${i}`} style={{ position: "relative", aspectRatio: "1", borderRadius: 10, overflow: "hidden" }}>
+                          <img alt="" src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <div style={{ position: "absolute", top: 4, left: 4, background: "rgba(59,130,246,0.85)", color: "#fff", fontSize: ".6rem", fontWeight: 800, padding: "2px 6px", borderRadius: 4 }}>NOWE</div>
                           <button onClick={() => { setNtImgPreviews(prev => prev.filter((_, j) => j !== i)); setNtImgFiles(prev => prev.filter((_, j) => j !== i)); }} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", width: 20, height: 20, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             <X size={11} />
                           </button>
@@ -554,9 +623,9 @@ const TestsTab = ({ userName, guestMode }: Props) => {
 
               {/* Modal footer */}
               <div style={{ padding: "14px 24px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 10, justifyContent: "flex-end" }}>
-                <button style={s.btnGhost} onClick={() => setShowCreate(false)}>Anuluj</button>
+                <button style={s.btnGhost} onClick={() => { setShowCreate(false); resetTestForm(); }}>Anuluj</button>
                 <motion.button style={s.btnGrad} onClick={publishTest} disabled={publishing} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                  {publishing ? "⏳ Publikowanie..." : "🚀 Opublikuj"}
+                  {publishing ? "⏳ Zapisywanie..." : editingTestId ? "💾 Zapisz zmiany" : "🚀 Opublikuj"}
                 </motion.button>
               </div>
             </motion.div>

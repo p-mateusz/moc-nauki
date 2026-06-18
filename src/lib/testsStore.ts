@@ -94,6 +94,16 @@ export async function createTest(input: {
   return { ...data, sname: data.school_name, desc: data.description, author: data.author_name, ts: new Date(data.created_at).getTime(), likes: data.likes || [], solutions: data.solutions || [], questions: data.questions || [], images: data.images || [] } as Test;
 }
 
+export async function updateTest(id: string, patch: {
+  title?: string; subject?: string; klasa?: string; scope?: string;
+  school_name?: string; teacher?: string; description?: string;
+  images?: string[];
+}): Promise<boolean> {
+  const { error } = await supabase.from("tests").update(patch as any).eq("id", id);
+  if (error) { console.error("updateTest error:", error); return false; }
+  return true;
+}
+
 export async function deleteTest(id: string) {
   await supabase.from("tests").delete().eq("id", id);
 }
