@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createAdminClient } from "../_shared/appSettings.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -42,6 +43,13 @@ function foldLine(line: string): string {
   return chunks.join("\r\n");
 }
 
+function createCloudAdminClient() {
+  const url = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !serviceKey) throw new Error("Missing Cloud backend credentials");
+  return createClient(url, serviceKey);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -52,8 +60,8 @@ serve(async (req) => {
       return new Response("Missing token", { status: 400, headers: corsHeaders });
     }
 
-    const adminSb = createAdminClient();
-    const { data: profile, error: profileError } = await adminSb
+    const feedSb = createCloudAdminClient();
+    const { data: profile, error: profileError } = await feedSb
       .from("user_calendar_feeds")
       .select("user_id")
       .eq("token", token)
@@ -65,6 +73,7 @@ serve(async (req) => {
 
     const userId = profile.user_id;
 
+    const adminSb = createAdminClient();
     const { data: events } = await adminSb
       .from("calendar_events")
       .select("*")
