@@ -126,6 +126,56 @@ const PreferencesDialog = ({ open, onClose }: Props) => {
           ))}
         </div>
 
+        {/* Default note detail level */}
+        <div style={sectionStyle}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <div style={titleStyle}>Domyślna szczegółowość notatki</div>
+            <div style={{ color: "#a5b4fc", fontWeight: 800, fontSize: ".82rem" }}>{detailLevel}/9</div>
+          </div>
+          <div style={subStyle}>
+            Wartość początkowa suwaka w okienku nagrywania (1 = bardzo zwięźle, 9 = bardzo szczegółowo).
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={9}
+            step={1}
+            value={detailLevel}
+            onChange={(e) => setDetailLevel(Number(e.target.value))}
+            className="pref-detail-slider"
+            style={{
+              width: "100%", appearance: "none", WebkitAppearance: "none",
+              background: "transparent", cursor: "pointer", height: 18, padding: 0, margin: 0,
+            }}
+          />
+          <style>{`
+            .pref-detail-slider::-webkit-slider-runnable-track {
+              height: 4px; border-radius: 999px;
+              background: linear-gradient(to right, #6366f1 0%, #6366f1 ${((detailLevel - 1) / 8) * 100}%, rgba(255,255,255,0.10) ${((detailLevel - 1) / 8) * 100}%, rgba(255,255,255,0.10) 100%);
+            }
+            .pref-detail-slider::-moz-range-track { height: 4px; border-radius: 999px; background: rgba(255,255,255,0.10); }
+            .pref-detail-slider::-moz-range-progress { height: 4px; border-radius: 999px; background: #6366f1; }
+            .pref-detail-slider::-webkit-slider-thumb {
+              -webkit-appearance: none; appearance: none;
+              width: 16px; height: 16px; border-radius: 50%;
+              background: #fff; border: 2px solid #6366f1;
+              box-shadow: 0 0 0 4px rgba(99,102,241,0.18), 0 2px 8px rgba(0,0,0,.35);
+              margin-top: -6px; cursor: grab;
+            }
+            .pref-detail-slider::-moz-range-thumb {
+              width: 16px; height: 16px; border-radius: 50%;
+              background: #fff; border: 2px solid #6366f1;
+              box-shadow: 0 0 0 4px rgba(99,102,241,0.18), 0 2px 8px rgba(0,0,0,.35);
+              cursor: grab;
+            }
+            .pref-detail-slider:focus { outline: none; }
+          `}</style>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".66rem", color: "#64748b", marginTop: 4 }}>
+            <span>mniej</span>
+            <span>więcej</span>
+          </div>
+        </div>
+
         {/* Visible languages */}
         <div style={sectionStyle}>
           <div style={titleStyle}>Widoczne języki w „Języki AI"</div>
