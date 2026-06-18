@@ -339,7 +339,8 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
      (window as any).__recordingActive = true;
      await requestWakeLock();
       startKeepAliveAudio(stream);
-     toast.success("🎤 Nagrywanie rozpoczęte!");
+      startSilentLoop();
+      setupMediaSession();
      setTimeout(() => setCollapsed(true), 10000);
    } catch (err: any) {
      toast.error("Brak dostępu do mikrofonu: " + (err?.message || "Nieznany błąd"));
