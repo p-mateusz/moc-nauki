@@ -6,7 +6,7 @@ interface SeoProps {
   path: string;
 }
 
-const BASE_URL = "https://nauki.lovable.app";
+const BASE_URL = "https://www.moc-nauki.pl";
 
 export function Seo({ title, description, path }: SeoProps) {
   const url = `${BASE_URL}${path}`;
