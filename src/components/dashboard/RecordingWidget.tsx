@@ -385,16 +385,23 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
 
  useEffect(() => { return () => stopTimer(); }, []);
 
- // Wznów Wake Lock po powrocie z tła (OS automatycznie go zwalnia).
- useEffect(() => {
-   const onVis = () => {
-     if (document.visibilityState === "visible" && (isActive || sending) && !wakeLockRef.current) {
-       requestWakeLock();
-     }
-   };
-   document.addEventListener("visibilitychange", onVis);
-   return () => document.removeEventListener("visibilitychange", onVis);
- }, [isActive, sending]);
+  // Wznów Wake Lock po powrocie z tła; wykryj zerwany strumień mikrofonu.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!isActive && !sending) return;
+      if (!wakeLockRef.current) requestWakeLock();
+      // Czy strumień mikrofonu nadal żyje? Mobile OS często go ubija w tle.
+      const stream = streamRef.current;
+      if (state === "recording" && stream) {
+        const tracks = stream.getAudioTracks();
+        const dead = tracks.length === 0 || tracks.every((t) => t.readyState === "ended" || t.muted);
+        if (dead) handleMicLost();
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [isActive, sending, state]);
 
  // Ostrzeżenie przed zamknięciem karty w trakcie nagrywania/wysyłki.
  useEffect(() => {
