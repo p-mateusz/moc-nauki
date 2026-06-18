@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Filter, Plus, Trash2, Upload, X, Heart, Star, BookOpen, PenLine, ChevronDown, ChevronUp, Pencil } from "lucide-react";
+import Autocomplete from "./Autocomplete";
 import {
   fetchTests, fetchSaves, createTest, updateTest, deleteTest as deleteTestApi,
   toggleLike, toggleSave, incrementUses, addSolution, deleteSolution as deleteSolApi,
