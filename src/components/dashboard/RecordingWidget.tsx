@@ -182,6 +182,80 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
   // Ukryty <audio> z odtwarzanym strumieniem mikrofonu (muted) — utrzymuje
   // ścieżkę "in use" i zmniejsza szansę, że iOS/Android ją zwolnią w tle.
   const sinkAudioRef = useRef<HTMLAudioElement | null>(null);
+  // Drugi <audio> z pętlą bardzo cichego pliku — sygnalizuje przeglądarce
+  // CIĄGŁĄ sesję odtwarzania mediów. To najważniejszy trick by mobilny
+  // OS / Safari / Chrome nie zawiesiły karty w tle.
+  const silentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // ~1s ciszy w WAV 8kHz mono — wystarczy do utrzymania sesji audio.
+  const SILENT_WAV_DATA_URL = (() => {
+    const sampleRate = 8000;
+    const samples = sampleRate; // 1 sekunda
+    const buffer = new ArrayBuffer(44 + samples * 2);
+    const view = new DataView(buffer);
+    const writeStr = (off: number, s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
+    writeStr(0, "RIFF"); view.setUint32(4, 36 + samples * 2, true); writeStr(8, "WAVE");
+    writeStr(12, "fmt "); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+    writeStr(36, "data"); view.setUint32(40, samples * 2, true);
+    // sample wartości 0 (cisza)
+    let bin = ""; const bytes = new Uint8Array(buffer);
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return "data:audio/wav;base64," + btoa(bin);
+  })();
+
+  const startSilentLoop = () => {
+    try {
+      if (!silentAudioRef.current) {
+        const el = document.createElement("audio");
+        el.src = SILENT_WAV_DATA_URL;
+        el.loop = true;
+        el.preload = "auto";
+        (el as any).playsInline = true;
+        el.setAttribute("playsinline", "");
+        el.volume = 0.001; // praktycznie cisza, ale NIE muted — muted media nie podtrzymują sesji w tle
+        el.style.position = "fixed";
+        el.style.width = "1px";
+        el.style.height = "1px";
+        el.style.opacity = "0";
+        el.style.pointerEvents = "none";
+        document.body.appendChild(el);
+        silentAudioRef.current = el;
+      }
+      silentAudioRef.current.play().catch(() => {});
+    } catch (error) { void error; }
+  };
+  const stopSilentLoop = () => {
+    try { silentAudioRef.current?.pause(); } catch (error) { void error; }
+  };
+
+  // MediaSession — rejestrujemy aktywną sesję mediów, dzięki czemu OS
+  // traktuje kartę jak działający odtwarzacz/dyktafon i nie usypia jej.
+  const setupMediaSession = () => {
+    try {
+      if (!("mediaSession" in navigator)) return;
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: "Nagrywanie lekcji",
+        artist: "Moc Nauki",
+        album: "Notatka audio",
+      });
+      navigator.mediaSession.playbackState = "playing";
+      navigator.mediaSession.setActionHandler("pause", () => { try { pauseRecording(); } catch {} });
+      navigator.mediaSession.setActionHandler("play", () => { try { void resumeRecording(); } catch {} });
+      navigator.mediaSession.setActionHandler("stop", () => { try { saveRecording(); } catch {} });
+    } catch (error) { void error; }
+  };
+  const teardownMediaSession = () => {
+    try {
+      if (!("mediaSession" in navigator)) return;
+      navigator.mediaSession.playbackState = "none";
+      navigator.mediaSession.setActionHandler("pause", null);
+      navigator.mediaSession.setActionHandler("play", null);
+      navigator.mediaSession.setActionHandler("stop", null);
+    } catch (error) { void error; }
+  };
+
   const attachStreamToSink = (stream: MediaStream) => {
     try {
       if (!sinkAudioRef.current) {
@@ -206,6 +280,27 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
       if (sinkAudioRef.current) {
         sinkAudioRef.current.pause();
         sinkAudioRef.current.srcObject = null;
+      }
+    } catch {}
+  };
+
+  // Prosi o wszystkie zgody potrzebne do nagrywania w tle: powiadomienia
+  // (poprawiają stabilność Wake Lock na niektórych systemach), persistent
+  // storage (przeglądarka rzadziej zabija proces) oraz sprawdza permission
+  // na mikrofon.
+  const requestBackgroundPermissions = async () => {
+    try {
+      if ("Notification" in window && Notification.permission === "default") {
+        try { await Notification.requestPermission(); } catch {}
+      }
+    } catch {}
+    try {
+      // @ts-ignore
+      if (navigator.storage?.persist) {
+        // @ts-ignore
+        const already = await navigator.storage.persisted?.();
+        // @ts-ignore
+        if (!already) await navigator.storage.persist();
       }
     } catch {}
   };
