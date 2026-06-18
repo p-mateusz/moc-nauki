@@ -261,44 +261,53 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
   };
 
 
- const cancelRecording = () => {
-   if (!confirm("Na pewno anulować nagranie?")) return;
-   stopTimer();
-   const recorder = mediaRecorderRef.current;
-   if (recorder && recorder.state !== "inactive") recorder.stop();
-   streamRef.current?.getTracks().forEach((t) => t.stop());
-   mediaRecorderRef.current = null;
-   streamRef.current = null;
-   chunksRef.current = [];
-   setState("idle");
-   setSeconds(0);
-   (window as any).__recordingActive = false;
-   releaseWakeLock();
-   stopKeepAliveAudio();
-   toast.info("Nagranie anulowane.");
- };
+  const cancelRecording = () => {
+    if (!confirm("Na pewno anulować nagranie?")) return;
+    stopTimer();
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") recorder.stop();
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    mediaRecorderRef.current = null;
+    streamRef.current = null;
+    chunksRef.current = [];
+    setState("idle");
+    setSeconds(0);
+    (window as any).__recordingActive = false;
+    releaseWakeLock();
+    stopKeepAliveAudio();
+    detachStreamFromSink();
+    toast.info("Nagranie anulowane.");
+  };
 
- const saveRecording = () => {
-   stopTimer();
-   const recorder = mediaRecorderRef.current;
-   if (!recorder) return;
-   const finalSeconds = seconds;
-   recorder.onstop = async () => {
-     const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-     streamRef.current?.getTracks().forEach((t) => t.stop());
-     mediaRecorderRef.current = null;
-     streamRef.current = null;
-     chunksRef.current = [];
-     setState("idle");
-     setSeconds(0);
-     (window as any).__recordingActive = false;
-     releaseWakeLock();
-     stopKeepAliveAudio();
-     if (finalSeconds < 3) { toast.warning("Nagranie za krótkie."); return; }
-     await sendToN8n(blob, finalSeconds);
-   };
-   if (recorder.state !== "inactive") recorder.stop();
- };
+  const finalizeAndSend = async (finalSeconds: number) => {
+    const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    mediaRecorderRef.current = null;
+    streamRef.current = null;
+    chunksRef.current = [];
+    setState("idle");
+    setSeconds(0);
+    (window as any).__recordingActive = false;
+    releaseWakeLock();
+    stopKeepAliveAudio();
+    detachStreamFromSink();
+    if (finalSeconds < 3) { toast.warning("Nagranie za krótkie."); return; }
+    await sendToN8n(blob, finalSeconds);
+  };
+
+  const saveRecording = () => {
+    stopTimer();
+    const finalSeconds = seconds;
+    const recorder = mediaRecorderRef.current;
+    // Gdy mic został zerwany (paused bez żywego recordera) — zapisz z chunks.
+    if (!recorder || recorder.state === "inactive") {
+      void finalizeAndSend(finalSeconds);
+      return;
+    }
+    recorder.onstop = () => { void finalizeAndSend(finalSeconds); };
+    recorder.stop();
+  };
+
 
   const persistNoteDirectly = async (title: string, content: string) => {
     try {
