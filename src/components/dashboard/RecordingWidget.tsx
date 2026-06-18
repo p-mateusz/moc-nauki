@@ -56,7 +56,27 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
  const [seconds, setSeconds] = useState(0);
  const [collapsed, setCollapsed] = useState(false);
  const [sending, setSending] = useState(false);
- const [targetInfo, setTargetInfo] = useState<string>("");
+  const [targetInfo, setTargetInfo] = useState<string>("");
+  const [detailLevel, setDetailLevel] = useState<number>(() => {
+    try {
+      const p = getCachedPreferences();
+      const v = Math.round(Number(p.noteDetailLevel ?? 5));
+      return Math.min(9, Math.max(1, isFinite(v) ? v : 5));
+    } catch { return 5; }
+  });
+  const detailLevelRef = useRef<number>(detailLevel);
+  useEffect(() => { detailLevelRef.current = detailLevel; }, [detailLevel]);
+  useEffect(() => {
+    const onPrefs = () => {
+      try {
+        const p = getCachedPreferences();
+        const v = Math.round(Number(p.noteDetailLevel ?? 5));
+        setDetailLevel(Math.min(9, Math.max(1, isFinite(v) ? v : 5)));
+      } catch {}
+    };
+    window.addEventListener("preferencesChanged", onPrefs);
+    return () => window.removeEventListener("preferencesChanged", onPrefs);
+  }, []);
    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
    const streamRef = useRef<MediaStream | null>(null);
    const chunksRef = useRef<Blob[]>([]);
