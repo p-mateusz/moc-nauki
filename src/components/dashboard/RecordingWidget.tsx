@@ -51,8 +51,8 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
    const chunksRef = useRef<Blob[]>([]);
    const intervalRef = useRef<any>(null);
    const targetSelectionRef = useRef<{ nbId: string; secId: string; nbName?: string; secName?: string } | null>(null);
-   const wakeLockRef = useRef<any>(null);
-   const keepAliveAudioRef = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode } | null>(null);
+    const wakeLockRef = useRef<any>(null);
+    const keepAliveAudioRef = useRef<{ ctx: AudioContext; stop: () => void } | null>(null);
    const secondsRef = useRef(0);
    const lostHandledRef = useRef(false);
   const isActive = state !== "idle";
@@ -90,30 +90,54 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
    wakeLockRef.current = null;
  };
 
- // Bezgłośny strumień audio — zapętlona pusta próbka odtwarzana z
- // gain=0. Trzyma kontekst audio aktywny, dzięki czemu mobilne przeglądarki
- // (zwłaszcza iOS Safari) nie zawieszają tabu po przejściu do innej aplikacji
- // i MediaRecorder dalej dostaje dane z mikrofonu. Brzmi cicho — gain 0.
- const startKeepAliveAudio = () => {
+  const configureRecordingAudioSession = () => {
+    try {
+      const audioSession = (navigator as any).audioSession;
+      if (audioSession && "type" in audioSession) audioSession.type = "play-and-record";
+    } catch {}
+    try { if ((navigator as any).mediaSession) (navigator as any).mediaSession.playbackState = "playing"; } catch {}
+  };
+  const clearRecordingAudioSession = () => {
+    try { if ((navigator as any).mediaSession) (navigator as any).mediaSession.playbackState = "none"; } catch {}
+  };
+
+  // Aktywna, prawie niesłyszalna ścieżka Web Audio podpięta do mikrofonu.
+  // To jest najmocniejszy webowy sposób, żeby mobilny system traktował kartę
+  // jak sesję audio/nagrywania zamiast zwykłą, łatwą do uśpienia stronę.
+  const startKeepAliveAudio = (stream?: MediaStream | null) => {
    try {
+      configureRecordingAudioSession();
+      if (keepAliveAudioRef.current) {
+        keepAliveAudioRef.current.ctx.resume?.().catch?.(() => {});
+        return;
+      }
      const AC: any = (window as any).AudioContext || (window as any).webkitAudioContext;
      if (!AC) return;
      const ctx: AudioContext = new AC();
-     const buffer = ctx.createBuffer(1, ctx.sampleRate * 1, ctx.sampleRate);
-     const src = ctx.createBufferSource();
-     src.buffer = buffer;
-     src.loop = true;
      const gain = ctx.createGain();
-     gain.gain.value = 0;
-     src.connect(gain).connect(ctx.destination);
-     src.start(0);
-     keepAliveAudioRef.current = { ctx, src };
+      gain.gain.value = 0.00001;
+      const osc = ctx.createOscillator();
+      osc.frequency.value = 18;
+      osc.connect(gain);
+      const micSource = stream ? ctx.createMediaStreamSource(stream) : null;
+      micSource?.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(0);
+      ctx.resume?.().catch?.(() => {});
+      keepAliveAudioRef.current = {
+        ctx,
+        stop: () => {
+          try { osc.stop(); } catch {}
+          try { micSource?.disconnect(); } catch {}
+          try { gain.disconnect(); } catch {}
+          try { ctx.close(); } catch {}
+        },
+      };
    } catch {}
  };
  const stopKeepAliveAudio = () => {
    try {
-     keepAliveAudioRef.current?.src.stop();
-     keepAliveAudioRef.current?.ctx.close();
+      keepAliveAudioRef.current?.stop();
    } catch {}
    keepAliveAudioRef.current = null;
  };
