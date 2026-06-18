@@ -21,18 +21,21 @@ const EVENT = "preferencesChanged";
 const isMissingPrivateProfileTable = (error: { code?: string; message?: string } | null | undefined) =>
   error?.code === "PGRST205" || error?.message?.includes("user_profile_private");
 
+const isMissingLegacyPreferencesColumn = (error: { code?: string; message?: string } | null | undefined) =>
+  error?.code === "42703" || error?.message?.includes("preferences");
+
 async function loadRemotePreferences(userId: string): Promise<Partial<UserPreferences>> {
-  const privateResult = await supabase
-    .from("user_profile_private")
+  const legacyResult = await (supabase as any)
+    .from("user_profiles")
     .select("preferences")
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (!privateResult.error) return (privateResult.data?.preferences as Partial<UserPreferences>) || {};
-  if (!isMissingPrivateProfileTable(privateResult.error)) return {};
+  if (!legacyResult.error) return (legacyResult.data?.preferences as Partial<UserPreferences>) || {};
+  if (!isMissingLegacyPreferencesColumn(legacyResult.error)) return {};
 
-  const { data } = await (supabase as any)
-    .from("user_profiles")
+  const { data } = await supabase
+    .from("user_profile_private")
     .select("preferences")
     .eq("user_id", userId)
     .maybeSingle();
@@ -41,15 +44,18 @@ async function loadRemotePreferences(userId: string): Promise<Partial<UserPrefer
 }
 
 async function saveRemotePreferences(userId: string, preferences: UserPreferences) {
+  const legacyResult = await (supabase as any)
+    .from("user_profiles")
+    .upsert({ user_id: userId, preferences }, { onConflict: "user_id" });
+
+  if (!isMissingLegacyPreferencesColumn(legacyResult.error)) return legacyResult;
+
   const privateResult = await supabase
     .from("user_profile_private")
     .upsert({ user_id: userId, preferences }, { onConflict: "user_id" });
 
   if (!isMissingPrivateProfileTable(privateResult.error)) return privateResult;
-
-  return (supabase as any)
-    .from("user_profiles")
-    .upsert({ user_id: userId, preferences }, { onConflict: "user_id" });
+  return legacyResult;
 }
 
 function loadCached(): UserPreferences {
