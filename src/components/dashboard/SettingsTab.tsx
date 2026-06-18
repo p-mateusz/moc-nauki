@@ -10,6 +10,7 @@ import { LoadingInline } from "@/components/ui/loading-state";
 import PreferencesDialog from "@/components/dashboard/PreferencesDialog";
 import CalendarConnectDialog from "@/components/dashboard/CalendarConnectDialog";
 import DownloadAppDialog from "@/components/dashboard/DownloadAppDialog";
+import AdminAppLinksDialog from "@/components/dashboard/AdminAppLinksDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,6 +90,7 @@ const SettingsTab = ({
   const [preferencesDialogOpen, setPreferencesDialogOpen] = useState(false);
   const [calendarDialogOpen, setCalendarDialogOpen] = useState(false);
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
+  const [adminLinksDialogOpen, setAdminLinksDialogOpen] = useState(false);
 
   const [newPassword, setNewPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -828,6 +830,15 @@ const SettingsTab = ({
               sub: "Wersja natywna na Android i iPhone",
               action: () => setDownloadDialogOpen(true),
             },
+
+            ...(userRole === "admin" ? [{
+              icon: "🛠️",
+              title: "Link do APK (admin)",
+              sub: "Ustaw publiczny URL pliku aplikacji Android",
+              action: () => setAdminLinksDialogOpen(true),
+            }] : []),
+
+
 
           ].map((item, i) => (
             <button
