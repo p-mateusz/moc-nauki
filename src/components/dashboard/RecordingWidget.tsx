@@ -46,14 +46,18 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
  const [collapsed, setCollapsed] = useState(false);
  const [sending, setSending] = useState(false);
  const [targetInfo, setTargetInfo] = useState<string>("");
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const intervalRef = useRef<any>(null);
-  const targetSelectionRef = useRef<{ nbId: string; secId: string; nbName?: string; secName?: string } | null>(null);
-  const wakeLockRef = useRef<any>(null);
-  const keepAliveAudioRef = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode } | null>(null);
- const isActive = state !== "idle";
+   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+   const streamRef = useRef<MediaStream | null>(null);
+   const chunksRef = useRef<Blob[]>([]);
+   const intervalRef = useRef<any>(null);
+   const targetSelectionRef = useRef<{ nbId: string; secId: string; nbName?: string; secName?: string } | null>(null);
+   const wakeLockRef = useRef<any>(null);
+   const keepAliveAudioRef = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode } | null>(null);
+   const secondsRef = useRef(0);
+   const lostHandledRef = useRef(false);
+  const isActive = state !== "idle";
+
+  useEffect(() => { secondsRef.current = seconds; }, [seconds]);
 
  const isGuest = (() => {
    try {
@@ -114,23 +118,58 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
    keepAliveAudioRef.current = null;
  };
 
- const startRecording = async () => {
-   if (isGuest) { toast.warning("Zaloguj się, aby nagrywać lekcje."); return; }
-   const hasSelection = (window as any).__notesTab_hasSelection;
-   if (!hasSelection || !hasSelection()) {
-     toast.warning("Najpierw otwórz zakładkę Notatki i wybierz notes oraz sekcję.");
-     return;
-   }
-    const sel = (window as any).__notesTab_getSelection?.();
-    targetSelectionRef.current = sel && sel.nbId && sel.secId ? { nbId: sel.nbId, secId: sel.secId, nbName: sel.nbName, secName: sel.secName } : null;
-    setTargetInfo(sel ? `${sel.nbName} › ${sel.secName}` : "");
-   try {
-     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-     streamRef.current = stream;
-     chunksRef.current = [];
-     const recorder = new MediaRecorder(stream);
-     recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-     recorder.start(1000);
+  const handleMicLost = () => {
+    if (lostHandledRef.current) return;
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) return;
+    lostHandledRef.current = true;
+    stopTimer();
+    const finalSeconds = secondsRef.current;
+    toast.warning("System zwolnił mikrofon (aplikacja była w tle). Zapisuję to, co udało się nagrać.");
+    recorder.onstop = async () => {
+      const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      mediaRecorderRef.current = null;
+      streamRef.current = null;
+      chunksRef.current = [];
+      setState("idle");
+      setSeconds(0);
+      (window as any).__recordingActive = false;
+      releaseWakeLock();
+      stopKeepAliveAudio();
+      if (finalSeconds < 3) { toast.warning("Nagranie za krótkie — nic nie zapisano."); return; }
+      await sendToN8n(blob, finalSeconds);
+    };
+    try { if (recorder.state !== "inactive") recorder.stop(); } catch {}
+  };
+
+  const startRecording = async () => {
+    if (isGuest) { toast.warning("Zaloguj się, aby nagrywać lekcje."); return; }
+    const hasSelection = (window as any).__notesTab_hasSelection;
+    if (!hasSelection || !hasSelection()) {
+      toast.warning("Najpierw otwórz zakładkę Notatki i wybierz notes oraz sekcję.");
+      return;
+    }
+     const sel = (window as any).__notesTab_getSelection?.();
+     targetSelectionRef.current = sel && sel.nbId && sel.secId ? { nbId: sel.nbId, secId: sel.secId, nbName: sel.nbName, secName: sel.secName } : null;
+     setTargetInfo(sel ? `${sel.nbName} › ${sel.secName}` : "");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      streamRef.current = stream;
+      chunksRef.current = [];
+      lostHandledRef.current = false;
+      stream.getAudioTracks().forEach((track) => {
+        track.onended = () => handleMicLost();
+        track.onmute = () => {
+          // niektóre przeglądarki tylko wyciszą ścieżkę zamiast ją zakończyć
+          setTimeout(() => {
+            if (track.muted && (streamRef.current?.getAudioTracks().includes(track))) handleMicLost();
+          }, 1500);
+        };
+      });
+      const recorder = new MediaRecorder(stream);
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      recorder.start(1000);
      mediaRecorderRef.current = recorder;
      setState("recording");
      setSeconds(0);
@@ -346,16 +385,23 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
 
  useEffect(() => { return () => stopTimer(); }, []);
 
- // Wznów Wake Lock po powrocie z tła (OS automatycznie go zwalnia).
- useEffect(() => {
-   const onVis = () => {
-     if (document.visibilityState === "visible" && (isActive || sending) && !wakeLockRef.current) {
-       requestWakeLock();
-     }
-   };
-   document.addEventListener("visibilitychange", onVis);
-   return () => document.removeEventListener("visibilitychange", onVis);
- }, [isActive, sending]);
+  // Wznów Wake Lock po powrocie z tła; wykryj zerwany strumień mikrofonu.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!isActive && !sending) return;
+      if (!wakeLockRef.current) requestWakeLock();
+      // Czy strumień mikrofonu nadal żyje? Mobile OS często go ubija w tle.
+      const stream = streamRef.current;
+      if (state === "recording" && stream) {
+        const tracks = stream.getAudioTracks();
+        const dead = tracks.length === 0 || tracks.every((t) => t.readyState === "ended" || t.muted);
+        if (dead) handleMicLost();
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [isActive, sending, state]);
 
  // Ostrzeżenie przed zamknięciem karty w trakcie nagrywania/wysyłki.
  useEffect(() => {
