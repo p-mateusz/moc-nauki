@@ -9,6 +9,7 @@ import { setAvatarCache } from "@/lib/avatarCache";
 import { LoadingInline } from "@/components/ui/loading-state";
 import PreferencesDialog from "@/components/dashboard/PreferencesDialog";
 import CalendarConnectDialog from "@/components/dashboard/CalendarConnectDialog";
+import DownloadAppDialog from "@/components/dashboard/DownloadAppDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -87,6 +88,7 @@ const SettingsTab = ({
     useState(false);
   const [preferencesDialogOpen, setPreferencesDialogOpen] = useState(false);
   const [calendarDialogOpen, setCalendarDialogOpen] = useState(false);
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
 
   const [newPassword, setNewPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -820,6 +822,13 @@ const SettingsTab = ({
               action: () => setCalendarDialogOpen(true),
             },
 
+            {
+              icon: "📱",
+              title: "Pobierz aplikację",
+              sub: "Wersja natywna na Android i iPhone",
+              action: () => setDownloadDialogOpen(true),
+            },
+
           ].map((item, i) => (
             <button
               key={i}
@@ -1145,6 +1154,7 @@ const SettingsTab = ({
 
       <PreferencesDialog open={preferencesDialogOpen} onClose={() => setPreferencesDialogOpen(false)} />
       <CalendarConnectDialog open={calendarDialogOpen} onClose={() => setCalendarDialogOpen(false)} />
+      <DownloadAppDialog open={downloadDialogOpen} onClose={() => setDownloadDialogOpen(false)} />
 
     </div>
   );
