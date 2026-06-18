@@ -427,6 +427,8 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
     releaseWakeLock();
     stopKeepAliveAudio();
      clearRecordingAudioSession();
+    stopSilentLoop();
+    teardownMediaSession();
     detachStreamFromSink();
     if (finalSeconds < 3) { toast.warning("Nagranie za krótkie."); return; }
     await sendToN8n(blob, finalSeconds);
