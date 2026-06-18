@@ -29,6 +29,17 @@ function cleanTitle(raw: string): string {
  );
 }
 
+type NavigatorWithAudioSession = Navigator & {
+  audioSession?: { type?: string };
+  mediaSession?: MediaSession;
+};
+
+type WindowWithWebkitAudio = Window & typeof globalThis & {
+  webkitAudioContext?: typeof AudioContext;
+};
+
+const ignoreAudioError = () => undefined;
+
 const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: RecordingWidgetProps = {}) => {
  const location = useLocation();
  const [currentTab, setCurrentTab] = useState<string>(() => {
@@ -51,8 +62,8 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
    const chunksRef = useRef<Blob[]>([]);
    const intervalRef = useRef<any>(null);
    const targetSelectionRef = useRef<{ nbId: string; secId: string; nbName?: string; secName?: string } | null>(null);
-   const wakeLockRef = useRef<any>(null);
-   const keepAliveAudioRef = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode } | null>(null);
+    const wakeLockRef = useRef<any>(null);
+    const keepAliveAudioRef = useRef<{ ctx: AudioContext; stop: () => void } | null>(null);
    const secondsRef = useRef(0);
    const lostHandledRef = useRef(false);
   const isActive = state !== "idle";
@@ -90,31 +101,56 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
    wakeLockRef.current = null;
  };
 
- // Bezgłośny strumień audio — zapętlona pusta próbka odtwarzana z
- // gain=0. Trzyma kontekst audio aktywny, dzięki czemu mobilne przeglądarki
- // (zwłaszcza iOS Safari) nie zawieszają tabu po przejściu do innej aplikacji
- // i MediaRecorder dalej dostaje dane z mikrofonu. Brzmi cicho — gain 0.
- const startKeepAliveAudio = () => {
+  const configureRecordingAudioSession = () => {
+    try {
+       const audioSession = (navigator as NavigatorWithAudioSession).audioSession;
+      if (audioSession && "type" in audioSession) audioSession.type = "play-and-record";
+     } catch (error) { void error; }
+     try { if ((navigator as NavigatorWithAudioSession).mediaSession) (navigator as NavigatorWithAudioSession).mediaSession!.playbackState = "playing"; } catch (error) { void error; }
+  };
+  const clearRecordingAudioSession = () => {
+     try { if ((navigator as NavigatorWithAudioSession).mediaSession) (navigator as NavigatorWithAudioSession).mediaSession!.playbackState = "none"; } catch (error) { void error; }
+  };
+
+  // Aktywna, prawie niesłyszalna ścieżka Web Audio podpięta do mikrofonu.
+  // To jest najmocniejszy webowy sposób, żeby mobilny system traktował kartę
+  // jak sesję audio/nagrywania zamiast zwykłą, łatwą do uśpienia stronę.
+  const startKeepAliveAudio = (stream?: MediaStream | null) => {
    try {
-     const AC: any = (window as any).AudioContext || (window as any).webkitAudioContext;
+      configureRecordingAudioSession();
+      if (keepAliveAudioRef.current) {
+        keepAliveAudioRef.current.ctx.resume?.().catch?.(ignoreAudioError);
+        return;
+      }
+      const win = window as WindowWithWebkitAudio;
+      const AC = win.AudioContext || win.webkitAudioContext;
      if (!AC) return;
      const ctx: AudioContext = new AC();
-     const buffer = ctx.createBuffer(1, ctx.sampleRate * 1, ctx.sampleRate);
-     const src = ctx.createBufferSource();
-     src.buffer = buffer;
-     src.loop = true;
      const gain = ctx.createGain();
-     gain.gain.value = 0;
-     src.connect(gain).connect(ctx.destination);
-     src.start(0);
-     keepAliveAudioRef.current = { ctx, src };
-   } catch {}
+      gain.gain.value = 0.00001;
+      const osc = ctx.createOscillator();
+      osc.frequency.value = 18;
+      osc.connect(gain);
+      const micSource = stream ? ctx.createMediaStreamSource(stream) : null;
+      micSource?.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(0);
+      ctx.resume?.().catch?.(ignoreAudioError);
+      keepAliveAudioRef.current = {
+        ctx,
+        stop: () => {
+          try { osc.stop(); } catch (error) { void error; }
+          try { micSource?.disconnect(); } catch (error) { void error; }
+          try { gain.disconnect(); } catch (error) { void error; }
+          try { ctx.close(); } catch (error) { void error; }
+        },
+      };
+    } catch (error) { void error; }
  };
  const stopKeepAliveAudio = () => {
    try {
-     keepAliveAudioRef.current?.src.stop();
-     keepAliveAudioRef.current?.ctx.close();
-   } catch {}
+      keepAliveAudioRef.current?.stop();
+    } catch (error) { void error; }
    keepAliveAudioRef.current = null;
  };
 
@@ -206,7 +242,7 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
      // a inne moduły mogą sprawdzić, że trwa nagrywanie.
      (window as any).__recordingActive = true;
      await requestWakeLock();
-     startKeepAliveAudio();
+      startKeepAliveAudio(stream);
      toast.success("🎤 Nagrywanie rozpoczęte!");
      setTimeout(() => setCollapsed(true), 10000);
    } catch (err: any) {
@@ -250,7 +286,7 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
       setState("recording");
       startTimer();
       await requestWakeLock();
-      startKeepAliveAudio();
+      startKeepAliveAudio(stream);
       toast.success("▶ Wznowiono nagrywanie");
     } catch (err: any) {
       toast.error("Nie udało się odzyskać mikrofonu: " + (err?.message || "Nieznany błąd"));
@@ -272,6 +308,7 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
     (window as any).__recordingActive = false;
     releaseWakeLock();
     stopKeepAliveAudio();
+     clearRecordingAudioSession();
     detachStreamFromSink();
     toast.info("Nagranie anulowane.");
   };
@@ -287,6 +324,7 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
     (window as any).__recordingActive = false;
     releaseWakeLock();
     stopKeepAliveAudio();
+     clearRecordingAudioSession();
     detachStreamFromSink();
     if (finalSeconds < 3) { toast.warning("Nagranie za krótkie."); return; }
     await sendToN8n(blob, finalSeconds);
@@ -459,6 +497,8 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
       if (document.visibilityState !== "visible") return;
       if (!isActive && !sending) return;
       if (!wakeLockRef.current) requestWakeLock();
+       configureRecordingAudioSession();
+       startKeepAliveAudio(streamRef.current);
       // Czy strumień mikrofonu nadal żyje? Mobile OS często go ubija w tle.
       const stream = streamRef.current;
       if (state === "recording" && stream) {
