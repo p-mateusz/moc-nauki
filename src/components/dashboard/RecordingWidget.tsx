@@ -230,7 +230,7 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
      // a inne moduły mogą sprawdzić, że trwa nagrywanie.
      (window as any).__recordingActive = true;
      await requestWakeLock();
-     startKeepAliveAudio();
+      startKeepAliveAudio(stream);
      toast.success("🎤 Nagrywanie rozpoczęte!");
      setTimeout(() => setCollapsed(true), 10000);
    } catch (err: any) {
@@ -274,7 +274,7 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
       setState("recording");
       startTimer();
       await requestWakeLock();
-      startKeepAliveAudio();
+      startKeepAliveAudio(stream);
       toast.success("▶ Wznowiono nagrywanie");
     } catch (err: any) {
       toast.error("Nie udało się odzyskać mikrofonu: " + (err?.message || "Nieznany błąd"));
@@ -483,6 +483,8 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
       if (document.visibilityState !== "visible") return;
       if (!isActive && !sending) return;
       if (!wakeLockRef.current) requestWakeLock();
+       configureRecordingAudioSession();
+       startKeepAliveAudio(streamRef.current);
       // Czy strumień mikrofonu nadal żyje? Mobile OS często go ubija w tle.
       const stream = streamRef.current;
       if (state === "recording" && stream) {
