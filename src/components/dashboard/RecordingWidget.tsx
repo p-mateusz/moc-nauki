@@ -603,6 +603,8 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
       if (!wakeLockRef.current) requestWakeLock();
        configureRecordingAudioSession();
        startKeepAliveAudio(streamRef.current);
+       startSilentLoop();
+       setupMediaSession();
       // Czy strumień mikrofonu nadal żyje? Mobile OS często go ubija w tle.
       const stream = streamRef.current;
       if (state === "recording" && stream) {
