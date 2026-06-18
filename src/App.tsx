@@ -84,7 +84,7 @@ const App = () => {
           <Route path="/share/:listId" element={<ShareImport />} />
           <Route path="/s/:slug" element={<ShareImport />} />
           <Route path="/terms" element={<Terms />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <RecordingWidget />
       </BrowserRouter>
