@@ -299,7 +299,7 @@ const CreateList = () => {
           setSentenceProgress(100);
           setSentenceMessage("Gotowe!");
           submittedRef.current = true;
-          setTimeout(() => { setSentenceLoading(false); toast.success(t("listCreated", lang)); navigate("/dashboard"); }, 500);
+          setTimeout(() => { setSentenceLoading(false); toast.success(t("listCreated", lang)); localStorage.setItem("dashboardActiveTab", "languages"); navigate("/dashboard"); }, 500);
         } catch (sentErr: any) {
           clearInterval(progressInterval);
           // Mark as draft so the user can resume later
@@ -307,11 +307,13 @@ const CreateList = () => {
           setSentenceLoading(false);
           submittedRef.current = true; // we already saved data; don't double-save on unmount
           toast.error("Generowanie zdań nie powiodło się — lista została zapisana jako wersja robocza");
+          localStorage.setItem("dashboardActiveTab", "languages");
           navigate("/dashboard");
         }
       } else {
         submittedRef.current = true;
         toast.success(t("listCreated", lang));
+        localStorage.setItem("dashboardActiveTab", "languages");
         navigate("/dashboard");
       }
     } catch (e: any) { toast.error(t("errorSaving", lang)); console.error(e); setSaving(false); }
