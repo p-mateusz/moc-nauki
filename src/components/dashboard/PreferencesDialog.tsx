@@ -44,6 +44,7 @@ const PreferencesDialog = ({ open, onClose }: Props) => {
       noteLanguageMode: noteMode,
       hiddenLanguages: hidden,
       confirmDelete,
+      noteDetailLevel: detailLevel,
     });
     setSaving(false);
     if (error) {
