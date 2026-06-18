@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://nauki.lovable.app/sitemap.xml
+Sitemap: https://www.moc-nauki.pl/sitemap.xml

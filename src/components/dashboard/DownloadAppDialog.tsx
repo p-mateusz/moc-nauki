@@ -150,7 +150,7 @@ const DownloadAppDialog = ({ open, onClose }: Props) => {
                 lineHeight: 1.65,
               }}
             >
-              <li>Otwórz <strong>nauki.lovable.app</strong> w przeglądarce <strong>Safari</strong>.</li>
+              <li>Otwórz <strong>www.moc-nauki.pl</strong> w przeglądarce <strong>Safari</strong>.</li>
               <li>Dotknij ikony udostępniania <strong>⬆️</strong> na dolnym pasku.</li>
               <li>Wybierz „<strong>Do ekranu początkowego</strong>".</li>
               <li>Potwierdź „Dodaj". Ikona pojawi się jak normalna aplikacja.</li>
