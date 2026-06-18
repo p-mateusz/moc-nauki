@@ -813,6 +813,18 @@ const TeacherStudentsTab = ({
                 const reactionEntries = Object.entries(reactions).filter(([, arr]) => (arr as string[]).length > 0);
                 const menuOpen = openMenuId === m.id;
                 const pickerOpen = reactionPickerId === m.id;
+                const longPressTimer = { current: null as ReturnType<typeof setTimeout> | null };
+                const startLongPress = (e: React.SyntheticEvent) => {
+                  if (longPressTimer.current) clearTimeout(longPressTimer.current);
+                  longPressTimer.current = setTimeout(() => {
+                    setOpenMenuId(m.id);
+                    setReactionPickerId(null);
+                    if (navigator.vibrate) navigator.vibrate(15);
+                  }, 350);
+                };
+                const cancelLongPress = () => {
+                  if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+                };
                 return (
                   <div
                     key={m.id}
@@ -826,6 +838,14 @@ const TeacherStudentsTab = ({
                     <div style={{ maxWidth: "75%", display: "flex", flexDirection: "column", alignItems: isMine ? "flex-end" : "flex-start", gap: 4 }}>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 6, flexDirection: isMine ? "row-reverse" : "row" }}>
                         <div
+                          onDoubleClick={(e) => { e.stopPropagation(); cancelLongPress(); toggleReaction(m, "❤️"); }}
+                          onMouseDown={startLongPress}
+                          onMouseUp={cancelLongPress}
+                          onMouseLeave={cancelLongPress}
+                          onTouchStart={startLongPress}
+                          onTouchEnd={cancelLongPress}
+                          onTouchMove={cancelLongPress}
+                          onContextMenu={(e) => { e.preventDefault(); setOpenMenuId(m.id); setReactionPickerId(null); }}
                           style={{
                             padding: m.image_url && !m.content ? 6 : "10px 14px",
                             borderRadius: 20,
@@ -837,6 +857,10 @@ const TeacherStudentsTab = ({
                             lineHeight: 1.5,
                             boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
                             position: "relative",
+                            cursor: "pointer",
+                            userSelect: "none",
+                            WebkitUserSelect: "none",
+                            WebkitTouchCallout: "none",
                           }}
                         >
                           {replied && (
@@ -858,7 +882,7 @@ const TeacherStudentsTab = ({
                             <img
                               src={m.image_url}
                               alt="załącznik"
-                              onClick={() => window.open(m.image_url!, "_blank")}
+                              onClick={(e) => { e.stopPropagation(); window.open(m.image_url!, "_blank"); }}
                               style={{
                                 maxWidth: 280, maxHeight: 280, borderRadius: 14,
                                 display: "block", cursor: "zoom-in",
@@ -871,23 +895,8 @@ const TeacherStudentsTab = ({
                             {new Date(m.created_at).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}
                           </div>
                         </div>
-
-                        {/* 3-dots menu trigger */}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(menuOpen ? null : m.id); setReactionPickerId(null); }}
-                          aria-label="Akcje wiadomości"
-                          className={`ts-msg-actions ${menuOpen || pickerOpen ? "active" : ""}`}
-                          style={{
-                            background: "rgba(255,255,255,0.05)", border: "none",
-                            width: 28, height: 28, borderRadius: "50%",
-                            color: "#cbd5e1", cursor: "pointer", flexShrink: 0,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            alignSelf: "center",
-                          }}
-                        >
-                          <MoreVertical size={14} />
-                        </button>
                       </div>
+
 
                       {/* Reaction chips */}
                       {reactionEntries.length > 0 && (
