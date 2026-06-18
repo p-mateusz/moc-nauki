@@ -1013,30 +1013,29 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
           >
             {dw > 0 && (
               <div style={{ width: innerW, display: "flex", flexDirection: "column" }}>
-                <div
-                  className="week-header-row"
-                  style={{ position: "sticky", top: 0, zIndex: 7, background: "rgba(8,16,32,0.98)" }}
-                >
-                  <div
-                    className="week-time-gutter"
-                    style={{ ...stickyLeft, width: MOBILE_GUTTER_W, flex: "0 0 auto" }}
-                  />
-                  {days.map(d => {
-                    const ds = isoDate(d);
-                    const isToday = ds === todayStr;
-                    return (
-                      <div
-                        key={ds}
-                        className={`week-day-header${isToday ? " today" : ""}`}
-                        style={{ width: dw, flex: "0 0 auto" }}
-                      >
-                        <div className="week-day-name">{DAY_NAMES_SHORT[d.getDay()]}</div>
-                        <div className="week-day-num">{d.getDate()}</div>
-                      </div>
-                    );
-                  })}
+                <div style={{ position: "sticky", top: 0, zIndex: 7, background: "rgba(8,16,32,0.98)" }}>
+                  <div className="week-header-row">
+                    <div
+                      className="week-time-gutter"
+                      style={{ ...stickyLeft, width: MOBILE_GUTTER_W, flex: "0 0 auto" }}
+                    />
+                    {days.map(d => {
+                      const ds = isoDate(d);
+                      const isToday = ds === todayStr;
+                      return (
+                        <div
+                          key={ds}
+                          className={`week-day-header${isToday ? " today" : ""}`}
+                          style={{ width: dw, flex: "0 0 auto" }}
+                        >
+                          <div className="week-day-name">{DAY_NAMES_SHORT[d.getDay()]}</div>
+                          <div className="week-day-num">{d.getDate()}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {renderAllDayRow(days, dw, MOBILE_GUTTER_W)}
                 </div>
-                {renderAllDayRow(days, dw, MOBILE_GUTTER_W)}
                 <div
                   className="week-body"
                   ref={weekBodyRef}
