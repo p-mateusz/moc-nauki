@@ -21,6 +21,7 @@ const PreferencesDialog = ({ open, onClose }: Props) => {
       setNoteMode(prefs.noteLanguageMode);
       setHidden(prefs.hiddenLanguages);
       setConfirmDelete(prefs.confirmDelete);
+      setDetailLevel(prefs.noteDetailLevel ?? 5);
     }
   }, [open, prefs]);
 
