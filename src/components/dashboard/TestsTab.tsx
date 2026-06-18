@@ -2,9 +2,9 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Filter, Plus, Trash2, Upload, X, Heart, Star, BookOpen, PenLine, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Filter, Plus, Trash2, Upload, X, Heart, Star, BookOpen, PenLine, ChevronDown, ChevronUp, Pencil } from "lucide-react";
 import {
-  fetchTests, fetchSaves, createTest, deleteTest as deleteTestApi,
+  fetchTests, fetchSaves, createTest, updateTest, deleteTest as deleteTestApi,
   toggleLike, toggleSave, incrementUses, addSolution, deleteSolution as deleteSolApi,
   uploadTestImage, Test, SUBJECTS, SCOPE_LABEL, SYMS, avInitials, ago,
 } from "@/lib/testsStore";
@@ -90,6 +90,8 @@ const TestsTab = ({ userName, guestMode }: Props) => {
   const [ntDesc, setNtDesc] = useState("");
   const [ntImgPreviews, setNtImgPreviews] = useState<string[]>([]);
   const [ntImgFiles, setNtImgFiles] = useState<File[]>([]);
+  const [ntExistingImgs, setNtExistingImgs] = useState<string[]>([]);
+  const [editingTestId, setEditingTestId] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
