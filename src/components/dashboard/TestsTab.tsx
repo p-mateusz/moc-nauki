@@ -497,12 +497,22 @@ const TestsTab = ({ userName, guestMode }: Props) => {
                       <Heart size={15} fill={liked ? "#ef4444" : "none"} /> {(t.likes || []).length}
                     </button>
                     {subtab === "mine" && isMe && (
-                      <button
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#334155", padding: 4, transition: ".2s" }}
-                        onClick={() => { if (confirm("Na pewno usunąć test?")) handleDeleteTest(t.id); }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <>
+                        <button
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "#60a5fa", padding: 4, transition: ".2s" }}
+                          onClick={() => openEdit(t)}
+                          title="Edytuj test"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "#334155", padding: 4, transition: ".2s" }}
+                          onClick={() => { if (confirm("Na pewno usunąć test?")) handleDeleteTest(t.id); }}
+                          title="Usuń test"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -515,14 +525,16 @@ const TestsTab = ({ userName, guestMode }: Props) => {
       {/* ── Create Modal ── */}
       <AnimatePresence>
         {showCreate && (
-          <motion.div style={s.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={e => { if (e.target === e.currentTarget) setShowCreate(false); }}>
+          <motion.div style={s.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={e => { if (e.target === e.currentTarget) { setShowCreate(false); resetTestForm(); } }}>
             <motion.div style={s.modal} initial={{ scale: 0.95, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 16 }} transition={{ duration: 0.25 }}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg, #3b82f6, #6366f1, #a78bfa)", borderRadius: "20px 20px 0 0" }} />
 
               {/* Modal header */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#fff" }}>📝 Dodaj test</div>
-                <button onClick={() => setShowCreate(false)} style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#8899b4", width: 32, height: 32, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#fff" }}>
+                  {editingTestId ? "✏️ Edytuj test" : "📝 Dodaj test"}
+                </div>
+                <button onClick={() => { setShowCreate(false); resetTestForm(); }} style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#8899b4", width: 32, height: 32, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <X size={16} />
                 </button>
               </div>
