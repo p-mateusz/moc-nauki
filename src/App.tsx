@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient, resetQueryCache } from "@/lib/queryClient";
 import { supabase } from "@/lib/supabase";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Login from "./pages/Login";
@@ -84,7 +84,7 @@ const App = () => {
           <Route path="/share/:listId" element={<ShareImport />} />
           <Route path="/s/:slug" element={<ShareImport />} />
           <Route path="/terms" element={<Terms />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <RecordingWidget />
       </BrowserRouter>
