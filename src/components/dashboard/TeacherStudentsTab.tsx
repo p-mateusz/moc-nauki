@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { ArrowLeft, Send, Search, MoreVertical, Reply, Copy, Trash2, SmilePlus, Paperclip, X, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Send, Search, Reply, Copy, Trash2, SmilePlus, Paperclip, X, Image as ImageIcon } from "lucide-react";
 import { useRoles } from "@/hooks/use-roles";
 import UserProfileModal from "./UserProfileModal";
 import { LoadingInline } from "@/components/ui/loading-state";
