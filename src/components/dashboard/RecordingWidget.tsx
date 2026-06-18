@@ -118,8 +118,10 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
    keepAliveAudioRef.current = null;
  };
 
-  // Gdy system mimo zabezpieczeń odbierze mikrofon — przełącz w PAUZĘ
-  // (zachowujemy nagrane chunks). Użytkownik "Wznów" ponownie zażąda mikrofonu.
+   // Gdy system mimo zabezpieczeń faktycznie zakończy strumień mikrofonu —
+   // przełącz w PAUZĘ (zachowujemy nagrane chunks). Nie traktujemy samego
+   // wyciszenia/mute przy zmianie aplikacji jako zerwania, bo na mobile to
+   // często chwilowy stan i nie powinien zatrzymywać nagrywania.
   const handleMicLost = () => {
     if (lostHandledRef.current) return;
     lostHandledRef.current = true;
@@ -137,12 +139,7 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
   const attachStreamGuards = (stream: MediaStream) => {
     stream.getAudioTracks().forEach((track) => {
       track.onended = () => handleMicLost();
-      track.onmute = () => {
-        // Niektóre przeglądarki tylko wyciszają ścieżkę zamiast ją zamykać.
-        setTimeout(() => {
-          if (track.muted && streamRef.current?.getAudioTracks().includes(track)) handleMicLost();
-        }, 1500);
-      };
+       track.onmute = null;
     });
   };
 
@@ -454,7 +451,9 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
 
  useEffect(() => { return () => stopTimer(); }, []);
 
-  // Wznów Wake Lock po powrocie z tła; wykryj zerwany strumień mikrofonu.
+   // Wznów Wake Lock po powrocie z tła. Nie pauzujemy na `muted`, bo przeglądarki
+   // mobilne często oznaczają tak strumień podczas przełączania aplikacji mimo,
+   // że po powrocie nagrywanie może być kontynuowane.
   useEffect(() => {
     const onVis = () => {
       if (document.visibilityState !== "visible") return;
@@ -464,7 +463,7 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
       const stream = streamRef.current;
       if (state === "recording" && stream) {
         const tracks = stream.getAudioTracks();
-        const dead = tracks.length === 0 || tracks.every((t) => t.readyState === "ended" || t.muted);
+         const dead = tracks.length === 0 || tracks.every((t) => t.readyState === "ended");
         if (dead) handleMicLost();
       }
     };
