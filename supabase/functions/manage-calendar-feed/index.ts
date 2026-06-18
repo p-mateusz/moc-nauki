@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getUserIdFromRequest } from "../_shared/auth.ts";
-import { createAdminClient } from "../_shared/appSettings.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,6 +17,13 @@ function generateToken(): string {
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
+function createCloudAdminClient() {
+  const url = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !serviceKey) throw new Error("Missing Cloud backend credentials");
+  return createClient(url, serviceKey);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -30,7 +37,7 @@ serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const action = (body?.action as string) || "get";
-    const adminSb = createAdminClient();
+    const adminSb = createCloudAdminClient();
 
     if (action !== "get" && action !== "regenerate" && action !== "revoke") {
       return new Response(JSON.stringify({ error: "Invalid action" }), {
