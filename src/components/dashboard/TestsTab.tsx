@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Filter, Plus, Trash2, Upload, X, Heart, Star, BookOpen, PenLine, ChevronDown, ChevronUp, Pencil } from "lucide-react";
+import Autocomplete from "./Autocomplete";
 import {
   fetchTests, fetchSaves, createTest, updateTest, deleteTest as deleteTestApi,
   toggleLike, toggleSave, incrementUses, addSolution, deleteSolution as deleteSolApi,
@@ -300,8 +301,13 @@ const TestsTab = ({ userName, guestMode }: Props) => {
   const hasActiveFilters = Object.values(filters).some(Boolean);
   const allSubjects = [...new Set(allTests.map(t => t.subject).filter(Boolean))].sort();
   const allKlasy = [...new Set(allTests.map(t => t.klasa).filter(Boolean))].sort((a, b) => Number(a) - Number(b));
-  const allTeachers = [...new Set(allTests.map(t => t.teacher).filter(Boolean))].sort();
-  const allSchools = [...new Set(allTests.map(t => t.school_name).filter(Boolean))].sort();
+  const dedupCI = (arr: string[]) => {
+    const seen = new Map<string, string>();
+    arr.forEach(v => { const k = v.trim().toLowerCase(); if (k && !seen.has(k)) seen.set(k, v.trim()); });
+    return [...seen.values()].sort((a, b) => a.localeCompare(b, "pl"));
+  };
+  const allTeachers = dedupCI(allTests.map(t => t.teacher).filter(Boolean) as string[]);
+  const allSchools = dedupCI(allTests.map(t => t.school_name).filter(Boolean) as string[]);
   const viewTest = viewTestId ? allTests.find(t => t.id === viewTestId) : null;
 
   const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
@@ -571,13 +577,11 @@ const TestsTab = ({ userName, guestMode }: Props) => {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div>
                     <label style={s.label}>Nazwa szkoły</label>
-                    <input list="schools-list" value={ntSname} onChange={e => setNtSname(e.target.value)} placeholder="np. ZS nr 3 Warszawa" maxLength={60} style={s.input} />
-                    <datalist id="schools-list">{allSchools.map(v => <option key={v} value={v} />)}</datalist>
+                    <Autocomplete value={ntSname} onChange={setNtSname} options={allSchools} placeholder="np. ZS nr 3 Warszawa" maxLength={60} inputStyle={s.input} />
                   </div>
                   <div>
                     <label style={s.label}>Nauczyciel</label>
-                    <input list="teachers-list" value={ntTeacher} onChange={e => setNtTeacher(e.target.value)} placeholder="np. mgr Kowalski" maxLength={50} style={s.input} />
-                    <datalist id="teachers-list">{allTeachers.map(v => <option key={v} value={v} />)}</datalist>
+                    <Autocomplete value={ntTeacher} onChange={setNtTeacher} options={allTeachers} placeholder="np. mgr Kowalski" maxLength={50} inputStyle={s.input} />
                   </div>
                 </div>
                 <div><label style={s.label}>Opis / zakres materiału</label><textarea value={ntDesc} onChange={e => setNtDesc(e.target.value)} rows={2} placeholder="np. Działy 4–6, funkcje trygonometryczne..." maxLength={220} style={s.textarea} /></div>
