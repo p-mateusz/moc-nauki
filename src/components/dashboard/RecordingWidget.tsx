@@ -315,6 +315,7 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
      const sel = (window as any).__notesTab_getSelection?.();
      targetSelectionRef.current = sel && sel.nbId && sel.secId ? { nbId: sel.nbId, secId: sel.secId, nbName: sel.nbName, secName: sel.secName } : null;
      setTargetInfo(sel ? `${sel.nbName} › ${sel.secName}` : "");
+    await requestBackgroundPermissions();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
