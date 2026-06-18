@@ -409,6 +409,8 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
     releaseWakeLock();
     stopKeepAliveAudio();
      clearRecordingAudioSession();
+    stopSilentLoop();
+    teardownMediaSession();
     detachStreamFromSink();
     toast.info("Nagranie anulowane.");
   };
