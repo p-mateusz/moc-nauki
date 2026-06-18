@@ -29,6 +29,17 @@ function cleanTitle(raw: string): string {
  );
 }
 
+type NavigatorWithAudioSession = Navigator & {
+  audioSession?: { type?: string };
+  mediaSession?: MediaSession;
+};
+
+type WindowWithWebkitAudio = Window & typeof globalThis & {
+  webkitAudioContext?: typeof AudioContext;
+};
+
+const ignoreAudioError = () => undefined;
+
 const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: RecordingWidgetProps = {}) => {
  const location = useLocation();
  const [currentTab, setCurrentTab] = useState<string>(() => {
@@ -92,13 +103,13 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
 
   const configureRecordingAudioSession = () => {
     try {
-      const audioSession = (navigator as any).audioSession;
+       const audioSession = (navigator as NavigatorWithAudioSession).audioSession;
       if (audioSession && "type" in audioSession) audioSession.type = "play-and-record";
-    } catch {}
-    try { if ((navigator as any).mediaSession) (navigator as any).mediaSession.playbackState = "playing"; } catch {}
+     } catch (error) { void error; }
+     try { if ((navigator as NavigatorWithAudioSession).mediaSession) (navigator as NavigatorWithAudioSession).mediaSession!.playbackState = "playing"; } catch (error) { void error; }
   };
   const clearRecordingAudioSession = () => {
-    try { if ((navigator as any).mediaSession) (navigator as any).mediaSession.playbackState = "none"; } catch {}
+     try { if ((navigator as NavigatorWithAudioSession).mediaSession) (navigator as NavigatorWithAudioSession).mediaSession!.playbackState = "none"; } catch (error) { void error; }
   };
 
   // Aktywna, prawie niesłyszalna ścieżka Web Audio podpięta do mikrofonu.
@@ -108,10 +119,11 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
    try {
       configureRecordingAudioSession();
       if (keepAliveAudioRef.current) {
-        keepAliveAudioRef.current.ctx.resume?.().catch?.(() => {});
+        keepAliveAudioRef.current.ctx.resume?.().catch?.(ignoreAudioError);
         return;
       }
-     const AC: any = (window as any).AudioContext || (window as any).webkitAudioContext;
+      const win = window as WindowWithWebkitAudio;
+      const AC = win.AudioContext || win.webkitAudioContext;
      if (!AC) return;
      const ctx: AudioContext = new AC();
      const gain = ctx.createGain();
@@ -123,22 +135,22 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
       micSource?.connect(gain);
       gain.connect(ctx.destination);
       osc.start(0);
-      ctx.resume?.().catch?.(() => {});
+      ctx.resume?.().catch?.(ignoreAudioError);
       keepAliveAudioRef.current = {
         ctx,
         stop: () => {
-          try { osc.stop(); } catch {}
-          try { micSource?.disconnect(); } catch {}
-          try { gain.disconnect(); } catch {}
-          try { ctx.close(); } catch {}
+          try { osc.stop(); } catch (error) { void error; }
+          try { micSource?.disconnect(); } catch (error) { void error; }
+          try { gain.disconnect(); } catch (error) { void error; }
+          try { ctx.close(); } catch (error) { void error; }
         },
       };
-   } catch {}
+    } catch (error) { void error; }
  };
  const stopKeepAliveAudio = () => {
    try {
       keepAliveAudioRef.current?.stop();
-   } catch {}
+    } catch (error) { void error; }
    keepAliveAudioRef.current = null;
  };
 
