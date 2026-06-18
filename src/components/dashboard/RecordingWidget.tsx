@@ -810,10 +810,71 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
            transition: "height 0.25s ease",
          }} />
        ))}
-     </div>
+      </div>
 
-     {/* Main action buttons */}
-     <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+      {/* Detail level slider */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "baseline",
+          fontSize: ".68rem", color: "#8899b4", letterSpacing: ".04em",
+          textTransform: "uppercase", fontWeight: 700, marginBottom: 6,
+        }}>
+          <span>Szczegółowość</span>
+          <span style={{ color: accentColor, fontWeight: 800 }}>{detailLevel}/9</span>
+        </div>
+        <input
+          type="range"
+          min={1}
+          max={9}
+          step={1}
+          value={detailLevel}
+          onChange={(e) => setDetailLevel(Number(e.target.value))}
+          className="rec-detail-slider"
+          style={{
+            width: "100%", appearance: "none", WebkitAppearance: "none",
+            background: "transparent", cursor: "pointer", padding: 0, margin: 0,
+            height: 18,
+          }}
+          aria-label="Poziom szczegółowości notatki"
+        />
+        <style>{`
+          .rec-detail-slider::-webkit-slider-runnable-track {
+            height: 4px; border-radius: 999px;
+            background: linear-gradient(to right, ${accentColor} 0%, ${accentColor} ${((detailLevel - 1) / 8) * 100}%, rgba(255,255,255,0.10) ${((detailLevel - 1) / 8) * 100}%, rgba(255,255,255,0.10) 100%);
+          }
+          .rec-detail-slider::-moz-range-track {
+            height: 4px; border-radius: 999px; background: rgba(255,255,255,0.10);
+          }
+          .rec-detail-slider::-moz-range-progress {
+            height: 4px; border-radius: 999px; background: ${accentColor};
+          }
+          .rec-detail-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: #fff; border: 2px solid ${accentColor};
+            box-shadow: 0 0 0 4px ${accentColor}22, 0 2px 8px rgba(0,0,0,.35);
+            margin-top: -6px; cursor: grab; transition: transform .15s;
+          }
+          .rec-detail-slider::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.15); }
+          .rec-detail-slider::-moz-range-thumb {
+            width: 16px; height: 16px; border-radius: 50%;
+            background: #fff; border: 2px solid ${accentColor};
+            box-shadow: 0 0 0 4px ${accentColor}22, 0 2px 8px rgba(0,0,0,.35);
+            cursor: grab;
+          }
+          .rec-detail-slider:focus { outline: none; }
+        `}</style>
+        <div style={{
+          display: "flex", justifyContent: "space-between",
+          fontSize: ".62rem", color: "#5a6a85", marginTop: 4,
+        }}>
+          <span>mniej</span>
+          <span>więcej</span>
+        </div>
+      </div>
+
+      {/* Main action buttons */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
        {/* Pause / Resume */}
        <button
          onClick={isPaused ? resumeRecording : pauseRecording}
