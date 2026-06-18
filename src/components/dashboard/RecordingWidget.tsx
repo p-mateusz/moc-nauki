@@ -578,7 +578,9 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
        formData.append("duration", duration);
        const userPrefs = getCachedPreferences();
        formData.append("noteLanguageMode", userPrefs.noteLanguageMode);
-       formData.append("noteLanguageHint", notePreferenceHint(userPrefs.noteLanguageMode));
+        formData.append("noteLanguageHint", notePreferenceHint(userPrefs.noteLanguageMode));
+        formData.append("detailLevel", String(detailLevelRef.current));
+        formData.append("noteDetailLevel", String(detailLevelRef.current));
        const resultText = await invokeCloudFunction<string>("proxy-n8n-audio", { body: formData, responseType: "text" });
         let title = "Notatka z lekcji";
         let content = resultText;
