@@ -1005,7 +1005,7 @@ const TeacherStudentsTab = ({
                   }}><X size={16} /></button>
                 </div>
               )}
-              <div style={{ padding: 18, display: "flex", gap: 10, alignItems: "center" }}>
+              <div style={{ padding: "14px 16px", display: "flex", gap: 8, alignItems: "center", minWidth: 0 }}>
                 <input
                   ref={imageInputRef}
                   type="file"
@@ -1032,16 +1032,16 @@ const TeacherStudentsTab = ({
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void sendMessage(); } }}
                   placeholder="Napisz wiadomość..."
                   style={{
-                    flex: 1, background: "rgba(255,255,255,0.06)",
+                    flex: 1, minWidth: 0, background: "rgba(255,255,255,0.06)",
                     border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16,
-                    padding: "14px 16px", color: "#fff", fontSize: ".92rem", outline: "none",
+                    padding: "12px 14px", color: "#fff", fontSize: ".92rem", outline: "none",
                   }}
                 />
                 <button
                   onClick={() => void sendMessage()}
                   disabled={!msgText.trim()}
                   style={{
-                    width: 54, height: 54, borderRadius: 18, border: "none",
+                    width: 44, height: 44, borderRadius: 14, border: "none",
                     background: msgText.trim() ? "linear-gradient(135deg,#3b82f6,#6366f1)" : "rgba(255,255,255,0.08)",
                     color: "#fff", cursor: msgText.trim() ? "pointer" : "not-allowed",
                     display: "flex", alignItems: "center", justifyContent: "center", transition: ".2s", flexShrink: 0,
@@ -1050,6 +1050,7 @@ const TeacherStudentsTab = ({
                   <Send size={18} />
                 </button>
               </div>
+
             </div>
           </>
 
