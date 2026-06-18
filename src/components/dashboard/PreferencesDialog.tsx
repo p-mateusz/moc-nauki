@@ -13,6 +13,7 @@ const PreferencesDialog = ({ open, onClose }: Props) => {
   const [noteMode, setNoteMode] = useState<NoteLanguageMode>(prefs.noteLanguageMode);
   const [hidden, setHidden] = useState<string[]>(prefs.hiddenLanguages);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(prefs.confirmDelete);
+  const [detailLevel, setDetailLevel] = useState<number>(prefs.noteDetailLevel ?? 5);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
