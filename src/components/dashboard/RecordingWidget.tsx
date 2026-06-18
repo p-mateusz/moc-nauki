@@ -385,6 +385,8 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
       startTimer();
       await requestWakeLock();
       startKeepAliveAudio(stream);
+      startSilentLoop();
+      setupMediaSession();
       toast.success("▶ Wznowiono nagrywanie");
     } catch (err: any) {
       toast.error("Nie udało się odzyskać mikrofonu: " + (err?.message || "Nieznany błąd"));
