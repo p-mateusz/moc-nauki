@@ -313,6 +313,7 @@ const CreateList = () => {
       } else {
         submittedRef.current = true;
         toast.success(t("listCreated", lang));
+        localStorage.setItem("dashboardActiveTab", "languages");
         navigate("/dashboard");
       }
     } catch (e: any) { toast.error(t("errorSaving", lang)); console.error(e); setSaving(false); }
