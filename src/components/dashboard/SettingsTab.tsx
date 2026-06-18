@@ -1166,6 +1166,9 @@ const SettingsTab = ({
       <PreferencesDialog open={preferencesDialogOpen} onClose={() => setPreferencesDialogOpen(false)} />
       <CalendarConnectDialog open={calendarDialogOpen} onClose={() => setCalendarDialogOpen(false)} />
       <DownloadAppDialog open={downloadDialogOpen} onClose={() => setDownloadDialogOpen(false)} />
+      {userRole === "admin" && (
+        <AdminAppLinksDialog open={adminLinksDialogOpen} onClose={() => setAdminLinksDialogOpen(false)} />
+      )}
 
     </div>
   );
