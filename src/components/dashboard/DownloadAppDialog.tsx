@@ -4,29 +4,41 @@ import { supabase } from "@/lib/supabase";
 
 type Props = { open: boolean; onClose: () => void };
 
-type Links = { android?: string; ios?: string };
+type Links = {
+  android?: string;
+  windows?: string;
+  macos?: string;
+};
 
 const DownloadAppDialog = ({ open, onClose }: Props) => {
   const [links, setLinks] = useState<Links>({});
   const [loading, setLoading] = useState(true);
+  const [showIosHelp, setShowIosHelp] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setLoading(true);
+    setShowIosHelp(false);
     (async () => {
       try {
         const { data } = await supabase
           .from("app_settings")
           .select("key, value")
-          .in("key", ["app_download_android_url", "app_download_ios_url"]);
+          .in("key", [
+            "app_download_android_url",
+            "app_download_windows_url",
+            "app_download_macos_url",
+          ]);
         const map: Links = {};
         (data || []).forEach((r: { key: string; value: unknown }) => {
-          if (r.key === "app_download_android_url" && typeof r.value === "string") map.android = r.value;
-          if (r.key === "app_download_ios_url" && typeof r.value === "string") map.ios = r.value;
+          if (typeof r.value !== "string") return;
+          if (r.key === "app_download_android_url") map.android = r.value;
+          if (r.key === "app_download_windows_url") map.windows = r.value;
+          if (r.key === "app_download_macos_url") map.macos = r.value;
         });
         setLinks(map);
       } catch {
-        // ignore — links pozostają puste
+        // brak linków = przyciski "wkrótce"
       } finally {
         setLoading(false);
       }
@@ -58,7 +70,6 @@ const DownloadAppDialog = ({ open, onClose }: Props) => {
     fontWeight: 800,
     cursor: enabled ? "pointer" : "not-allowed",
     fontSize: ".88rem",
-    textDecoration: "none",
     width: "100%",
   });
 
@@ -69,6 +80,38 @@ const DownloadAppDialog = ({ open, onClose }: Props) => {
     }
     window.open(url, "_blank", "noopener,noreferrer");
   };
+
+  type Platform = {
+    icon: string;
+    title: string;
+    sub: string;
+    url?: string;
+    label: string;
+  };
+
+  const platforms: Platform[] = [
+    {
+      icon: "🤖",
+      title: "Android",
+      sub: "Plik APK — instalacja jednym kliknięciem",
+      url: links.android,
+      label: "⬇️ Pobierz APK",
+    },
+    {
+      icon: "🪟",
+      title: "Windows",
+      sub: "Instalator .exe — bez Microsoft Store",
+      url: links.windows,
+      label: "⬇️ Pobierz dla Windows",
+    },
+    {
+      icon: "🖥️",
+      title: "macOS",
+      sub: "Plik .dmg — bez Mac App Store",
+      url: links.macos,
+      label: "⬇️ Pobierz dla Mac",
+    },
+  ];
 
   return (
     <div
@@ -83,7 +126,7 @@ const DownloadAppDialog = ({ open, onClose }: Props) => {
         onClick={(e) => e.stopPropagation()}
         style={{
           background: "#0f172a", borderRadius: 20, padding: 22,
-          maxWidth: 480, width: "100%", maxHeight: "85vh", overflowY: "auto",
+          maxWidth: 500, width: "100%", maxHeight: "85vh", overflowY: "auto",
           border: "1px solid rgba(255,255,255,0.1)", color: "#fff",
         }}
       >
@@ -91,46 +134,67 @@ const DownloadAppDialog = ({ open, onClose }: Props) => {
           📱 Pobierz aplikację Moc Nauki
         </h3>
         <p style={{ fontSize: ".82rem", color: "#94a3b8", marginBottom: 16 }}>
-          Aplikacja natywna daje pełny dostęp do mikrofonu w tle, powiadomień
-          i działa nawet przy zablokowanym ekranie.
+          Aplikacja natywna daje pełny dostęp do mikrofonu w tle i działa nawet
+          przy zablokowanym ekranie. Pobierasz bezpośrednio od nas — żadnego
+          sklepu, żadnego konta.
         </p>
 
-        <div style={card}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            <span style={{ fontSize: "1.4rem" }}>🤖</span>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: ".95rem" }}>Android</div>
-              <div style={{ fontSize: ".72rem", color: "#94a3b8" }}>
-                Plik instalacyjny APK
+        {platforms.map((p) => (
+          <div key={p.title} style={card}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+              <span style={{ fontSize: "1.4rem" }}>{p.icon}</span>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: ".95rem" }}>{p.title}</div>
+                <div style={{ fontSize: ".72rem", color: "#94a3b8" }}>{p.sub}</div>
               </div>
             </div>
+            <button
+              onClick={() => open_(p.url)}
+              disabled={loading}
+              style={btn(!!p.url && !loading)}
+            >
+              {loading ? "Ładowanie…" : p.url ? p.label : "Wkrótce dostępne"}
+            </button>
           </div>
-          <button
-            onClick={() => open_(links.android)}
-            disabled={loading}
-            style={btn(!!links.android && !loading)}
-          >
-            {loading ? "Ładowanie…" : links.android ? "⬇️ Pobierz na Android" : "Wkrótce dostępne"}
-          </button>
-        </div>
+        ))}
 
+        {/* iOS — PWA only */}
         <div style={card}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
             <span style={{ fontSize: "1.4rem" }}>🍎</span>
             <div>
               <div style={{ fontWeight: 800, fontSize: ".95rem" }}>iPhone / iPad</div>
               <div style={{ fontSize: ".72rem", color: "#94a3b8" }}>
-                Przez TestFlight lub App Store
+                Dodaj do ekranu głównego z Safari (Apple nie pozwala na instalację spoza App Store)
               </div>
             </div>
           </div>
           <button
-            onClick={() => open_(links.ios)}
-            disabled={loading}
-            style={btn(!!links.ios && !loading)}
+            onClick={() => setShowIosHelp((v) => !v)}
+            style={{
+              ...btn(true),
+              background: "rgba(255,255,255,0.08)",
+              color: "#fff",
+            }}
           >
-            {loading ? "Ładowanie…" : links.ios ? "⬇️ Otwórz w TestFlight" : "Wkrótce dostępne"}
+            {showIosHelp ? "Ukryj instrukcję" : "Pokaż instrukcję krok po kroku"}
           </button>
+          {showIosHelp && (
+            <ol
+              style={{
+                marginTop: 12,
+                paddingLeft: 18,
+                fontSize: ".82rem",
+                color: "#cbd5e1",
+                lineHeight: 1.65,
+              }}
+            >
+              <li>Otwórz <strong>nauki.lovable.app</strong> w przeglądarce <strong>Safari</strong> (nie Chrome).</li>
+              <li>Dotknij ikony udostępniania <strong>⬆️</strong> na dolnym pasku.</li>
+              <li>Wybierz „<strong>Do ekranu początkowego</strong>" / „<strong>Add to Home Screen</strong>".</li>
+              <li>Potwierdź „Dodaj". Ikona Moc Nauki pojawi się jak normalna aplikacja.</li>
+            </ol>
+          )}
         </div>
 
         <div
@@ -141,9 +205,9 @@ const DownloadAppDialog = ({ open, onClose }: Props) => {
           }}
         >
           <div style={{ fontSize: ".78rem", color: "#cbd5e1", lineHeight: 1.55 }}>
-            💡 Jeśli linki są nieaktywne, finalizujemy jeszcze wersję na Twój
-            system. Tymczasem możesz „Dodać do ekranu głównego" z menu
-            przeglądarki — działa jak aplikacja.
+            💡 Pliki Android / Windows / Mac są podpisane i pobierasz je
+            bezpośrednio od nas. System może raz zapytać o zgodę na instalację
+            aplikacji „spoza sklepu" — to normalne.
           </div>
         </div>
 
