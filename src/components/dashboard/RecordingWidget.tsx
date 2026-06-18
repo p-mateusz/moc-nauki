@@ -46,14 +46,18 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
  const [collapsed, setCollapsed] = useState(false);
  const [sending, setSending] = useState(false);
  const [targetInfo, setTargetInfo] = useState<string>("");
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const intervalRef = useRef<any>(null);
-  const targetSelectionRef = useRef<{ nbId: string; secId: string; nbName?: string; secName?: string } | null>(null);
-  const wakeLockRef = useRef<any>(null);
-  const keepAliveAudioRef = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode } | null>(null);
- const isActive = state !== "idle";
+   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+   const streamRef = useRef<MediaStream | null>(null);
+   const chunksRef = useRef<Blob[]>([]);
+   const intervalRef = useRef<any>(null);
+   const targetSelectionRef = useRef<{ nbId: string; secId: string; nbName?: string; secName?: string } | null>(null);
+   const wakeLockRef = useRef<any>(null);
+   const keepAliveAudioRef = useRef<{ ctx: AudioContext; src: AudioBufferSourceNode } | null>(null);
+   const secondsRef = useRef(0);
+   const lostHandledRef = useRef(false);
+  const isActive = state !== "idle";
+
+  useEffect(() => { secondsRef.current = seconds; }, [seconds]);
 
  const isGuest = (() => {
    try {
