@@ -576,13 +576,15 @@ const TestsTab = ({ userName, guestMode }: Props) => {
 
                 <div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                    <label style={{ ...s.label, marginBottom: 0 }}>Zdjęcia testu {ntImgPreviews.length > 0 && <span style={{ color: "#475569" }}>({ntImgPreviews.length})</span>}</label>
+                    <label style={{ ...s.label, marginBottom: 0 }}>
+                      Zdjęcia testu {(ntExistingImgs.length + ntImgPreviews.length) > 0 && <span style={{ color: "#475569" }}>({ntExistingImgs.length + ntImgPreviews.length})</span>}
+                    </label>
                     <button onClick={() => fileInputRef.current?.click()} style={{ ...s.btnGhost, padding: "5px 12px", fontSize: ".78rem" }}>
                       <Plus size={13} /> Dodaj
                     </button>
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => handleImgUpload(e, "test")} />
-                  {ntImgPreviews.length === 0 ? (
+                  {ntExistingImgs.length === 0 && ntImgPreviews.length === 0 ? (
                     <div
                       onClick={() => fileInputRef.current?.click()}
                       style={{ border: "2px dashed rgba(255,255,255,0.08)", borderRadius: 12, padding: "28px", textAlign: "center", cursor: "pointer", transition: ".2s" }}
@@ -593,10 +595,19 @@ const TestsTab = ({ userName, guestMode }: Props) => {
                     </div>
                   ) : (
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 8 }}>
-                      {ntImgPreviews.map((src, i) => (
-                        <div key={i} style={{ position: "relative", aspectRatio: "1", borderRadius: 10, overflow: "hidden" }}>
+                      {ntExistingImgs.map((src, i) => (
+                        <div key={`ex-${i}`} style={{ position: "relative", aspectRatio: "1", borderRadius: 10, overflow: "hidden" }}>
                           <img alt="" src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                           <div style={{ position: "absolute", top: 4, left: 4, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: ".6rem", fontWeight: 800, padding: "2px 6px", borderRadius: 4 }}>{i + 1}</div>
+                          <button onClick={() => setNtExistingImgs(prev => prev.filter((_, j) => j !== i))} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", width: 20, height: 20, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <X size={11} />
+                          </button>
+                        </div>
+                      ))}
+                      {ntImgPreviews.map((src, i) => (
+                        <div key={`new-${i}`} style={{ position: "relative", aspectRatio: "1", borderRadius: 10, overflow: "hidden" }}>
+                          <img alt="" src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <div style={{ position: "absolute", top: 4, left: 4, background: "rgba(59,130,246,0.85)", color: "#fff", fontSize: ".6rem", fontWeight: 800, padding: "2px 6px", borderRadius: 4 }}>NOWE</div>
                           <button onClick={() => { setNtImgPreviews(prev => prev.filter((_, j) => j !== i)); setNtImgFiles(prev => prev.filter((_, j) => j !== i)); }} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", width: 20, height: 20, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             <X size={11} />
                           </button>
@@ -612,9 +623,9 @@ const TestsTab = ({ userName, guestMode }: Props) => {
 
               {/* Modal footer */}
               <div style={{ padding: "14px 24px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 10, justifyContent: "flex-end" }}>
-                <button style={s.btnGhost} onClick={() => setShowCreate(false)}>Anuluj</button>
+                <button style={s.btnGhost} onClick={() => { setShowCreate(false); resetTestForm(); }}>Anuluj</button>
                 <motion.button style={s.btnGrad} onClick={publishTest} disabled={publishing} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                  {publishing ? "⏳ Publikowanie..." : "🚀 Opublikuj"}
+                  {publishing ? "⏳ Zapisywanie..." : editingTestId ? "💾 Zapisz zmiany" : "🚀 Opublikuj"}
                 </motion.button>
               </div>
             </motion.div>
