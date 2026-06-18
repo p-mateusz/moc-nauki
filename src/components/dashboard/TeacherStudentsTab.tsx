@@ -814,6 +814,7 @@ const TeacherStudentsTab = ({
                 const menuOpen = openMenuId === m.id;
                 const pickerOpen = reactionPickerId === m.id;
                 const longPressTimer = { current: null as ReturnType<typeof setTimeout> | null };
+                const lastTap = { current: 0 };
                 const startLongPress = (e: React.SyntheticEvent) => {
                   if (longPressTimer.current) clearTimeout(longPressTimer.current);
                   longPressTimer.current = setTimeout(() => {
@@ -824,6 +825,17 @@ const TeacherStudentsTab = ({
                 };
                 const cancelLongPress = () => {
                   if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+                };
+                const handleTapEnd = (e: React.SyntheticEvent) => {
+                  cancelLongPress();
+                  const now = Date.now();
+                  if (now - lastTap.current < 320) {
+                    lastTap.current = 0;
+                    e.preventDefault();
+                    toggleReaction(m, "❤️");
+                  } else {
+                    lastTap.current = now;
+                  }
                 };
                 return (
                   <div
@@ -843,7 +855,7 @@ const TeacherStudentsTab = ({
                           onMouseUp={cancelLongPress}
                           onMouseLeave={cancelLongPress}
                           onTouchStart={startLongPress}
-                          onTouchEnd={cancelLongPress}
+                          onTouchEnd={handleTapEnd}
                           onTouchMove={cancelLongPress}
                           onContextMenu={(e) => { e.preventDefault(); setOpenMenuId(m.id); setReactionPickerId(null); }}
                           style={{
