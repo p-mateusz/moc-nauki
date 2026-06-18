@@ -118,29 +118,63 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
    keepAliveAudioRef.current = null;
  };
 
+  // Gdy system mimo zabezpieczeń odbierze mikrofon — przełącz w PAUZĘ
+  // (zachowujemy nagrane chunks). Użytkownik "Wznów" ponownie zażąda mikrofonu.
   const handleMicLost = () => {
     if (lostHandledRef.current) return;
-    const recorder = mediaRecorderRef.current;
-    if (!recorder) return;
     lostHandledRef.current = true;
+    const recorder = mediaRecorderRef.current;
     stopTimer();
-    const finalSeconds = secondsRef.current;
-    toast.warning("System zwolnił mikrofon (aplikacja była w tle). Zapisuję to, co udało się nagrać.");
-    recorder.onstop = async () => {
-      const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      mediaRecorderRef.current = null;
-      streamRef.current = null;
-      chunksRef.current = [];
-      setState("idle");
-      setSeconds(0);
-      (window as any).__recordingActive = false;
-      releaseWakeLock();
-      stopKeepAliveAudio();
-      if (finalSeconds < 3) { toast.warning("Nagranie za krótkie — nic nie zapisano."); return; }
-      await sendToN8n(blob, finalSeconds);
-    };
-    try { if (recorder.state !== "inactive") recorder.stop(); } catch {}
+    try { if (recorder && recorder.state !== "inactive") recorder.stop(); } catch {}
+    try { streamRef.current?.getTracks().forEach((t) => t.stop()); } catch {}
+    streamRef.current = null;
+    // Zachowujemy chunksRef i secondsRef — wznowienie dopisze kolejne fragmenty.
+    setState("paused");
+    setCollapsed(false);
+    toast.warning("System odebrał mikrofon. Naciśnij „Wznów”, by kontynuować nagrywanie.");
+  };
+
+  const attachStreamGuards = (stream: MediaStream) => {
+    stream.getAudioTracks().forEach((track) => {
+      track.onended = () => handleMicLost();
+      track.onmute = () => {
+        // Niektóre przeglądarki tylko wyciszają ścieżkę zamiast ją zamykać.
+        setTimeout(() => {
+          if (track.muted && streamRef.current?.getAudioTracks().includes(track)) handleMicLost();
+        }, 1500);
+      };
+    });
+  };
+
+  // Ukryty <audio> z odtwarzanym strumieniem mikrofonu (muted) — utrzymuje
+  // ścieżkę "in use" i zmniejsza szansę, że iOS/Android ją zwolnią w tle.
+  const sinkAudioRef = useRef<HTMLAudioElement | null>(null);
+  const attachStreamToSink = (stream: MediaStream) => {
+    try {
+      if (!sinkAudioRef.current) {
+        const el = document.createElement("audio");
+        el.muted = true;
+        (el as any).playsInline = true;
+        el.setAttribute("playsinline", "");
+        el.style.position = "fixed";
+        el.style.width = "1px";
+        el.style.height = "1px";
+        el.style.opacity = "0";
+        el.style.pointerEvents = "none";
+        document.body.appendChild(el);
+        sinkAudioRef.current = el;
+      }
+      sinkAudioRef.current.srcObject = stream;
+      sinkAudioRef.current.play().catch(() => {});
+    } catch {}
+  };
+  const detachStreamFromSink = () => {
+    try {
+      if (sinkAudioRef.current) {
+        sinkAudioRef.current.pause();
+        sinkAudioRef.current.srcObject = null;
+      }
+    } catch {}
   };
 
   const startRecording = async () => {
@@ -154,19 +188,15 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
      targetSelectionRef.current = sel && sel.nbId && sel.secId ? { nbId: sel.nbId, secId: sel.secId, nbName: sel.nbName, secName: sel.secName } : null;
      setTargetInfo(sel ? `${sel.nbName} › ${sel.secName}` : "");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: false,
+      });
       streamRef.current = stream;
       chunksRef.current = [];
       lostHandledRef.current = false;
-      stream.getAudioTracks().forEach((track) => {
-        track.onended = () => handleMicLost();
-        track.onmute = () => {
-          // niektóre przeglądarki tylko wyciszą ścieżkę zamiast ją zakończyć
-          setTimeout(() => {
-            if (track.muted && (streamRef.current?.getAudioTracks().includes(track))) handleMicLost();
-          }, 1500);
-        };
-      });
+      attachStreamGuards(stream);
+      attachStreamToSink(stream);
       const recorder = new MediaRecorder(stream);
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       recorder.start(1000);
@@ -187,58 +217,97 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
    }
  };
 
- const pauseRecording = () => {
-   const recorder = mediaRecorderRef.current;
-   if (recorder && recorder.state === "recording") {
-     recorder.pause(); setState("paused"); stopTimer(); toast.info("⏸ Nagrywanie wstrzymane");
-   }
- };
+  const pauseRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state === "recording") {
+      recorder.pause(); setState("paused"); stopTimer(); toast.info("⏸ Nagrywanie wstrzymane");
+    }
+  };
 
- const resumeRecording = () => {
-   const recorder = mediaRecorderRef.current;
-   if (recorder && recorder.state === "paused") {
-     recorder.resume(); setState("recording"); startTimer(); toast.info("▶ Nagrywanie wznowione");
-   }
- };
+  const resumeRecording = async () => {
+    const recorder = mediaRecorderRef.current;
+    // Normalna pauza — MediaRecorder żyje, tylko wznawiamy.
+    if (recorder && recorder.state === "paused") {
+      try {
+        recorder.resume();
+        setState("recording");
+        startTimer();
+        toast.info("▶ Nagrywanie wznowione");
+        return;
+      } catch {}
+    }
+    // Mic został zerwany — ponownie żądamy dostępu (musi być w geście użytkownika).
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: false,
+      });
+      streamRef.current = stream;
+      lostHandledRef.current = false;
+      attachStreamGuards(stream);
+      attachStreamToSink(stream);
+      const newRec = new MediaRecorder(stream);
+      newRec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      newRec.start(1000);
+      mediaRecorderRef.current = newRec;
+      setState("recording");
+      startTimer();
+      await requestWakeLock();
+      startKeepAliveAudio();
+      toast.success("▶ Wznowiono nagrywanie");
+    } catch (err: any) {
+      toast.error("Nie udało się odzyskać mikrofonu: " + (err?.message || "Nieznany błąd"));
+    }
+  };
 
- const cancelRecording = () => {
-   if (!confirm("Na pewno anulować nagranie?")) return;
-   stopTimer();
-   const recorder = mediaRecorderRef.current;
-   if (recorder && recorder.state !== "inactive") recorder.stop();
-   streamRef.current?.getTracks().forEach((t) => t.stop());
-   mediaRecorderRef.current = null;
-   streamRef.current = null;
-   chunksRef.current = [];
-   setState("idle");
-   setSeconds(0);
-   (window as any).__recordingActive = false;
-   releaseWakeLock();
-   stopKeepAliveAudio();
-   toast.info("Nagranie anulowane.");
- };
 
- const saveRecording = () => {
-   stopTimer();
-   const recorder = mediaRecorderRef.current;
-   if (!recorder) return;
-   const finalSeconds = seconds;
-   recorder.onstop = async () => {
-     const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-     streamRef.current?.getTracks().forEach((t) => t.stop());
-     mediaRecorderRef.current = null;
-     streamRef.current = null;
-     chunksRef.current = [];
-     setState("idle");
-     setSeconds(0);
-     (window as any).__recordingActive = false;
-     releaseWakeLock();
-     stopKeepAliveAudio();
-     if (finalSeconds < 3) { toast.warning("Nagranie za krótkie."); return; }
-     await sendToN8n(blob, finalSeconds);
-   };
-   if (recorder.state !== "inactive") recorder.stop();
- };
+  const cancelRecording = () => {
+    if (!confirm("Na pewno anulować nagranie?")) return;
+    stopTimer();
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") recorder.stop();
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    mediaRecorderRef.current = null;
+    streamRef.current = null;
+    chunksRef.current = [];
+    setState("idle");
+    setSeconds(0);
+    (window as any).__recordingActive = false;
+    releaseWakeLock();
+    stopKeepAliveAudio();
+    detachStreamFromSink();
+    toast.info("Nagranie anulowane.");
+  };
+
+  const finalizeAndSend = async (finalSeconds: number) => {
+    const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    mediaRecorderRef.current = null;
+    streamRef.current = null;
+    chunksRef.current = [];
+    setState("idle");
+    setSeconds(0);
+    (window as any).__recordingActive = false;
+    releaseWakeLock();
+    stopKeepAliveAudio();
+    detachStreamFromSink();
+    if (finalSeconds < 3) { toast.warning("Nagranie za krótkie."); return; }
+    await sendToN8n(blob, finalSeconds);
+  };
+
+  const saveRecording = () => {
+    stopTimer();
+    const finalSeconds = seconds;
+    const recorder = mediaRecorderRef.current;
+    // Gdy mic został zerwany (paused bez żywego recordera) — zapisz z chunks.
+    if (!recorder || recorder.state === "inactive") {
+      void finalizeAndSend(finalSeconds);
+      return;
+    }
+    recorder.onstop = () => { void finalizeAndSend(finalSeconds); };
+    recorder.stop();
+  };
+
 
   const persistNoteDirectly = async (title: string, content: string) => {
     try {
