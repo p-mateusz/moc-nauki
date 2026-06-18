@@ -180,12 +180,57 @@ const TestsTab = ({ userName, guestMode }: Props) => {
     e.target.value = "";
   };
 
+  const resetTestForm = () => {
+    setNtTitle(""); setNtSubject(""); setNtKlasa(""); setNtScope("");
+    setNtSname(""); setNtTeacher(""); setNtDesc("");
+    setNtImgPreviews([]); setNtImgFiles([]); setNtExistingImgs([]);
+    setEditingTestId(null);
+  };
+
+  const openEdit = (t: Test) => {
+    setEditingTestId(t.id);
+    setNtTitle(t.title || "");
+    setNtSubject(t.subject || "");
+    setNtKlasa(t.klasa || "");
+    setNtScope(t.scope || "");
+    setNtSname(t.school_name || "");
+    setNtTeacher(t.teacher || "");
+    setNtDesc(t.description || "");
+    setNtExistingImgs(t.images || []);
+    setNtImgPreviews([]);
+    setNtImgFiles([]);
+    setShowCreate(true);
+  };
+
   const publishTest = async () => {
     if (!ntTitle) { toast.warning("Podaj temat testu!"); return; }
     if (!ntSubject) { toast.warning("Wybierz przedmiot!"); return; }
     if (!ntKlasa) { toast.warning("Wybierz klasę!"); return; }
     if (!ntScope) { toast.warning("Wybierz zakres!"); return; }
     setPublishing(true);
+
+    if (editingTestId) {
+      // Upload any new files
+      const newUrls: string[] = [];
+      for (const file of ntImgFiles) {
+        const url = await uploadTestImage(file, editingTestId, userId);
+        if (url) newUrls.push(url);
+        else toast.error(`Nie udało się zapisać zdjęcia: ${file.name}`);
+      }
+      const ok = await updateTest(editingTestId, {
+        title: ntTitle, subject: ntSubject, klasa: ntKlasa, scope: ntScope,
+        school_name: ntSname, teacher: ntTeacher, description: ntDesc,
+        images: [...ntExistingImgs, ...newUrls],
+      });
+      setPublishing(false);
+      if (!ok) { toast.error("Nie udało się zapisać zmian"); return; }
+      setShowCreate(false);
+      resetTestForm();
+      toast.success("✅ Zmiany zapisane!");
+      reload();
+      return;
+    }
+
     const test = await createTest({ title: ntTitle, subject: ntSubject, klasa: ntKlasa, scope: ntScope, school_name: ntSname, teacher: ntTeacher, description: ntDesc, images: [], author_id: userId, author_name: userName });
     if (!test) { toast.error("Błąd tworzenia testu"); setPublishing(false); return; }
     if (ntImgFiles.length > 0) {
@@ -201,8 +246,7 @@ const TestsTab = ({ userName, guestMode }: Props) => {
       }
     }
     setShowCreate(false);
-    setNtTitle(""); setNtSubject(""); setNtKlasa(""); setNtScope("");
-    setNtSname(""); setNtTeacher(""); setNtDesc(""); setNtImgPreviews([]); setNtImgFiles([]);
+    resetTestForm();
     setPublishing(false);
     toast.success("🚀 Test opublikowany!");
     reload();
