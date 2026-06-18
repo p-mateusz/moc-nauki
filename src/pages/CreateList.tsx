@@ -307,6 +307,7 @@ const CreateList = () => {
           setSentenceLoading(false);
           submittedRef.current = true; // we already saved data; don't double-save on unmount
           toast.error("Generowanie zdań nie powiodło się — lista została zapisana jako wersja robocza");
+          localStorage.setItem("dashboardActiveTab", "languages");
           navigate("/dashboard");
         }
       } else {
