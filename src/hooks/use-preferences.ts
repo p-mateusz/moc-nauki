@@ -7,12 +7,14 @@ export type UserPreferences = {
   noteLanguageMode: NoteLanguageMode;
   hiddenLanguages: string[];
   confirmDelete: boolean;
+  noteDetailLevel: number;
 };
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
   noteLanguageMode: "original",
   hiddenLanguages: [],
   confirmDelete: true,
+  noteDetailLevel: 5,
 };
 
 const STORAGE_KEY = "userPreferences";
