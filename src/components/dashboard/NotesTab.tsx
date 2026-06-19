@@ -1117,6 +1117,54 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     );
   };
 
+  // === Move page to another section ===
+  const movePageToSection = async (pageId: string, targetSecId: string) => {
+    if (!activeNb) return;
+    let srcSec: Section | undefined;
+    let page: Page | undefined;
+    for (const sec of activeNb.sections) {
+      const p = sec.pages.find(x => x.id === pageId);
+      if (p) { srcSec = sec; page = p; break; }
+    }
+    if (!srcSec || !page || srcSec.id === targetSecId) return;
+    const targetSec = activeNb.sections.find(s => s.id === targetSecId);
+    if (!targetSec) return;
+    const newSortOrder = targetSec.pages.reduce((m, p) => Math.max(m, p.sort_order), -1) + 1;
+    const { error } = await supabase
+      .from("notebook_pages")
+      .update({ section_id: targetSecId, sort_order: newSortOrder })
+      .eq("id", pageId);
+    if (error) { toast.error("Nie udało się przenieść strony"); return; }
+    srcSec.pages = srcSec.pages.filter(p => p.id !== pageId);
+    page.section_id = targetSecId;
+    page.sort_order = newSortOrder;
+    targetSec.pages.push(page);
+    setNotebooks([...notebooks]);
+    if (activePageId === pageId) setActiveSecId(targetSecId);
+    toast.success(`Strona przeniesiona do „${targetSec.name}"`);
+  };
+
+  // === Move section to another notebook ===
+  const moveSectionToNotebookId = async (secId: string, targetNbId: string) => {
+    if (!activeNb || activeNb.id === targetNbId) return;
+    const sec = activeNb.sections.find(s => s.id === secId);
+    const targetNb = notebooks.find(n => n.id === targetNbId);
+    if (!sec || !targetNb) return;
+    const newSortOrder = targetNb.sections.reduce((m, s) => Math.max(m, s.sort_order), -1) + 1;
+    const { error } = await supabase
+      .from("notebook_sections")
+      .update({ notebook_id: targetNbId, sort_order: newSortOrder })
+      .eq("id", secId);
+    if (error) { toast.error("Nie udało się przenieść sekcji"); return; }
+    activeNb.sections = activeNb.sections.filter(s => s.id !== secId);
+    sec.notebook_id = targetNbId;
+    sec.sort_order = newSortOrder;
+    targetNb.sections.push(sec);
+    if (activeSecId === secId) { setActiveSecId(null); setActivePageId(null); }
+    setNotebooks([...notebooks]);
+    toast.success(`Sekcja przeniesiona do „${targetNb.name}"`);
+  };
+
   // === Drag & Drop reorder notebooks ===
   const handleDragStart = (e: React.DragEvent, nbId: string) => {
     setDragNbId(nbId);
@@ -1125,6 +1173,8 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   };
 
   const handleDragOver = (e: React.DragEvent, nbId: string) => {
+    // Accept notebook reorder OR section-drop (move section into this notebook)
+    if (!dragNbId && !dragSecId) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (dragNbId !== nbId) setDragOverNbId(nbId);
@@ -1137,6 +1187,11 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   const handleDrop = async (e: React.DragEvent, targetNbId: string) => {
     e.preventDefault();
     setDragOverNbId(null);
+    if (dragSecId) {
+      await moveSectionToNotebookId(dragSecId, targetNbId);
+      setDragSecId(null);
+      return;
+    }
     if (!dragNbId || dragNbId === targetNbId) { setDragNbId(null); return; }
     await reorderNotebooks(dragNbId, targetNbId);
     setDragNbId(null);
@@ -1146,37 +1201,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     setDragNbId(null);
     setDragOverNbId(null);
   };
-
-  // === Touch drag reorder for mobile ===
-  const touchStartRef = useRef<{ id: string; y: number } | null>(null);
-
-  const handleTouchStart = (id: string, e: React.TouchEvent) => {
-    touchStartRef.current = { id, y: e.touches[0].clientY };
-  };
-
-  const handleTouchEnd = (targetId: string) => {
-    if (!touchStartRef.current || touchStartRef.current.id === targetId) {
-      touchStartRef.current = null;
-      return;
-    }
-    reorderNotebooks(touchStartRef.current.id, targetId);
-    touchStartRef.current = null;
-  };
-
-  const pageTouchStartRef = useRef<{ id: string; y: number } | null>(null);
-  const handlePageTouchStart = (id: string, e: React.TouchEvent) => {
-    pageTouchStartRef.current = { id, y: e.touches[0].clientY };
-  };
-
-  const handlePageTouchEnd = (targetId: string) => {
-    if (!pageTouchStartRef.current || pageTouchStartRef.current.id === targetId) {
-      pageTouchStartRef.current = null;
-      return;
-    }
-    reorderPages(pageTouchStartRef.current.id, targetId);
-    pageTouchStartRef.current = null;
-  };
-
+...
   const handleSectionDragStart = (e: React.DragEvent, secId: string) => {
     setDragSecId(secId);
     e.dataTransfer.effectAllowed = "move";
@@ -1184,6 +1209,8 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   };
 
   const handleSectionDragOver = (e: React.DragEvent, secId: string) => {
+    // Accept section reorder OR page-drop (move page into this section)
+    if (!dragSecId && !dragPageId) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (dragSecId !== secId) setDragOverSecId(secId);
@@ -1192,6 +1219,11 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   const handleSectionDrop = async (e: React.DragEvent, targetSecId: string) => {
     e.preventDefault();
     setDragOverSecId(null);
+    if (dragPageId) {
+      await movePageToSection(dragPageId, targetSecId);
+      setDragPageId(null);
+      return;
+    }
     if (!dragSecId || dragSecId === targetSecId) { setDragSecId(null); return; }
     await reorderSections(dragSecId, targetSecId);
     setDragSecId(null);
