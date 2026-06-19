@@ -1201,7 +1201,37 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     setDragNbId(null);
     setDragOverNbId(null);
   };
-...
+
+  // === Touch drag reorder for mobile ===
+  const touchStartRef = useRef<{ id: string; y: number } | null>(null);
+
+  const handleTouchStart = (id: string, e: React.TouchEvent) => {
+    touchStartRef.current = { id, y: e.touches[0].clientY };
+  };
+
+  const handleTouchEnd = (targetId: string) => {
+    if (!touchStartRef.current || touchStartRef.current.id === targetId) {
+      touchStartRef.current = null;
+      return;
+    }
+    reorderNotebooks(touchStartRef.current.id, targetId);
+    touchStartRef.current = null;
+  };
+
+  const pageTouchStartRef = useRef<{ id: string; y: number } | null>(null);
+  const handlePageTouchStart = (id: string, e: React.TouchEvent) => {
+    pageTouchStartRef.current = { id, y: e.touches[0].clientY };
+  };
+
+  const handlePageTouchEnd = (targetId: string) => {
+    if (!pageTouchStartRef.current || pageTouchStartRef.current.id === targetId) {
+      pageTouchStartRef.current = null;
+      return;
+    }
+    reorderPages(pageTouchStartRef.current.id, targetId);
+    pageTouchStartRef.current = null;
+  };
+
   const handleSectionDragStart = (e: React.DragEvent, secId: string) => {
     setDragSecId(secId);
     e.dataTransfer.effectAllowed = "move";
