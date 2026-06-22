@@ -573,14 +573,12 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
    let lastError: any = null;
    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
      try {
-       const formData = new FormData();
-       formData.append("file", blob, "recording.webm");
-       formData.append("duration", duration);
-       const userPrefs = getCachedPreferences();
-       formData.append("noteLanguageMode", userPrefs.noteLanguageMode);
+        const formData = new FormData();
+        formData.append("file", blob, "recording.webm");
+        formData.append("duration", duration);
+        const userPrefs = getCachedPreferences();
         formData.append("noteLanguageHint", notePreferenceHint(userPrefs.noteLanguageMode));
         formData.append("detailLevel", String(detailLevelRef.current));
-        formData.append("noteDetailLevel", String(detailLevelRef.current));
        const resultText = await invokeCloudFunction<string>("proxy-n8n-audio", { body: formData, responseType: "text" });
         let title = "Notatka z lekcji";
         let content = resultText;

@@ -32,9 +32,8 @@ serve(async (req) => {
       throw new Error("No audio file provided");
     }
     const duration = (incoming.get("duration") as string) || "0:00";
-    const noteLanguageMode = (incoming.get("noteLanguageMode") as string) || "original";
     const noteLanguageHint = (incoming.get("noteLanguageHint") as string) || "";
-    const rawDetailLevel = Number(incoming.get("noteDetailLevel") || incoming.get("detailLevel") || 5);
+    const rawDetailLevel = Number(incoming.get("detailLevel") || 5);
     const noteDetailLevel = Math.min(9, Math.max(1, Number.isFinite(rawDetailLevel) ? Math.round(rawDetailLevel) : 5));
 
     // Forward file as multipart/form-data (TRUE binary upload).
@@ -49,12 +48,8 @@ serve(async (req) => {
     outgoing.append("file", blob, filename);
     outgoing.append("duration", duration);
     outgoing.append("type", "transcribe");
-    outgoing.append("noteLanguageMode", noteLanguageMode);
     outgoing.append("noteLanguageHint", noteLanguageHint);
-    outgoing.append("noteDetailLevel", String(noteDetailLevel));
     outgoing.append("detailLevel", String(noteDetailLevel));
-    outgoing.append("accuracyLevel", String(noteDetailLevel));
-    outgoing.append("noteAccuracyLevel", String(noteDetailLevel));
 
     console.log("Forwarding audio (binary) to webhook:", webhookUrl);
     console.log("File:", filename, mime, blob.size, "bytes, duration:", duration, "detailLevel:", noteDetailLevel);
