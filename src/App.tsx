@@ -21,6 +21,7 @@ import Quiz from "./pages/Quiz";
 import ListDetail from "./pages/ListDetail";
 import ShareImport from "./pages/ShareImport";
 import Terms from "./pages/Terms";
+import Trust from "./pages/Trust";
 import NotFound from "./pages/NotFound";
 import RecordingWidget from "./components/dashboard/RecordingWidget";
 
@@ -84,6 +85,7 @@ const App = () => {
           <Route path="/share/:listId" element={<ShareImport />} />
           <Route path="/s/:slug" element={<ShareImport />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/trust" element={<Trust />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <RecordingWidget />
