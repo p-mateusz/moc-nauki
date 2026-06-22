@@ -189,7 +189,7 @@ serve(async (req) => {
     } catch (_) { /* noop */ }
 
     return new Response(
-      JSON.stringify({ error: "Operacja nie powiodła się — spróbuj ponownie", detail: msg }),
+      JSON.stringify({ error: "Operacja nie powiodła się — spróbuj ponownie" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

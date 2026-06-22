@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
 
     const { data: signed, error: signedError } = await admin.storage
       .from(BUCKET)
-      .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      .createSignedUrl(path, 60 * 60 * 24 * 7);
     if (signedError || !signed?.signedUrl) throw signedError || new Error("Signed URL failed");
 
     return new Response(JSON.stringify({ imageUrl: signed.signedUrl, path }), {

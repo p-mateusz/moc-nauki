@@ -892,6 +892,20 @@ const TeacherStudentsTab = ({
                               src={m.image_url}
                               alt="załącznik"
                               onClick={(e) => { e.stopPropagation(); window.open(m.image_url!, "_blank"); }}
+                              onError={async (e) => {
+                                const img = e.currentTarget as HTMLImageElement;
+                                if (img.dataset.refreshed === "1") return;
+                                img.dataset.refreshed = "1";
+                                try {
+                                  const match = (m.image_url || "").match(/\/chat-images\/([^?]+)\?/);
+                                  if (!match) return;
+                                  const res = await invokeCloudFunction<{ imageUrl: string }>(
+                                    "refresh-chat-image-url",
+                                    { body: { path: match[1] } },
+                                  );
+                                  if (res?.imageUrl) img.src = res.imageUrl;
+                                } catch { /* noop */ }
+                              }}
                               style={{
                                 maxWidth: 280, maxHeight: 280, borderRadius: 14,
                                 display: "block", cursor: "zoom-in",
