@@ -123,7 +123,7 @@ serve(async (req) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("generate-definitions error:", msg, e);
-    return new Response(JSON.stringify({ error: "Operacja nie powiodła się — spróbuj ponownie", detail: msg }), {
+    return new Response(JSON.stringify({ error: "Operacja nie powiodła się — spróbuj ponownie" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
