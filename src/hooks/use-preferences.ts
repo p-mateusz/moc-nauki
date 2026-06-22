@@ -26,37 +26,49 @@ const isMissingPrivateProfileTable = (error: { code?: string; message?: string }
 const isMissingLegacyPreferencesColumn = (error: { code?: string; message?: string } | null | undefined) =>
   error?.code === "42703" || error?.message?.includes("preferences");
 
+function normalizePreferences(raw: Partial<UserPreferences> | null | undefined): Partial<UserPreferences> {
+  if (!raw || typeof raw !== "object") return {};
+  const next: Partial<UserPreferences> = {};
+  if (raw.noteLanguageMode === "original" || raw.noteLanguageMode === "polish") next.noteLanguageMode = raw.noteLanguageMode;
+  if (Array.isArray(raw.hiddenLanguages)) next.hiddenLanguages = raw.hiddenLanguages.filter((x) => typeof x === "string");
+  if (typeof raw.confirmDelete === "boolean") next.confirmDelete = raw.confirmDelete;
+  const detail = Math.round(Number(raw.noteDetailLevel));
+  if (Number.isFinite(detail)) next.noteDetailLevel = Math.min(9, Math.max(1, detail));
+  return next;
+}
+
 async function loadRemotePreferences(userId: string): Promise<Partial<UserPreferences>> {
+  const privateResult = await supabase
+    .from("user_profile_private")
+    .select("preferences")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!privateResult.error) return normalizePreferences(privateResult.data?.preferences as Partial<UserPreferences>);
+  if (!isMissingPrivateProfileTable(privateResult.error)) return {};
+
   const legacyResult = await (supabase as any)
     .from("user_profiles")
     .select("preferences")
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (!legacyResult.error) return (legacyResult.data?.preferences as Partial<UserPreferences>) || {};
-  if (!isMissingLegacyPreferencesColumn(legacyResult.error)) return {};
-
-  const { data } = await supabase
-    .from("user_profile_private")
-    .select("preferences")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  return (data?.preferences as Partial<UserPreferences>) || {};
+  if (legacyResult.error) return {};
+  return normalizePreferences(legacyResult.data?.preferences as Partial<UserPreferences>);
 }
 
 async function saveRemotePreferences(userId: string, preferences: UserPreferences) {
+  const privateResult = await supabase
+    .from("user_profile_private")
+    .upsert({ user_id: userId, preferences, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+
+  if (!isMissingPrivateProfileTable(privateResult.error)) return privateResult;
+
   const legacyResult = await (supabase as any)
     .from("user_profiles")
     .upsert({ user_id: userId, preferences }, { onConflict: "user_id" });
 
   if (!isMissingLegacyPreferencesColumn(legacyResult.error)) return legacyResult;
-
-  const privateResult = await supabase
-    .from("user_profile_private")
-    .upsert({ user_id: userId, preferences }, { onConflict: "user_id" });
-
-  if (!isMissingPrivateProfileTable(privateResult.error)) return privateResult;
   return legacyResult;
 }
 
@@ -108,7 +120,7 @@ export function usePreferences() {
       }
       const remote = await loadRemotePreferences(userId);
       if (cancelled) return;
-      const merged: UserPreferences = { ...DEFAULT_PREFERENCES, ...remote };
+      const merged: UserPreferences = { ...DEFAULT_PREFERENCES, ...loadCached(), ...remote };
       setPrefs(merged);
       persistCache(merged);
       setLoading(false);

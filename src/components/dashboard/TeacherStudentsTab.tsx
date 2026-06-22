@@ -384,7 +384,7 @@ const TeacherStudentsTab = ({
         id: `local-${Date.now()}`,
         sender_id: userId,
         receiver_id: selectedUser.id,
-        content: content || null,
+        content,
         read: true,
         created_at: new Date().toISOString(),
         reply_to_id: replyTo?.id ?? null,
@@ -403,7 +403,7 @@ const TeacherStudentsTab = ({
       .insert({
         sender_id: userId,
         receiver_id: selectedUser.id,
-        content: content || null,
+        content,
         reply_to_id: replyTo?.id ?? null,
         image_url: imageUrl,
       })
@@ -438,13 +438,16 @@ const TeacherStudentsTab = ({
     setUploadingImage(true);
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("chat-images").upload(path, file, {
+      const path = `${userId}/chat/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("note-images").upload(path, file, {
         upsert: false, contentType: file.type,
       });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("chat-images").getPublicUrl(path);
-      await sendMessage({ content: msgText, imageUrl: pub.publicUrl });
+      const { data: signed, error: signedErr } = await supabase.storage
+        .from("note-images")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      if (signedErr || !signed?.signedUrl) throw signedErr || new Error("Brak URL zdjęcia");
+      await sendMessage({ content: msgText, imageUrl: signed.signedUrl });
     } catch (err) {
       console.error(err);
       toast.error("Nie udało się wysłać zdjęcia");
