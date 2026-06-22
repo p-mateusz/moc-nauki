@@ -48,12 +48,8 @@ serve(async (req) => {
     outgoing.append("file", blob, filename);
     outgoing.append("duration", duration);
     outgoing.append("type", "transcribe");
-    outgoing.append("noteLanguageMode", noteLanguageMode);
     outgoing.append("noteLanguageHint", noteLanguageHint);
-    outgoing.append("noteDetailLevel", String(noteDetailLevel));
     outgoing.append("detailLevel", String(noteDetailLevel));
-    outgoing.append("accuracyLevel", String(noteDetailLevel));
-    outgoing.append("noteAccuracyLevel", String(noteDetailLevel));
 
     console.log("Forwarding audio (binary) to webhook:", webhookUrl);
     console.log("File:", filename, mime, blob.size, "bytes, duration:", duration, "detailLevel:", noteDetailLevel);
