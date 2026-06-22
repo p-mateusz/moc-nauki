@@ -34,6 +34,8 @@ serve(async (req) => {
     const duration = (incoming.get("duration") as string) || "0:00";
     const noteLanguageMode = (incoming.get("noteLanguageMode") as string) || "original";
     const noteLanguageHint = (incoming.get("noteLanguageHint") as string) || "";
+    const rawDetailLevel = Number(incoming.get("noteDetailLevel") || incoming.get("detailLevel") || 5);
+    const noteDetailLevel = Math.min(9, Math.max(1, Number.isFinite(rawDetailLevel) ? Math.round(rawDetailLevel) : 5));
 
     // Forward file as multipart/form-data (TRUE binary upload).
     // n8n's Webhook node will expose it under `binary.file` automatically — no base64 decoding needed.
@@ -49,9 +51,13 @@ serve(async (req) => {
     outgoing.append("type", "transcribe");
     outgoing.append("noteLanguageMode", noteLanguageMode);
     outgoing.append("noteLanguageHint", noteLanguageHint);
+    outgoing.append("noteDetailLevel", String(noteDetailLevel));
+    outgoing.append("detailLevel", String(noteDetailLevel));
+    outgoing.append("accuracyLevel", String(noteDetailLevel));
+    outgoing.append("noteAccuracyLevel", String(noteDetailLevel));
 
     console.log("Forwarding audio (binary) to webhook:", webhookUrl);
-    console.log("File:", filename, mime, blob.size, "bytes, duration:", duration);
+    console.log("File:", filename, mime, blob.size, "bytes, duration:", duration, "detailLevel:", noteDetailLevel);
 
     // 25s timeout — leaves buffer before edge function hard limit
     const controller = new AbortController();

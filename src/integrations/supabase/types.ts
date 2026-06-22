@@ -321,27 +321,39 @@ export type Database = {
       }
       messages: {
         Row: {
-          content: string
+          content: string | null
           created_at: string | null
+          deleted_for: string[]
           id: string
+          image_url: string | null
+          reactions: Json
           read: boolean | null
           receiver_id: string
+          reply_to_id: string | null
           sender_id: string
         }
         Insert: {
-          content: string
+          content?: string | null
           created_at?: string | null
+          deleted_for?: string[]
           id?: string
+          image_url?: string | null
+          reactions?: Json
           read?: boolean | null
           receiver_id: string
+          reply_to_id?: string | null
           sender_id: string
         }
         Update: {
-          content?: string
+          content?: string | null
           created_at?: string | null
+          deleted_for?: string[]
           id?: string
+          image_url?: string | null
+          reactions?: Json
           read?: boolean | null
           receiver_id?: string
+          reply_to_id?: string | null
           sender_id?: string
         }
         Relationships: [
@@ -350,6 +362,13 @@ export type Database = {
             columns: ["receiver_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
           {
