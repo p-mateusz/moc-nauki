@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/lib/supabase";
+import { invokeCloudFunction, supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { ArrowLeft, Send, Search, Reply, Copy, Trash2, SmilePlus, Paperclip, X, Image as ImageIcon } from "lucide-react";
 import { useRoles } from "@/hooks/use-roles";
@@ -437,17 +437,11 @@ const TeacherStudentsTab = ({
     }
     setUploadingImage(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("chat-images").upload(path, file, {
-        upsert: false, contentType: file.type,
-      });
-      if (upErr) throw upErr;
-      const { data: signed, error: signedErr } = await supabase.storage
-        .from("chat-images")
-        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
-      if (signedErr || !signed?.signedUrl) throw signedErr || new Error("Brak URL zdjęcia");
-      await sendMessage({ content: msgText, imageUrl: signed.signedUrl });
+      const formData = new FormData();
+      formData.append("file", file, file.name || "image.jpg");
+      const result = await invokeCloudFunction<{ imageUrl: string }>("upload-chat-image", { body: formData });
+      if (!result.imageUrl) throw new Error("Brak URL zdjęcia");
+      await sendMessage({ content: msgText, imageUrl: result.imageUrl });
     } catch (err) {
       console.error(err);
       toast.error("Nie udało się wysłać zdjęcia");
