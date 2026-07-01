@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
 import { supabase } from "@/lib/supabase";
-import { MoreVertical, GripVertical, Trash2, AlertTriangle } from "lucide-react";
+import { MoreVertical, Trash2, AlertTriangle } from "lucide-react";
 import { SYMS } from "@/lib/testsStore";
 import { LoadingInline } from "@/components/ui/loading-state";
 
@@ -1728,7 +1728,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                 onTouchEnd={() => handleTouchEnd(nb.id)}
                 style={{ position: "relative", opacity: dragNbId === nb.id ? 0.5 : 1 }}
               >
-                <GripVertical size={12} className="nb-grip" style={{ color: "#8899b4", opacity: 0.3, flexShrink: 0, cursor: "grab" }} />
+                
                 <div className="nb-dot" style={{ background: nb.color }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="nb-name">{nb.name}</div>
@@ -1786,7 +1786,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                   onDrop={(e) => handleSectionDrop(e, sec.id)}
                   onDragEnd={handleSectionDragEnd}
                 >
-                  <GripVertical size={12} className="sec-grip" />
+                  
                   <div style={{
                     width: 4, height: "100%", position: "absolute", left: 0, top: 0,
                     background: activeSecId === sec.id ? activeNb.color : "transparent",
