@@ -1733,7 +1733,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="nb-name">{nb.name}</div>
                 </div>
-                <div className="nb-count">{nb.sections.reduce((a, s) => a + s.pages.length, 0)}</div>
+                
                 <button
                   className="nb-ctx-btn"
                   onClick={(e) => { e.stopPropagation(); setNbContextMenu(nbContextMenu === nb.id ? null : nb.id); setSecContextMenu(null); }}
@@ -1793,7 +1793,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                     borderRadius: "0 3px 3px 0",
                   }} />
                   <div className="sec-col-name">{sec.name}</div>
-                  <div className="sec-col-count">{sec.pages.length}</div>
+                  
                   <button
                     className="sec-ctx-btn-col"
                     onClick={(e) => { e.stopPropagation(); setSecContextMenu(secContextMenu === sec.id ? null : sec.id); setNbContextMenu(null); }}
