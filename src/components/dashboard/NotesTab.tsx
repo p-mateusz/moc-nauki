@@ -1728,7 +1728,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                 onTouchEnd={() => handleTouchEnd(nb.id)}
                 style={{ position: "relative", opacity: dragNbId === nb.id ? 0.5 : 1 }}
               >
-                <GripVertical size={12} className="nb-grip" style={{ color: "#8899b4", opacity: 0.3, flexShrink: 0, cursor: "grab" }} />
+                
                 <div className="nb-dot" style={{ background: nb.color }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="nb-name">{nb.name}</div>
