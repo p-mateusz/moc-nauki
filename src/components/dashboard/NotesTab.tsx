@@ -1303,7 +1303,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                 ← Wróć
               </button>
               <div className="nps-breadcrumb">
-                <span style={{ color: activeNb.color }}>{activeNb.name}</span>
+                <span style={{ color: activeNb.color, cursor: "pointer" }} onClick={goBackToBrowse}>{activeNb.name}</span>
                 <span style={{ opacity: .4 }}>›</span>
                 <span>{activeSec.name}</span>
               </div>
