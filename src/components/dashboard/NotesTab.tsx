@@ -1786,7 +1786,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                   onDrop={(e) => handleSectionDrop(e, sec.id)}
                   onDragEnd={handleSectionDragEnd}
                 >
-                  <GripVertical size={12} className="sec-grip" />
+                  
                   <div style={{
                     width: 4, height: "100%", position: "absolute", left: 0, top: 0,
                     background: activeSecId === sec.id ? activeNb.color : "transparent",
