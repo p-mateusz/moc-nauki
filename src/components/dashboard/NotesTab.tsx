@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
 import { supabase } from "@/lib/supabase";
-import { MoreVertical, GripVertical, Trash2, AlertTriangle } from "lucide-react";
+import { MoreVertical, Trash2, AlertTriangle } from "lucide-react";
 import { SYMS } from "@/lib/testsStore";
 import { LoadingInline } from "@/components/ui/loading-state";
 
