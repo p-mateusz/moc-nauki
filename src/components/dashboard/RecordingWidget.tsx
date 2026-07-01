@@ -812,14 +812,13 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
 
       {/* Detail level slider */}
       <div style={{ marginBottom: 14 }}>
-        <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "baseline",
-          fontSize: ".68rem", color: "#8899b4", letterSpacing: ".04em",
-          textTransform: "uppercase", fontWeight: 700, marginBottom: 6,
-        }}>
-          <span>Szczegółowość</span>
-          <span style={{ color: accentColor, fontWeight: 800 }}>{detailLevel}/9</span>
-        </div>
+         <div style={{
+           display: "flex", justifyContent: "space-between", alignItems: "baseline",
+           fontSize: ".68rem", color: "#8899b4", letterSpacing: ".04em",
+           textTransform: "uppercase", fontWeight: 700, marginBottom: 6,
+         }}>
+           <span>Szczegółowość</span>
+         </div>
         <input
           type="range"
           min={1}
