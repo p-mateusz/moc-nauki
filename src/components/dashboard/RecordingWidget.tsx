@@ -863,7 +863,7 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
         `}</style>
         <div style={{
           display: "flex", justifyContent: "space-between",
-          fontSize: ".62rem", color: "#5a6a85", marginTop: 4,
+          fontSize: ".62rem", color: "#5a6a85", marginTop: 2,
         }}>
           <span>mniej</span>
           <span>więcej</span>
