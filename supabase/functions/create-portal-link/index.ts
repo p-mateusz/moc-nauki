@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Brak konta w Stripe — najpierw kup plan." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const origin = "https://nauki.lovable.app";
+    const origin = "https://www.moc-nauki.pl";
     const portal = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}/dashboard`,
