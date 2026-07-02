@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       if (found.data.length) customerId = found.data[0].id;
     }
 
-    const origin = "https://nauki.lovable.app";
+    const origin = "https://www.moc-nauki.pl";
     const session = await stripe.checkout.sessions.create({
       mode: plan === "30" ? "subscription" : "payment",
       customer: customerId ?? undefined,
