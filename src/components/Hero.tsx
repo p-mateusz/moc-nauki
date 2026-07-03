@@ -215,7 +215,7 @@ const Hero: React.FC<HeroProps> = ({ heroRef, featRef, priceRef, scrollTo, navig
             </motion.div>
           </motion.div>
         </div>
-      </motion.section>
+      </section>
     </div>
   );
 };
