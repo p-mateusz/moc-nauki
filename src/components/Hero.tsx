@@ -30,12 +30,8 @@ const Hero: React.FC<HeroProps> = ({ heroRef, featRef, priceRef, scrollTo, navig
 
   return (
     <div ref={heroRef}>
-      <motion.section
-        id="home-hero"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
+      <section id="home-hero">
+
         <div className="blob blob1" />
         <div className="blob blob2" />
 
@@ -219,7 +215,7 @@ const Hero: React.FC<HeroProps> = ({ heroRef, featRef, priceRef, scrollTo, navig
             </motion.div>
           </motion.div>
         </div>
-      </motion.section>
+      </section>
     </div>
   );
 };
