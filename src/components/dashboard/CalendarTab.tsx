@@ -230,8 +230,15 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   const weekBodyRef = useRef<HTMLDivElement>(null);
   const weekHScrollRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const VISIBLE_DAYS_MOBILE = 4;
   const MOBILE_GUTTER_W = 32;
+  // Dynamic day count: pick whole-number of days that best fills width (~95px min per day)
+  const computeVisibleDays = (w: number) => {
+    if (w <= 0) return 4;
+    const avail = w - MOBILE_GUTTER_W;
+    const MIN_DAY_W = 95;
+    const n = Math.max(1, Math.min(7, Math.floor(avail / MIN_DAY_W)));
+    return n;
+  };
   const [hScrollerW, setHScrollerW] = useState(0);
   const [sliderVal, setSliderVal] = useState(0);
   const syncingScrollRef = useRef(false);
@@ -555,12 +562,13 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     if (!el) return;
     const measuredW = el.clientWidth;
     if (measuredW <= 0) return;
-    const dw = Math.floor((measuredW - MOBILE_GUTTER_W) / VISIBLE_DAYS_MOBILE);
+    const visibleDays = computeVisibleDays(measuredW);
+    const dw = (measuredW - MOBILE_GUTTER_W) / visibleDays;
     if (dw <= 0) return;
     const target = parseDate(pendingFocusDate);
     const ws = startOfWeek(target);
     const idx = Math.round((target.getTime() - ws.getTime()) / 86400000);
-    const visibleDaysW = VISIBLE_DAYS_MOBILE * dw;
+    const visibleDaysW = visibleDays * dw;
     const desired = idx * dw - (visibleDaysW - dw) / 2;
     const maxScroll = el.scrollWidth - el.clientWidth;
     const clamped = Math.max(0, Math.min(maxScroll, desired));
@@ -993,8 +1001,9 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     const ws = startOfWeek(cursor);
     const days = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
     const measuredW = hScrollerW > 0 ? hScrollerW : (typeof window !== "undefined" ? window.innerWidth : 0);
+    const visibleDays = computeVisibleDays(measuredW);
     const dw = isMobile && measuredW > 0
-      ? Math.floor((measuredW - MOBILE_GUTTER_W) / VISIBLE_DAYS_MOBILE)
+      ? (measuredW - MOBILE_GUTTER_W) / visibleDays
       : 0;
     const innerW = isMobile ? MOBILE_GUTTER_W + 7 * dw : 0;
 
