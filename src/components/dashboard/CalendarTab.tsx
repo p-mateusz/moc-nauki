@@ -1001,8 +1001,9 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     const ws = startOfWeek(cursor);
     const days = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
     const measuredW = hScrollerW > 0 ? hScrollerW : (typeof window !== "undefined" ? window.innerWidth : 0);
+    const visibleDays = computeVisibleDays(measuredW);
     const dw = isMobile && measuredW > 0
-      ? Math.floor((measuredW - MOBILE_GUTTER_W) / VISIBLE_DAYS_MOBILE)
+      ? (measuredW - MOBILE_GUTTER_W) / visibleDays
       : 0;
     const innerW = isMobile ? MOBILE_GUTTER_W + 7 * dw : 0;
 
