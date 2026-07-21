@@ -562,12 +562,13 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
     if (!el) return;
     const measuredW = el.clientWidth;
     if (measuredW <= 0) return;
-    const dw = Math.floor((measuredW - MOBILE_GUTTER_W) / VISIBLE_DAYS_MOBILE);
+    const visibleDays = computeVisibleDays(measuredW);
+    const dw = (measuredW - MOBILE_GUTTER_W) / visibleDays;
     if (dw <= 0) return;
     const target = parseDate(pendingFocusDate);
     const ws = startOfWeek(target);
     const idx = Math.round((target.getTime() - ws.getTime()) / 86400000);
-    const visibleDaysW = VISIBLE_DAYS_MOBILE * dw;
+    const visibleDaysW = visibleDays * dw;
     const desired = idx * dw - (visibleDaysW - dw) / 2;
     const maxScroll = el.scrollWidth - el.clientWidth;
     const clamped = Math.max(0, Math.min(maxScroll, desired));
