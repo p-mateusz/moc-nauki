@@ -230,8 +230,15 @@ const CalendarTab = ({ externalEvents, onExternalEventsConsumed, userId, guestMo
   const weekBodyRef = useRef<HTMLDivElement>(null);
   const weekHScrollRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const VISIBLE_DAYS_MOBILE = 4;
   const MOBILE_GUTTER_W = 32;
+  // Dynamic day count: pick whole-number of days that best fills width (~95px min per day)
+  const computeVisibleDays = (w: number) => {
+    if (w <= 0) return 4;
+    const avail = w - MOBILE_GUTTER_W;
+    const MIN_DAY_W = 95;
+    const n = Math.max(1, Math.min(7, Math.floor(avail / MIN_DAY_W)));
+    return n;
+  };
   const [hScrollerW, setHScrollerW] = useState(0);
   const [sliderVal, setSliderVal] = useState(0);
   const syncingScrollRef = useRef(false);
