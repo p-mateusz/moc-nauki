@@ -6,8 +6,34 @@ const corsHeaders = {
 };
 
 
+// Per-IP + per-username in-memory rate limiter (best-effort, per edge instance).
+// Blokuje brute-force zgadywania haseł.
+const LOGIN_HITS = new Map<string, number[]>();
+const LOGIN_WINDOW_MS = 60_000;
+const LOGIN_MAX_PER_WINDOW = 8;
+
+function loginRateLimited(key: string): boolean {
+  const now = Date.now();
+  const arr = (LOGIN_HITS.get(key) || []).filter((t) => now - t < LOGIN_WINDOW_MS);
+  if (arr.length >= LOGIN_MAX_PER_WINDOW) {
+    LOGIN_HITS.set(key, arr);
+    return true;
+  }
+  arr.push(now);
+  LOGIN_HITS.set(key, arr);
+  return false;
+}
+
+function loginClientIp(req: Request): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("cf-connecting-ip") ||
+    "unknown"
+  );
+}
 
 async function getSessionTokens(supabaseUrl: string, anonKey: string, email: string, password: string) {
+
   const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
     method: "POST",
     headers: {
@@ -31,6 +57,16 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Rate limit — najpierw po IP, potem po (IP+username) aby nie karać całego biura,
+    // gdy ktoś atakuje jedno konto.
+    const ip = loginClientIp(req);
+    if (loginRateLimited(`ip:${ip}`) || loginRateLimited(`u:${ip}:${normalizedUsername}`)) {
+      return new Response(JSON.stringify({ error: "Zbyt wiele prób logowania. Spróbuj ponownie za minutę." }), {
+        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
