@@ -6,8 +6,34 @@ const corsHeaders = {
 };
 
 
+// Per-IP + per-username in-memory rate limiter (best-effort, per edge instance).
+// Blokuje brute-force zgadywania haseł.
+const LOGIN_HITS = new Map<string, number[]>();
+const LOGIN_WINDOW_MS = 60_000;
+const LOGIN_MAX_PER_WINDOW = 8;
+
+function loginRateLimited(key: string): boolean {
+  const now = Date.now();
+  const arr = (LOGIN_HITS.get(key) || []).filter((t) => now - t < LOGIN_WINDOW_MS);
+  if (arr.length >= LOGIN_MAX_PER_WINDOW) {
+    LOGIN_HITS.set(key, arr);
+    return true;
+  }
+  arr.push(now);
+  LOGIN_HITS.set(key, arr);
+  return false;
+}
+
+function loginClientIp(req: Request): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("cf-connecting-ip") ||
+    "unknown"
+  );
+}
 
 async function getSessionTokens(supabaseUrl: string, anonKey: string, email: string, password: string) {
+
   const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
     method: "POST",
     headers: {
