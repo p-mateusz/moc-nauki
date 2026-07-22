@@ -58,6 +58,16 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Rate limit — najpierw po IP, potem po (IP+username) aby nie karać całego biura,
+    // gdy ktoś atakuje jedno konto.
+    const ip = loginClientIp(req);
+    if (loginRateLimited(`ip:${ip}`) || loginRateLimited(`u:${ip}:${normalizedUsername}`)) {
+      return new Response(JSON.stringify({ error: "Zbyt wiele prób logowania. Spróbuj ponownie za minutę." }), {
+        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
