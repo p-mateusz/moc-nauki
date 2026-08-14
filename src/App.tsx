@@ -24,6 +24,7 @@ import Terms from "./pages/Terms";
 import Trust from "./pages/Trust";
 import NotFound from "./pages/NotFound";
 import RecordingWidget from "./components/dashboard/RecordingWidget";
+import AnalyticsTracker from "./components/AnalyticsTracker";
 
 
 
@@ -68,6 +69,7 @@ const App = () => {
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <AnalyticsTracker />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<About />} />

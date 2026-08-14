@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Menu, X as XIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSessionSafe } from "@/lib/authSession";
+import { initAnalytics } from "@/lib/analytics";
 import "./LandingPage.css";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
@@ -38,6 +39,7 @@ const Index = () => {
 
   const acceptCookies = () => {
     localStorage.setItem("cookieConsent", "accepted");
+    initAnalytics();
     setShowCookieBanner(false);
   };
 

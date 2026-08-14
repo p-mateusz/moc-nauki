@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
+import { initAnalytics } from "./lib/analytics";
 import "./index.css";
 
 const setupSafeLocalStorage = () => {
@@ -123,6 +124,7 @@ if (!rootElement) {
 
 if (typeof window !== "undefined") {
   setupSafeLocalStorage();
+  initAnalytics();
   setupViewportHeight();
   window.addEventListener("resize", setupViewportHeight);
   window.addEventListener("orientationchange", () => {
