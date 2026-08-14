@@ -1,15 +1,21 @@
-# Moc Nauki
+# Moc Nauki – Platforma Edukacyjna nowej generacji wspierana przez AI
 
-> Inteligentna platforma edukacyjna AI dla uczniów — automatyczne notatki, kalendarz nauki, nauczyciel 24/7, fiszki, quizy i baza testów. Slogan: „Od uczniów, dla uczniów".
+> Moc Nauki (moc-nauki.pl) to innowacyjna platforma edukacyjna stworzona przez uczniów dla uczniów, wykorzystująca sztuczną inteligencję do wspierania procesu nauki na poziomie szkoły średniej i podstawowej. Projekt jest obecnie w fazie intensywnego rozwoju i zamkniętych testów przedpremierowych.
 
-## Pages
+## Główna Misja i Oferowane Funkcje
 
-- [Strona główna](/): Wprowadzenie do platformy Moc Nauki i jej funkcji.
-- [O nas](/about): Misja, zespół i historia projektu.
-- [Cennik](/pricing): Plany 30-dniowe i roczne.
-- [Regulamin](/terms): Regulamin korzystania i polityka prywatności.
+- **Automatyczne Notatki AI:** Błyskawiczne generowanie skrótów i czytelnych podsumowań z materiałów lekcyjnych.
 
-## Optional
+- **Asystent i Nauczyciel AI 24/7:** Wyjaśnianie trudnych zagadnień z przedmiotów ścisłych (matematyka, fizyka, chemia), humanistycznych oraz języków obcych.
 
-- [Logowanie](/login)
-- [Rejestracja](/register)
+- **Inteligentny Kalendarz i Planner:** Planowanie powtórek do sprawdzianów i kartkówek.
+
+- **Generator Fiszek i Quizów:** Zamiana wiedzy z podręczników w interaktywne zestawy ćwiczeń.
+
+- **Baza Testów:** Przygotowanie materiałów ukierunkowanych pod wymogi egzaminów i matur CKE.
+
+## Dostępność
+
+- Platforma jest obecnie niedostępna w otwartej sprzedaży – trwają zamknięte zapisy na testy przedpremierowe.
+
+- Oficjalna strona: https://moc-nauki.pl
