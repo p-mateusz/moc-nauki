@@ -124,6 +124,7 @@ if (!rootElement) {
 
 if (typeof window !== "undefined") {
   setupSafeLocalStorage();
+  initAnalytics();
   setupViewportHeight();
   window.addEventListener("resize", setupViewportHeight);
   window.addEventListener("orientationchange", () => {
