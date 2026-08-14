@@ -97,7 +97,7 @@ export default function Pricing() {
 
   return (
     <>
-    <Seo title="Cennik — Moc Nauki" description="Plany 30-dniowe i roczne — wybierz dostęp do Moc Nauki i kontynuuj naukę." path="/pricing" />
+    <Seo title="Dostęp do Moc Nauki — zapisy na testy przedpremierowe" description="Moc Nauki to platforma edukacyjna AI — automatyczne notatki, kalendarz, nauczyciel 24/7, fiszki i quizy. Trwają zamknięte zapisy na testy przedpremierowe." path="/pricing" />
     <div style={{
       position: "fixed", inset: 0, zIndex: 1, background: "#060d1a",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",

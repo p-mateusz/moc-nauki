@@ -53,7 +53,7 @@ export default function RegisterPlan() {
 
   return (
     <>
-    <Seo title="Wybierz plan — Moc Nauki" description="Wybierz plan dostępu do Moc Nauki i zacznij naukę z AI." path="/register" />
+    <Seo title="Dołącz do Moc Nauki — zapisy na testy przedpremierowe" description="Dołącz do platformy edukacyjnej Moc Nauki — notatki AI, fiszki, quizy i inteligentny kalendarz. Trwają zamknięte zapisy na testy przedpremierowe." path="/register" />
     <div style={{
       minHeight: "100vh",
       background: "#060d1a",
