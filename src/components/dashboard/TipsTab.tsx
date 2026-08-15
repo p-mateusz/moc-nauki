@@ -786,8 +786,8 @@ const TipsTab = ({ userId, isAdmin, guestMode }: TipsTabProps) => {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 16,
-                padding: "18px",
+                gap: 12,
+                padding: "16px 14px",
                 borderRadius: 20,
                 textDecoration: "none",
                 color: "inherit",
@@ -796,39 +796,23 @@ const TipsTab = ({ userId, isAdmin, guestMode }: TipsTabProps) => {
                 transition: "all .18s ease",
                 position: "relative",
                 overflow: "hidden",
+                boxSizing: "border-box",
+                minWidth: 0,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
                 e.currentTarget.style.borderColor =
                   "rgba(99,102,241,0.35)";
                 e.currentTarget.style.background =
                   "rgba(255,255,255,0.06)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
                 e.currentTarget.style.borderColor =
                   "rgba(255,255,255,0.08)";
                 e.currentTarget.style.background =
                   "rgba(255,255,255,0.04)";
               }}
             >
-              <div
-                style={{
-                  width: 54,
-                  height: 54,
-                  borderRadius: 16,
-                  flexShrink: 0,
-                  background:
-                    "linear-gradient(135deg, rgba(99,102,241,0.22), rgba(59,130,246,0.14))",
-                  border: "1px solid rgba(99,102,241,0.18)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "1.2rem",
-                }}
-              >
-                🔗
-              </div>
+              <SiteLogo url={tip.url} />
 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
@@ -837,6 +821,7 @@ const TipsTab = ({ userId, isAdmin, guestMode }: TipsTabProps) => {
                     fontWeight: 800,
                     marginBottom: 4,
                     color: "#fff",
+                    overflowWrap: "anywhere",
                   }}
                 >
                   {tip.title}
@@ -848,6 +833,7 @@ const TipsTab = ({ userId, isAdmin, guestMode }: TipsTabProps) => {
                       fontSize: ".82rem",
                       color: "#94a3b8",
                       lineHeight: 1.5,
+                      overflowWrap: "anywhere",
                     }}
                   >
                     {tip.description}
@@ -860,43 +846,47 @@ const TipsTab = ({ userId, isAdmin, guestMode }: TipsTabProps) => {
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 6,
+                    maxWidth: "100%",
                     padding: "5px 10px",
                     borderRadius: 999,
                     background: "rgba(99,102,241,0.08)",
                     border: "1px solid rgba(99,102,241,0.14)",
                     fontSize: ".72rem",
                     color: "#818cf8",
+                    overflowWrap: "anywhere",
                   }}
                 >
-                  <Link2 size={12} />
+                  <Link2 size={12} style={{ flexShrink: 0 }} />
                   {domainFromUrl(tip.url)}
                 </div>
               </div>
 
-              <ExternalLink
-                size={18}
+              <div
                 style={{
-                  color: "#94a3b8",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 8,
                   flexShrink: 0,
                 }}
-              />
+              >
+                <ExternalLink size={18} style={{ color: "#94a3b8" }} />
 
-              {isAdmin && (
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleDelete(tip.id);
-                  }}
-                  style={{
-                    ...deleteBtn,
-                    marginLeft: 4,
-                  }}
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
+                {isAdmin && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDelete(tip.id);
+                    }}
+                    style={{ ...deleteBtn, width: 32, height: 32 }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
             </a>
+
           ))}
         </div>
       )}
