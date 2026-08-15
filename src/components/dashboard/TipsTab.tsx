@@ -284,7 +284,9 @@ const TipsTab = ({ userId, isAdmin, guestMode }: TipsTabProps) => {
                 alignItems: "center",
                 gap: 10,
                 marginBottom: 6,
+                minWidth: 0,
               }}
+
             >
               <div
                 style={{
