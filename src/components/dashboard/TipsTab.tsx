@@ -383,9 +383,11 @@ const TipsTab = ({ userId, isAdmin, guestMode }: TipsTabProps) => {
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: 8,
                 fontWeight: 800,
-                flexShrink: 0,
+                flex: "1 1 160px",
+                whiteSpace: "nowrap",
                 boxShadow: "0 8px 30px rgba(99,102,241,0.35)",
               }}
             >
@@ -393,6 +395,7 @@ const TipsTab = ({ userId, isAdmin, guestMode }: TipsTabProps) => {
               Dodaj poradę
             </button>
           )}
+
         </div>
       </div>
 
