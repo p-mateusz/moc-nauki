@@ -33,6 +33,55 @@ interface TipsTabProps {
   guestMode?: boolean;
 }
 
+const SiteLogo = ({ url }: { url: string }) => {
+  const [failed, setFailed] = useState(false);
+
+  const host = useMemo(() => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return "";
+    }
+  }, [url]);
+
+  const src = host
+    ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=128`
+    : "";
+
+  return (
+    <div
+      style={{
+        width: 52,
+        height: 52,
+        borderRadius: 16,
+        flexShrink: 0,
+        background:
+          "linear-gradient(135deg, rgba(99,102,241,0.22), rgba(59,130,246,0.14))",
+        border: "1px solid rgba(99,102,241,0.18)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "1.2rem",
+        overflow: "hidden",
+      }}
+    >
+      {src && !failed ? (
+        <img
+          src={src}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setFailed(true)}
+          style={{ width: 30, height: 30, objectFit: "contain", borderRadius: 8 }}
+        />
+      ) : (
+        "🔗"
+      )}
+    </div>
+  );
+};
+
+
 const TipsTab = ({ userId, isAdmin, guestMode }: TipsTabProps) => {
   const [tips, setTips] = useState<Tip[]>([]);
   const [pendingTips, setPendingTips] = useState<Tip[]>([]);
