@@ -269,12 +269,14 @@ const TipsTab = ({ userId, isAdmin, guestMode }: TipsTabProps) => {
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "space-between",
-            gap: 16,
+            gap: 14,
+            flexWrap: "wrap",
             position: "relative",
             zIndex: 1,
           }}
         >
-          <div>
+          <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+
             <div
               className="md-page-title"
               style={{
