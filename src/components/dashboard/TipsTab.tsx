@@ -242,13 +242,15 @@ const TipsTab = ({ userId, isAdmin, guestMode }: TipsTabProps) => {
           position: "relative",
           overflow: "hidden",
           borderRadius: 24,
-          padding: "24px 24px 22px",
+          padding: "20px 18px",
+          boxSizing: "border-box",
           background:
             "linear-gradient(135deg, rgba(99,102,241,0.22), rgba(59,130,246,0.12))",
           border: "1px solid rgba(99,102,241,0.22)",
           marginBottom: 18,
         }}
       >
+
         <div
           style={{
             position: "absolute",
