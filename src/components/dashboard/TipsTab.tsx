@@ -303,16 +303,18 @@ const TipsTab = ({ userId, isAdmin, guestMode }: TipsTabProps) => {
                 <Lightbulb size={24} style={{ color: "#fbbf24" }} />
               </div>
 
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <div
                   style={{
-                    fontSize: "1.45rem",
+                    fontSize: "1.25rem",
                     fontWeight: 900,
-                    lineHeight: 1.1,
+                    lineHeight: 1.15,
+                    overflowWrap: "anywhere",
                   }}
                 >
                   Porady edukacyjne
                 </div>
+
 
                 <div
                   style={{
