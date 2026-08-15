@@ -337,9 +337,10 @@ body:has(.moc-dashboard) #root {
 
 .md-content {
   flex: 1;
+  min-width: 0;
+  min-height: 0;
   overflow-y: auto;
-  overflow-y: overlay;
-  /* overlay mode prevents layout shift */
+  overflow-x: hidden;
   padding: 24px;
   padding-bottom: max(24px, env(safe-area-inset-bottom));
   scroll-behavior: auto;
@@ -347,6 +348,14 @@ body:has(.moc-dashboard) #root {
   scroll-padding: 0;
   -webkit-overflow-scrolling: touch;
 }
+
+@media (max-width: 420px) {
+  .md-content {
+    padding: 12px;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+}
+
 
 .md-content::-webkit-scrollbar {
   width: 4px;
