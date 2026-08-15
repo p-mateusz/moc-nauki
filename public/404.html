@@ -7,13 +7,28 @@
     <title>Moc Nauki — ładowanie…</title>
     <script>
       // Awaryjny fallback: jeśli hosting zwróci 404 na trasie SPA,
-      // przenieś użytkownika na tę samą ścieżkę obsłużoną przez aplikację.
+      // spróbuj raz ponownie wczytać tę samą ścieżkę, a potem wróć na stronę główną.
       (function () {
-        var path = window.location.pathname + window.location.search + window.location.hash;
-        var target = path && path !== "/404.html" ? path : "/";
-        window.location.replace(target === "/404.html" ? "/" : "/#redirect" === "" ? "/" : target);
+        try {
+          var path = window.location.pathname + window.location.search + window.location.hash;
+          if (!path || path.indexOf("/404.html") === 0) {
+            window.location.replace("/");
+            return;
+          }
+          var key = "mn_spa_404_retry";
+          if (sessionStorage.getItem(key) === path) {
+            sessionStorage.removeItem(key);
+            window.location.replace("/");
+            return;
+          }
+          sessionStorage.setItem(key, path);
+          window.location.replace(path);
+        } catch (e) {
+          window.location.replace("/");
+        }
       })();
     </script>
+
     <style>
       html, body { margin: 0; height: 100%; background: #0f172a; color: #e2e8f0;
         font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
