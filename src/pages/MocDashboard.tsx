@@ -208,9 +208,10 @@ const MocDashboard = () => {
       return;
     }
     if (!userId) {
-      navigate("/login");
+      navigate("/login?redirect=%2Fdashboard", { replace: true });
       return;
     }
+
 
     // Optimistically render the dashboard — if we have a stored userId,
     // we don't need to block on a network round-trip to Supabase.

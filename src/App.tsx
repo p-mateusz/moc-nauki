@@ -25,6 +25,8 @@ import Trust from "./pages/Trust";
 import NotFound from "./pages/NotFound";
 import RecordingWidget from "./components/dashboard/RecordingWidget";
 import AnalyticsTracker from "./components/AnalyticsTracker";
+import RequireAuth from "./components/RequireAuth";
+
 
 
 
@@ -78,7 +80,7 @@ const App = () => {
           <Route path="/register/success" element={<RegisterSuccess />} />
           <Route path="/register/account" element={<Register />} />
           <Route path="/pricing" element={<Pricing />} />
-          <Route path="/dashboard" element={<MocDashboard />} />
+          <Route path="/dashboard" element={<RequireAuth><MocDashboard /></RequireAuth>} />
           <Route path="/create" element={<CreateList />} />
           <Route path="/practice/:listId" element={<Practice />} />
           <Route path="/flashcards/:listId" element={<FlashCards />} />

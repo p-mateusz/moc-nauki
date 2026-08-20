@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { getSessionSafe } from "@/lib/authSession";
+import { safeInternalPath } from "@/components/RequireAuth";
 import { toast } from "sonner";
 import { Seo } from "@/components/Seo";
 
@@ -13,15 +14,22 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = safeInternalPath(searchParams.get("redirect"));
 
   useEffect(() => {
     getSessionSafe(2500).then((session) => {
-      const storedUserId = localStorage.getItem("userId");
-      if (session && storedUserId && storedUserId !== "guest") {
-        navigate("/dashboard", { replace: true });
+      if (session?.user?.id) {
+        // Sesja jest źródłem prawdy — odbudowujemy cache, żeby panel nie wpadł
+        // w niespójny stan po odświeżeniu.
+        if (localStorage.getItem("userId") !== session.user.id) {
+          try { localStorage.setItem("userId", session.user.id); } catch {}
+        }
+        navigate(redirectTo, { replace: true });
       }
     });
   }, []);
+
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -63,7 +71,7 @@ const Login = () => {
       localStorage.setItem("userName", data.name);
       localStorage.setItem("userUsername", data.username);
       localStorage.setItem("userRole", data.role || "uczeń");
-      navigate("/dashboard");
+      navigate(redirectTo, { replace: true });
     } catch (e: any) {
       toast.error("Nieprawidłowa nazwa użytkownika lub hasło");
       console.error(e);
