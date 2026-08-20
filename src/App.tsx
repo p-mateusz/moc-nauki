@@ -25,6 +25,8 @@ import Trust from "./pages/Trust";
 import NotFound from "./pages/NotFound";
 import RecordingWidget from "./components/dashboard/RecordingWidget";
 import AnalyticsTracker from "./components/AnalyticsTracker";
+import RequireAuth from "./components/RequireAuth";
+
 
 
 
