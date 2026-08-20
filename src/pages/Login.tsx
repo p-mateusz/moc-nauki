@@ -71,7 +71,7 @@ const Login = () => {
       localStorage.setItem("userName", data.name);
       localStorage.setItem("userUsername", data.username);
       localStorage.setItem("userRole", data.role || "uczeń");
-      navigate("/dashboard");
+      navigate(redirectTo, { replace: true });
     } catch (e: any) {
       toast.error("Nieprawidłowa nazwa użytkownika lub hasło");
       console.error(e);
