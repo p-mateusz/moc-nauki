@@ -109,6 +109,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
       if (!sel || sel.rangeCount === 0) return;
       let node: Node | null = sel.anchorNode;
       if (!node || !editor.contains(node)) { setCurrentBlock(""); return; }
+      try { savedRangeRef.current = sel.getRangeAt(0).cloneRange(); } catch { /* ignore */ }
       let el: HTMLElement | null = node.nodeType === 1 ? (node as HTMLElement) : node.parentElement;
       const blockTags = new Set(["H1","H2","H3","H4","H5","H6","P","PRE","DIV","LI","BLOCKQUOTE"]);
       while (el && el !== editor && !blockTags.has(el.tagName)) {
