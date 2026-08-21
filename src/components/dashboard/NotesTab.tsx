@@ -1436,7 +1436,16 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               className="ef-select"
               value={currentBlock}
               onChange={(e) => {
-                if (e.target.value) execCmd("formatBlock", e.target.value);
+                const val = e.target.value;
+                if (!val) return;
+                restoreEditorSelection();
+                const list = getClosest(["UL", "OL"]);
+                if (list) {
+                  document.execCommand(list.tagName === "UL" ? "insertUnorderedList" : "insertOrderedList", false);
+                  const still = getClosest(["UL", "OL"]);
+                  if (still && still === list) unwrapList(still);
+                }
+                execCmd("formatBlock", val);
               }}
             >
               <option value="" disabled>Nagłówek</option>
@@ -1496,7 +1505,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                   <span className="sym-group-label">{gr.g}</span>
                   <div className="sym-group-row">
                     {gr.s.map((s, i) => (
-                      <button key={i} className="sym-btn" onClick={() => insertSym(s)} title={s}>{s}</button>
+                      <button key={i} className="sym-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => insertSym(s)} title={s}>{s}</button>
                     ))}
                   </div>
                 </div>
@@ -1688,9 +1697,21 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                     (range.startContainer === li ||
                      (range.startContainer.nodeType === 3 && range.startContainer === li.firstChild) ||
                      (range.startContainer.nodeType === 1 && (range.startContainer as HTMLElement) === li.firstElementChild && range.startOffset === 0));
-                  if (atStart && getDepth(li) > 1) {
+                  if (atStart) {
                     e.preventDefault();
-                    document.execCommand("outdent");
+                    if (getDepth(li) > 1) {
+                      document.execCommand("outdent");
+                    } else {
+                      const list = li.parentElement;
+                      const isFirst = list?.firstElementChild === li;
+                      const cmd = list?.tagName === "OL" ? "insertOrderedList" : "insertUnorderedList";
+                      document.execCommand(cmd, false);
+                      const still = getClosest(["UL", "OL"]);
+                      if (still && list && still === list) {
+                        if (isFirst) unwrapList(list);
+                        else document.execCommand("outdent");
+                      }
+                    }
                     saveCurrentPage();
                   }
                 }
