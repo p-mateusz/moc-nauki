@@ -87,6 +87,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   const [editNbColor, setEditNbColor] = useState("#3b82f6");
   const [symOpen, setSymOpen] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
+  const savedRangeRef = useRef<Range | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const saveTimeout = useRef<any>(null);
   const [pagesCollapsed, setPagesCollapsed] = useState(false);
