@@ -87,6 +87,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   const [editNbColor, setEditNbColor] = useState("#3b82f6");
   const [symOpen, setSymOpen] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
+  const savedRangeRef = useRef<Range | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const saveTimeout = useRef<any>(null);
   const [pagesCollapsed, setPagesCollapsed] = useState(false);
@@ -108,6 +109,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
       if (!sel || sel.rangeCount === 0) return;
       let node: Node | null = sel.anchorNode;
       if (!node || !editor.contains(node)) { setCurrentBlock(""); return; }
+      try { savedRangeRef.current = sel.getRangeAt(0).cloneRange(); } catch { /* ignore */ }
       let el: HTMLElement | null = node.nodeType === 1 ? (node as HTMLElement) : node.parentElement;
       const blockTags = new Set(["H1","H2","H3","H4","H5","H6","P","PRE","DIV","LI","BLOCKQUOTE"]);
       while (el && el !== editor && !blockTags.has(el.tagName)) {
@@ -879,24 +881,99 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     return () => window.removeEventListener("notesTab_externalNoteAdded", handler);
   }, [loadNotebooks]);
 
+  // Restores the caret inside the editor before running a command.
+  // Toolbar clicks / <select> interactions can move focus out of the
+  // contentEditable, which makes execCommand a no-op (e.g. list toggle off).
+  const restoreEditorSelection = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+    const sel = window.getSelection();
+    const inside = sel && sel.rangeCount > 0 && editor.contains(sel.anchorNode);
+    if (inside) return;
+    const saved = savedRangeRef.current;
+    if (saved && editor.contains(saved.startContainer)) {
+      sel?.removeAllRanges();
+      sel?.addRange(saved);
+    } else {
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+  };
+
+  const getClosest = (tags: string[]): HTMLElement | null => {
+    const editor = editorRef.current;
+    const sel = window.getSelection();
+    if (!editor || !sel || sel.rangeCount === 0) return null;
+    let node: Node | null = sel.anchorNode;
+    while (node && node !== editor) {
+      if (node.nodeType === 1 && tags.includes((node as HTMLElement).tagName)) return node as HTMLElement;
+      node = node.parentNode;
+    }
+    return null;
+  };
+
   const execCmd = (cmd: string, value?: string) => {
+    restoreEditorSelection();
     document.execCommand(cmd, false, value);
     editorRef.current?.focus();
     saveCurrentPage();
   };
+
+  // Manual fallback: convert every <li> of the list back into paragraphs.
+  const unwrapList = (list: HTMLElement) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const frag = document.createDocumentFragment();
+    Array.from(list.children).forEach((child) => {
+      if (child.tagName !== "LI") { frag.appendChild(child); return; }
+      const p = document.createElement("p");
+      while (child.firstChild) p.appendChild(child.firstChild);
+      if (!p.firstChild) p.appendChild(document.createElement("br"));
+      frag.appendChild(p);
+    });
+    const first = frag.firstChild as HTMLElement | null;
+    list.parentNode?.replaceChild(frag, list);
+    if (first) {
+      const range = document.createRange();
+      range.selectNodeContents(first);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+  };
+
+  const toggleList = (cmd: "insertUnorderedList" | "insertOrderedList") => {
+    restoreEditorSelection();
+    const before = getClosest(["UL", "OL"]);
+    document.execCommand(cmd, false);
+    const after = getClosest(["UL", "OL"]);
+    // Toggling off failed (common when the list is the editor's first/only block)
+    const expected = cmd === "insertUnorderedList" ? "UL" : "OL";
+    if (before && after && after === before && after.tagName === expected) {
+      unwrapList(after);
+    }
+    editorRef.current?.focus();
+    saveCurrentPage();
+  };
+
 
   const insertTable = () => {
     const rows = 2, cols = 2;
     const cell = '<td style="border:1px solid rgba(255,255,255,0.15);padding:8px;min-width:40px">\u200B</td>';
     const rowHtml = `<tr>${cell.repeat(cols)}</tr>`;
     const html = `<table class="note-table" style="border-collapse:collapse;width:100%;margin:8px 0">${rowHtml.repeat(rows)}</table><p>\u200B</p>`;
-    editorRef.current?.focus();
+    restoreEditorSelection();
     document.execCommand("insertHTML", false, html);
     saveCurrentPage();
   };
 
   const insertSym = (s: string) => {
-    editorRef.current?.focus();
+    restoreEditorSelection();
     document.execCommand("insertText", false, s);
     saveCurrentPage();
   };
@@ -1359,7 +1436,16 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               className="ef-select"
               value={currentBlock}
               onChange={(e) => {
-                if (e.target.value) execCmd("formatBlock", e.target.value);
+                const val = e.target.value;
+                if (!val) return;
+                restoreEditorSelection();
+                const list = getClosest(["UL", "OL"]);
+                if (list) {
+                  document.execCommand(list.tagName === "UL" ? "insertUnorderedList" : "insertOrderedList", false);
+                  const still = getClosest(["UL", "OL"]);
+                  if (still && still === list) unwrapList(still);
+                }
+                execCmd("formatBlock", val);
               }}
             >
               <option value="" disabled>Nagłówek</option>
@@ -1373,14 +1459,14 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               <option value="pre">Preformatowany</option>
             </select>
             <div className="et-sep" />
-            <button className="et-btn" onClick={() => execCmd("bold")} title="Pogrubienie"><b>B</b></button>
-            <button className="et-btn" onClick={() => execCmd("italic")} title="Kursywa"><i>I</i></button>
-            <button className="et-btn" onClick={() => execCmd("underline")} title="Podkreślenie"><u>U</u></button>
+            <button className="et-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => execCmd("bold")} title="Pogrubienie"><b>B</b></button>
+            <button className="et-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => execCmd("italic")} title="Kursywa"><i>I</i></button>
+            <button className="et-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => execCmd("underline")} title="Podkreślenie"><u>U</u></button>
             <div className="et-sep" />
-            <button className="et-btn" onClick={() => execCmd("insertUnorderedList")} title="Lista">⋮≡</button>
-            <button className="et-btn" onClick={() => execCmd("insertOrderedList")} title="Lista numerowana">➀➁➂</button>
+            <button className="et-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => toggleList("insertUnorderedList")} title="Lista">⋮≡</button>
+            <button className="et-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => toggleList("insertOrderedList")} title="Lista numerowana">➀➁➂</button>
             <div className="et-sep" />
-            <button className="et-btn" onClick={insertTable} title="Wstaw tabelę">▦</button>
+            <button className="et-btn" onMouseDown={(e) => e.preventDefault()} onClick={insertTable} title="Wstaw tabelę">▦</button>
             <div className="et-sep" />
             <button className="et-btn" onClick={pickImage} title="Wstaw zdjęcie">📷</button>
             <input
@@ -1391,7 +1477,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               onChange={onImagePicked}
             />
             <div className="et-sep" />
-            <button className={`et-btn ${symOpen ? "active" : ""}`} onClick={() => setSymOpen(p => !p)} title="Symbole matematyczne">🔣</button>
+            <button className={`et-btn ${symOpen ? "active" : ""}`} onMouseDown={(e) => e.preventDefault()} onClick={() => setSymOpen(p => !p)} title="Symbole matematyczne">🔣</button>
             <div className="et-sep" />
             <button
               className="et-btn"
@@ -1419,7 +1505,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                   <span className="sym-group-label">{gr.g}</span>
                   <div className="sym-group-row">
                     {gr.s.map((s, i) => (
-                      <button key={i} className="sym-btn" onClick={() => insertSym(s)} title={s}>{s}</button>
+                      <button key={i} className="sym-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => insertSym(s)} title={s}>{s}</button>
                     ))}
                   </div>
                 </div>
@@ -1611,9 +1697,21 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                     (range.startContainer === li ||
                      (range.startContainer.nodeType === 3 && range.startContainer === li.firstChild) ||
                      (range.startContainer.nodeType === 1 && (range.startContainer as HTMLElement) === li.firstElementChild && range.startOffset === 0));
-                  if (atStart && getDepth(li) > 1) {
+                  if (atStart) {
                     e.preventDefault();
-                    document.execCommand("outdent");
+                    if (getDepth(li) > 1) {
+                      document.execCommand("outdent");
+                    } else {
+                      const list = li.parentElement;
+                      const isFirst = list?.firstElementChild === li;
+                      const cmd = list?.tagName === "OL" ? "insertOrderedList" : "insertUnorderedList";
+                      document.execCommand(cmd, false);
+                      const still = getClosest(["UL", "OL"]);
+                      if (still && list && still === list) {
+                        if (isFirst) unwrapList(list);
+                        else document.execCommand("outdent");
+                      }
+                    }
                     saveCurrentPage();
                   }
                 }
