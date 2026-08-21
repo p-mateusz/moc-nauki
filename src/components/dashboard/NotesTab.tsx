@@ -953,7 +953,8 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     document.execCommand(cmd, false);
     const after = getClosest(["UL", "OL"]);
     // Toggling off failed (common when the list is the editor's first/only block)
-    if (before && after && after === before) {
+    const expected = cmd === "insertUnorderedList" ? "UL" : "OL";
+    if (before && after && after === before && after.tagName === expected) {
       unwrapList(after);
     }
     editorRef.current?.focus();
@@ -966,13 +967,13 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     const cell = '<td style="border:1px solid rgba(255,255,255,0.15);padding:8px;min-width:40px">\u200B</td>';
     const rowHtml = `<tr>${cell.repeat(cols)}</tr>`;
     const html = `<table class="note-table" style="border-collapse:collapse;width:100%;margin:8px 0">${rowHtml.repeat(rows)}</table><p>\u200B</p>`;
-    editorRef.current?.focus();
+    restoreEditorSelection();
     document.execCommand("insertHTML", false, html);
     saveCurrentPage();
   };
 
   const insertSym = (s: string) => {
-    editorRef.current?.focus();
+    restoreEditorSelection();
     document.execCommand("insertText", false, s);
     saveCurrentPage();
   };
@@ -1449,14 +1450,14 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               <option value="pre">Preformatowany</option>
             </select>
             <div className="et-sep" />
-            <button className="et-btn" onClick={() => execCmd("bold")} title="Pogrubienie"><b>B</b></button>
-            <button className="et-btn" onClick={() => execCmd("italic")} title="Kursywa"><i>I</i></button>
-            <button className="et-btn" onClick={() => execCmd("underline")} title="Podkreślenie"><u>U</u></button>
+            <button className="et-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => execCmd("bold")} title="Pogrubienie"><b>B</b></button>
+            <button className="et-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => execCmd("italic")} title="Kursywa"><i>I</i></button>
+            <button className="et-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => execCmd("underline")} title="Podkreślenie"><u>U</u></button>
             <div className="et-sep" />
-            <button className="et-btn" onClick={() => execCmd("insertUnorderedList")} title="Lista">⋮≡</button>
-            <button className="et-btn" onClick={() => execCmd("insertOrderedList")} title="Lista numerowana">➀➁➂</button>
+            <button className="et-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => toggleList("insertUnorderedList")} title="Lista">⋮≡</button>
+            <button className="et-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => toggleList("insertOrderedList")} title="Lista numerowana">➀➁➂</button>
             <div className="et-sep" />
-            <button className="et-btn" onClick={insertTable} title="Wstaw tabelę">▦</button>
+            <button className="et-btn" onMouseDown={(e) => e.preventDefault()} onClick={insertTable} title="Wstaw tabelę">▦</button>
             <div className="et-sep" />
             <button className="et-btn" onClick={pickImage} title="Wstaw zdjęcie">📷</button>
             <input
@@ -1467,7 +1468,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               onChange={onImagePicked}
             />
             <div className="et-sep" />
-            <button className={`et-btn ${symOpen ? "active" : ""}`} onClick={() => setSymOpen(p => !p)} title="Symbole matematyczne">🔣</button>
+            <button className={`et-btn ${symOpen ? "active" : ""}`} onMouseDown={(e) => e.preventDefault()} onClick={() => setSymOpen(p => !p)} title="Symbole matematyczne">🔣</button>
             <div className="et-sep" />
             <button
               className="et-btn"
