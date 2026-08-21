@@ -881,11 +881,85 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     return () => window.removeEventListener("notesTab_externalNoteAdded", handler);
   }, [loadNotebooks]);
 
+  // Restores the caret inside the editor before running a command.
+  // Toolbar clicks / <select> interactions can move focus out of the
+  // contentEditable, which makes execCommand a no-op (e.g. list toggle off).
+  const restoreEditorSelection = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+    const sel = window.getSelection();
+    const inside = sel && sel.rangeCount > 0 && editor.contains(sel.anchorNode);
+    if (inside) return;
+    const saved = savedRangeRef.current;
+    if (saved && editor.contains(saved.startContainer)) {
+      sel?.removeAllRanges();
+      sel?.addRange(saved);
+    } else {
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+  };
+
+  const getClosest = (tags: string[]): HTMLElement | null => {
+    const editor = editorRef.current;
+    const sel = window.getSelection();
+    if (!editor || !sel || sel.rangeCount === 0) return null;
+    let node: Node | null = sel.anchorNode;
+    while (node && node !== editor) {
+      if (node.nodeType === 1 && tags.includes((node as HTMLElement).tagName)) return node as HTMLElement;
+      node = node.parentNode;
+    }
+    return null;
+  };
+
   const execCmd = (cmd: string, value?: string) => {
+    restoreEditorSelection();
     document.execCommand(cmd, false, value);
     editorRef.current?.focus();
     saveCurrentPage();
   };
+
+  // Manual fallback: convert every <li> of the list back into paragraphs.
+  const unwrapList = (list: HTMLElement) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const frag = document.createDocumentFragment();
+    Array.from(list.children).forEach((child) => {
+      if (child.tagName !== "LI") { frag.appendChild(child); return; }
+      const p = document.createElement("p");
+      while (child.firstChild) p.appendChild(child.firstChild);
+      if (!p.firstChild) p.appendChild(document.createElement("br"));
+      frag.appendChild(p);
+    });
+    const first = frag.firstChild as HTMLElement | null;
+    list.parentNode?.replaceChild(frag, list);
+    if (first) {
+      const range = document.createRange();
+      range.selectNodeContents(first);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+  };
+
+  const toggleList = (cmd: "insertUnorderedList" | "insertOrderedList") => {
+    restoreEditorSelection();
+    const before = getClosest(["UL", "OL"]);
+    document.execCommand(cmd, false);
+    const after = getClosest(["UL", "OL"]);
+    // Toggling off failed (common when the list is the editor's first/only block)
+    if (before && after && after === before) {
+      unwrapList(after);
+    }
+    editorRef.current?.focus();
+    saveCurrentPage();
+  };
+
 
   const insertTable = () => {
     const rows = 2, cols = 2;
