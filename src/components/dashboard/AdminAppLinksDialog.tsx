@@ -8,6 +8,8 @@ type SettingRow = { key: string; value: unknown };
 
 const AdminAppLinksDialog = ({ open, onClose }: Props) => {
   const [androidUrl, setAndroidUrl] = useState("");
+  const [pay30, setPay30] = useState("");
+  const [pay90, setPay90] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -17,10 +19,18 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
     (async () => {
       try {
         const res = await invokeCloudFunction<SettingRow[]>("manage-app-settings", {
-          body: { action: "get", keys: ["app_download_android_url"] },
+          body: {
+            action: "get",
+            keys: ["app_download_android_url", "payment_link_30", "payment_link_90"],
+          },
         });
-        const row = (res || []).find((r) => r.key === "app_download_android_url");
-        setAndroidUrl(typeof row?.value === "string" ? (row.value as string) : "");
+        const pick = (key: string) => {
+          const row = (res || []).find((r) => r.key === key);
+          return typeof row?.value === "string" ? (row.value as string) : "";
+        };
+        setAndroidUrl(pick("app_download_android_url"));
+        setPay30(pick("payment_link_30"));
+        setPay90(pick("payment_link_90"));
       } catch {
         toast.error("Nie udało się pobrać aktualnego linku");
       } finally {
@@ -33,20 +43,27 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
 
   const save = async () => {
     const url = androidUrl.trim();
-    if (url && !/^https?:\/\//i.test(url)) {
-      toast.error("Link musi zaczynać się od http:// lub https://");
-      return;
+    const link30 = pay30.trim();
+    const link90 = pay90.trim();
+    const entries: Array<[string, string]> = [
+      ["app_download_android_url", url],
+      ["payment_link_30", link30],
+      ["payment_link_90", link90],
+    ];
+    for (const [, v] of entries) {
+      if (v && !/^https:\/\//i.test(v) && !/^http:\/\//i.test(v)) {
+        toast.error("Każdy link musi zaczynać się od http:// lub https://");
+        return;
+      }
     }
     setSaving(true);
     try {
-      await invokeCloudFunction("manage-app-settings", {
-        body: {
-          action: "set",
-          key: "app_download_android_url",
-          value: url,
-        },
-      });
-      toast.success(url ? "Link zapisany — użytkownicy mogą już pobrać APK" : "Link wyczyszczony");
+      for (const [key, value] of entries) {
+        await invokeCloudFunction("manage-app-settings", {
+          body: { action: "set", key, value },
+        });
+      }
+      toast.success("Ustawienia zapisane");
       onClose();
     } catch {
       toast.error("Zapis nie powiódł się");
@@ -124,6 +141,47 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
           }}
         />
 
+        <h3 style={{ fontSize: "1.05rem", fontWeight: 900, margin: "8px 0 6px" }}>
+          💳 Linki do płatności
+        </h3>
+        <p style={{ fontSize: ".78rem", color: "#94a3b8", marginBottom: 12, lineHeight: 1.55 }}>
+          Jeśli wpiszesz link (np. Stripe Payment Link), użytkownik po kliknięciu
+          „Wykup dostęp" trafi prosto pod ten adres. Puste pole = standardowy
+          checkout tworzony przez system.
+        </p>
+
+        <label style={{ fontSize: ".78rem", fontWeight: 700, color: "#cbd5e1", display: "block", marginBottom: 6 }}>
+          Plan 30-dniowy (29 zł)
+        </label>
+        <input
+          type="url"
+          value={pay30}
+          onChange={(e) => setPay30(e.target.value)}
+          placeholder="https://buy.stripe.com/..."
+          disabled={loading || saving}
+          style={{
+            width: "100%", padding: "11px 14px", borderRadius: 12,
+            border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)",
+            color: "#fff", fontSize: ".88rem", marginBottom: 12,
+          }}
+        />
+
+        <label style={{ fontSize: ".78rem", fontWeight: 700, color: "#cbd5e1", display: "block", marginBottom: 6 }}>
+          Plan 90-dniowy (89 zł)
+        </label>
+        <input
+          type="url"
+          value={pay90}
+          onChange={(e) => setPay90(e.target.value)}
+          placeholder="https://buy.stripe.com/..."
+          disabled={loading || saving}
+          style={{
+            width: "100%", padding: "11px 14px", borderRadius: 12,
+            border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)",
+            color: "#fff", fontSize: ".88rem", marginBottom: 16,
+          }}
+        />
+
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button
             onClick={onClose}
@@ -143,7 +201,7 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
               color: "#fff", cursor: "pointer", fontWeight: 800,
               opacity: loading || saving ? 0.6 : 1,
             }}
-          >{saving ? "Zapisywanie…" : "Zapisz link"}</button>
+          >{saving ? "Zapisywanie…" : "Zapisz ustawienia"}</button>
         </div>
 
         <div style={{ marginTop: 18, fontSize: ".72rem", color: "#64748b", lineHeight: 1.5 }}>
