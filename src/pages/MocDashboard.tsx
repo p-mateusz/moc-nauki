@@ -500,14 +500,17 @@ const MocDashboard = () => {
               {group.tabs.map((tab) => {
                 const badge = getTabBadge(tab);
                 const isLocked = isTabLocked(tab);
-                const showStrike = guestMode && tab !== "languages";
+                const comingSoon = isComingSoon(tab);
+                const showStrike = comingSoon || (guestMode && tab !== "languages");
                 return (
-                  <div key={tab} className={`md-sb-item ${activeTab === tab ? "active" : ""} ${isLocked ? "guest-disabled" : ""}`} onClick={() => handleTabClick(tab)}>
+                  <div key={tab} className={`md-sb-item ${activeTab === tab ? "active" : ""} ${isLocked ? "guest-disabled" : ""}`} onClick={() => handleTabClick(tab)} title={comingSoon ? "Dostępne wkrótce" : undefined}>
                     <span className="md-ic">{tabMeta[tab].icon}</span>
                     <span className={showStrike ? "guest-label" : ""}>{tabMeta[tab].label}</span>
-                    {badge > 0 && <span className="md-sb-tab-badge">{badge}</span>}
+                    {comingSoon && <span className="md-soon-badge">Dostępne wkrótce</span>}
+                    {!comingSoon && badge > 0 && <span className="md-sb-tab-badge">{badge}</span>}
                   </div>
                 );
+
               })}
             </div>
           ))}
