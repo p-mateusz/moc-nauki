@@ -44,11 +44,34 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Toggle "everyone is fee exempt" mode. Disabling also revokes the exemption
+    // from every student account that currently has it.
+    if (action === "set_all_fee_exempt") {
+      const enabled = value === true || value === "true";
+      const { error: settingError } = await supabase.from("app_settings").upsert(
+        { key: "all_fee_exempt", value: enabled ? "true" : "false", updated_at: new Date().toISOString() },
+        { onConflict: "key" }
+      );
+      if (settingError) throw settingError;
+
+      if (!enabled) {
+        const { error: revokeError } = await supabase
+          .from("user_accounts")
+          .update({ fee_exempt: false, subscription_status: "inactive" })
+          .eq("fee_exempt", true)
+          .not("role", "in", '("admin","nauczyciel")');
+        if (revokeError) throw revokeError;
+      }
+
+      return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     if (action === "delete") {
       const { error } = await supabase.from("app_settings").delete().eq("key", key);
       if (error) throw error;
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
 
     return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400, headers: corsHeaders });
   } catch (e) {
