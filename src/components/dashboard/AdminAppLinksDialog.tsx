@@ -10,6 +10,10 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
   const [androidUrl, setAndroidUrl] = useState("");
   const [pay30, setPay30] = useState("");
   const [pay90, setPay90] = useState("");
+  const [lockTabs, setLockTabs] = useState(false);
+  const [allFeeExempt, setAllFeeExempt] = useState(false);
+  const [togglingExempt, setTogglingExempt] = useState(false);
+  const [togglingTabs, setTogglingTabs] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -21,7 +25,7 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
         const res = await invokeCloudFunction<SettingRow[]>("manage-app-settings", {
           body: {
             action: "get",
-            keys: ["app_download_android_url", "payment_link_30", "payment_link_90"],
+            keys: ["app_download_android_url", "payment_link_30", "payment_link_90", "lock_community_tabs", "all_fee_exempt"],
           },
         });
         const pick = (key: string) => {
@@ -31,6 +35,8 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
         setAndroidUrl(pick("app_download_android_url"));
         setPay30(pick("payment_link_30"));
         setPay90(pick("payment_link_90"));
+        setLockTabs(pick("lock_community_tabs") === "true");
+        setAllFeeExempt(pick("all_fee_exempt") === "true");
       } catch {
         toast.error("Nie udało się pobrać aktualnego linku");
       } finally {
@@ -40,6 +46,40 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
   }, [open]);
 
   if (!open) return null;
+
+  const toggleLockTabs = async () => {
+    const next = !lockTabs;
+    setTogglingTabs(true);
+    try {
+      await invokeCloudFunction("manage-app-settings", {
+        body: { action: "set", key: "lock_community_tabs", value: next ? "true" : "false" },
+      });
+      setLockTabs(next);
+      window.dispatchEvent(new CustomEvent("communityTabsLockChanged", { detail: next }));
+      toast.success(next ? "Zakładki zablokowane („Dostępne wkrótce”)" : "Zakładki odblokowane");
+    } catch {
+      toast.error("Nie udało się zmienić ustawienia");
+    } finally {
+      setTogglingTabs(false);
+    }
+  };
+
+  const toggleAllFeeExempt = async () => {
+    const next = !allFeeExempt;
+    if (!next && !window.confirm("Wyłączyć zwolnienie z opłat? Wszyscy uczniowie ze statusem zwolnienia stracą go.")) return;
+    setTogglingExempt(true);
+    try {
+      await invokeCloudFunction("manage-app-settings", {
+        body: { action: "set_all_fee_exempt", value: next },
+      });
+      setAllFeeExempt(next);
+      toast.success(next ? "Wszyscy zwolnieni z opłat — rejestracja bez wyboru planu" : "Przywrócono opłaty i cofnięto zwolnienia");
+    } catch {
+      toast.error("Nie udało się zmienić ustawienia");
+    } finally {
+      setTogglingExempt(false);
+    }
+  };
 
   const save = async () => {
     const url = androidUrl.trim();
@@ -71,6 +111,7 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
       setSaving(false);
     }
   };
+
 
   return (
     <div
