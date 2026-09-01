@@ -199,6 +199,14 @@ Deno.serve(async (req) => {
 
     const authUserId = authUser.user.id;
 
+    // Global "everyone is fee exempt" mode (toggled by admin)
+    const { data: exemptSetting } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "all_fee_exempt")
+      .maybeSingle();
+    const allFeeExempt = String((exemptSetting as any)?.value ?? "") === "true";
+
     // Create user_accounts record — use `id` = auth user id (no user_id column)
     const { data: newAccount, error: insertError } = await supabase
       .from("user_accounts")
@@ -208,9 +216,11 @@ Deno.serve(async (req) => {
         name: name.trim(),
         username: trimmedUsername,
         role: "uczeń",
+        ...(allFeeExempt ? { fee_exempt: true, subscription_status: "exempt" } : {}),
       })
       .select("id, name, username")
       .single();
+
 
     if (insertError) {
       await supabase.auth.admin.deleteUser(authUserId);

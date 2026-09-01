@@ -35,6 +35,23 @@ Deno.serve(async (req) => {
     }
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    // Admin może nadpisać checkout własnym linkiem płatności (app_settings).
+    const overrideKey = plan === "30" ? "payment_link_30" : "payment_link_90";
+    const { data: overrideRow } = await admin
+      .from("app_settings")
+      .select("value")
+      .eq("key", overrideKey)
+      .maybeSingle();
+    const overrideUrl = typeof overrideRow?.value === "string" ? overrideRow.value.trim() : "";
+    if (overrideUrl && /^https:\/\//i.test(overrideUrl)) {
+      const withRef = new URL(overrideUrl);
+      withRef.searchParams.set("client_reference_id", userId);
+      return new Response(JSON.stringify({ url: withRef.toString() }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data: account } = await admin
       .from("user_accounts")
       .select("email, stripe_customer_id")

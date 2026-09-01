@@ -8,6 +8,12 @@ type SettingRow = { key: string; value: unknown };
 
 const AdminAppLinksDialog = ({ open, onClose }: Props) => {
   const [androidUrl, setAndroidUrl] = useState("");
+  const [pay30, setPay30] = useState("");
+  const [pay90, setPay90] = useState("");
+  const [lockTabs, setLockTabs] = useState(false);
+  const [allFeeExempt, setAllFeeExempt] = useState(false);
+  const [togglingExempt, setTogglingExempt] = useState(false);
+  const [togglingTabs, setTogglingTabs] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -17,10 +23,20 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
     (async () => {
       try {
         const res = await invokeCloudFunction<SettingRow[]>("manage-app-settings", {
-          body: { action: "get", keys: ["app_download_android_url"] },
+          body: {
+            action: "get",
+            keys: ["app_download_android_url", "payment_link_30", "payment_link_90", "lock_community_tabs", "all_fee_exempt"],
+          },
         });
-        const row = (res || []).find((r) => r.key === "app_download_android_url");
-        setAndroidUrl(typeof row?.value === "string" ? (row.value as string) : "");
+        const pick = (key: string) => {
+          const row = (res || []).find((r) => r.key === key);
+          return typeof row?.value === "string" ? (row.value as string) : "";
+        };
+        setAndroidUrl(pick("app_download_android_url"));
+        setPay30(pick("payment_link_30"));
+        setPay90(pick("payment_link_90"));
+        setLockTabs(pick("lock_community_tabs") === "true");
+        setAllFeeExempt(pick("all_fee_exempt") === "true");
       } catch {
         toast.error("Nie udało się pobrać aktualnego linku");
       } finally {
@@ -31,22 +47,63 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
 
   if (!open) return null;
 
+  const toggleLockTabs = async () => {
+    const next = !lockTabs;
+    setTogglingTabs(true);
+    try {
+      await invokeCloudFunction("manage-app-settings", {
+        body: { action: "set", key: "lock_community_tabs", value: next ? "true" : "false" },
+      });
+      setLockTabs(next);
+      window.dispatchEvent(new CustomEvent("communityTabsLockChanged", { detail: next }));
+      toast.success(next ? "Zakładki zablokowane („Dostępne wkrótce”)" : "Zakładki odblokowane");
+    } catch {
+      toast.error("Nie udało się zmienić ustawienia");
+    } finally {
+      setTogglingTabs(false);
+    }
+  };
+
+  const toggleAllFeeExempt = async () => {
+    const next = !allFeeExempt;
+    if (!next && !window.confirm("Wyłączyć zwolnienie z opłat? Wszyscy uczniowie ze statusem zwolnienia stracą go.")) return;
+    setTogglingExempt(true);
+    try {
+      await invokeCloudFunction("manage-app-settings", {
+        body: { action: "set_all_fee_exempt", value: next },
+      });
+      setAllFeeExempt(next);
+      toast.success(next ? "Wszyscy zwolnieni z opłat — rejestracja bez wyboru planu" : "Przywrócono opłaty i cofnięto zwolnienia");
+    } catch {
+      toast.error("Nie udało się zmienić ustawienia");
+    } finally {
+      setTogglingExempt(false);
+    }
+  };
+
   const save = async () => {
     const url = androidUrl.trim();
-    if (url && !/^https?:\/\//i.test(url)) {
-      toast.error("Link musi zaczynać się od http:// lub https://");
-      return;
+    const link30 = pay30.trim();
+    const link90 = pay90.trim();
+    const entries: Array<[string, string]> = [
+      ["app_download_android_url", url],
+      ["payment_link_30", link30],
+      ["payment_link_90", link90],
+    ];
+    for (const [, v] of entries) {
+      if (v && !/^https:\/\//i.test(v) && !/^http:\/\//i.test(v)) {
+        toast.error("Każdy link musi zaczynać się od http:// lub https://");
+        return;
+      }
     }
     setSaving(true);
     try {
-      await invokeCloudFunction("manage-app-settings", {
-        body: {
-          action: "set",
-          key: "app_download_android_url",
-          value: url,
-        },
-      });
-      toast.success(url ? "Link zapisany — użytkownicy mogą już pobrać APK" : "Link wyczyszczony");
+      for (const [key, value] of entries) {
+        await invokeCloudFunction("manage-app-settings", {
+          body: { action: "set", key, value },
+        });
+      }
+      toast.success("Ustawienia zapisane");
       onClose();
     } catch {
       toast.error("Zapis nie powiódł się");
@@ -54,6 +111,7 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
       setSaving(false);
     }
   };
+
 
   return (
     <div
@@ -124,6 +182,99 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
           }}
         />
 
+        <h3 style={{ fontSize: "1.05rem", fontWeight: 900, margin: "8px 0 6px" }}>
+          🚧 Tymczasowe przełączniki
+        </h3>
+
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+          background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 12, padding: 12, marginBottom: 10,
+        }}>
+          <div style={{ fontSize: ".8rem", lineHeight: 1.5 }}>
+            <div style={{ fontWeight: 800 }}>Zablokuj „Uczniowie” i „Nauczyciele”</div>
+            <div style={{ color: "#94a3b8", fontSize: ".72rem" }}>
+              Zakładki zostają widoczne, ale przekreślone i oznaczone „Dostępne wkrótce”.
+            </div>
+          </div>
+          <button
+            onClick={toggleLockTabs}
+            disabled={loading || togglingTabs}
+            style={{
+              padding: "9px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              fontWeight: 800, fontSize: ".78rem", whiteSpace: "nowrap", color: "#fff",
+              background: lockTabs ? "linear-gradient(135deg,#f87171,#ef4444)" : "rgba(255,255,255,0.1)",
+              opacity: loading || togglingTabs ? 0.6 : 1,
+            }}
+          >{lockTabs ? "Odblokuj" : "Zablokuj"}</button>
+        </div>
+
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+          background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 12, padding: 12, marginBottom: 16,
+        }}>
+          <div style={{ fontSize: ".8rem", lineHeight: 1.5 }}>
+            <div style={{ fontWeight: 800 }}>Zwolnij wszystkich z opłat</div>
+            <div style={{ color: "#94a3b8", fontSize: ".72rem" }}>
+              Rejestracja bez wyboru planu, nowe konta od razu zwolnione. Wyłączenie cofa
+              zwolnienie wszystkim uczniom.
+            </div>
+          </div>
+          <button
+            onClick={toggleAllFeeExempt}
+            disabled={loading || togglingExempt}
+            style={{
+              padding: "9px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              fontWeight: 800, fontSize: ".78rem", whiteSpace: "nowrap", color: "#fff",
+              background: allFeeExempt ? "linear-gradient(135deg,#f87171,#ef4444)" : "linear-gradient(135deg,#34d399,#10b981)",
+              opacity: loading || togglingExempt ? 0.6 : 1,
+            }}
+          >{allFeeExempt ? "Wyłącz" : "Włącz"}</button>
+        </div>
+
+
+        <h3 style={{ fontSize: "1.05rem", fontWeight: 900, margin: "8px 0 6px" }}>
+          💳 Linki do płatności
+        </h3>
+        <p style={{ fontSize: ".78rem", color: "#94a3b8", marginBottom: 12, lineHeight: 1.55 }}>
+          Jeśli wpiszesz link (np. Stripe Payment Link), użytkownik po kliknięciu
+          „Wykup dostęp" trafi prosto pod ten adres. Puste pole = standardowy
+          checkout tworzony przez system.
+        </p>
+
+        <label style={{ fontSize: ".78rem", fontWeight: 700, color: "#cbd5e1", display: "block", marginBottom: 6 }}>
+          Plan 30-dniowy (29 zł)
+        </label>
+        <input
+          type="url"
+          value={pay30}
+          onChange={(e) => setPay30(e.target.value)}
+          placeholder="https://buy.stripe.com/..."
+          disabled={loading || saving}
+          style={{
+            width: "100%", padding: "11px 14px", borderRadius: 12,
+            border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)",
+            color: "#fff", fontSize: ".88rem", marginBottom: 12,
+          }}
+        />
+
+        <label style={{ fontSize: ".78rem", fontWeight: 700, color: "#cbd5e1", display: "block", marginBottom: 6 }}>
+          Plan 90-dniowy (89 zł)
+        </label>
+        <input
+          type="url"
+          value={pay90}
+          onChange={(e) => setPay90(e.target.value)}
+          placeholder="https://buy.stripe.com/..."
+          disabled={loading || saving}
+          style={{
+            width: "100%", padding: "11px 14px", borderRadius: 12,
+            border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)",
+            color: "#fff", fontSize: ".88rem", marginBottom: 16,
+          }}
+        />
+
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button
             onClick={onClose}
@@ -143,7 +294,7 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
               color: "#fff", cursor: "pointer", fontWeight: 800,
               opacity: loading || saving ? 0.6 : 1,
             }}
-          >{saving ? "Zapisywanie…" : "Zapisz link"}</button>
+          >{saving ? "Zapisywanie…" : "Zapisz ustawienia"}</button>
         </div>
 
         <div style={{ marginTop: 18, fontSize: ".72rem", color: "#64748b", lineHeight: 1.5 }}>
