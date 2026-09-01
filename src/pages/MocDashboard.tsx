@@ -717,7 +717,17 @@ const MocDashboard = () => {
               )
             )}
             {activeTab === "teacher" && (
-              guestMode ? (
+              communityLocked ? (
+                <div className="guest-locked-area">
+                  <div className="guest-blur-inner">
+                    <TeacherStudentsTab mode="teacher" onMessagesRead={handleMessagesRead} guestMode />
+                  </div>
+                  <div className="guest-lock-overlay">
+                    <div className="guest-lock-icon">🔒</div>
+                    <div className="guest-lock-text">Dostępne wkrótce</div>
+                  </div>
+                </div>
+              ) : guestMode ? (
                 <div className="guest-locked-area">
                   <div className="guest-blur-inner">
                     <TeacherStudentsTab mode="teacher" onMessagesRead={handleMessagesRead} guestMode={guestMode} />
@@ -731,7 +741,17 @@ const MocDashboard = () => {
               )
             )}
             {activeTab === "students" && (
-              guestMode ? (
+              communityLocked ? (
+                <div className="guest-locked-area">
+                  <div className="guest-blur-inner">
+                    <TeacherStudentsTab mode="student" onMessagesRead={handleMessagesRead} guestMode />
+                  </div>
+                  <div className="guest-lock-overlay">
+                    <div className="guest-lock-icon">🔒</div>
+                    <div className="guest-lock-text">Dostępne wkrótce</div>
+                  </div>
+                </div>
+              ) : guestMode ? (
                 <div className="guest-locked-area">
                   <div className="guest-blur-inner">
                     <TeacherStudentsTab mode="student" onMessagesRead={handleMessagesRead} guestMode={guestMode} />
@@ -744,6 +764,7 @@ const MocDashboard = () => {
                 <TeacherStudentsTab mode="student" onMessagesRead={handleMessagesRead} />
               )
             )}
+
             {activeTab === "overview" && (
               guestMode ? (
                 <div className="guest-locked-area">
