@@ -506,7 +506,6 @@ const MocDashboard = () => {
                   <div key={tab} className={`md-sb-item ${activeTab === tab ? "active" : ""} ${isLocked ? "guest-disabled" : ""}`} onClick={() => handleTabClick(tab)} title={comingSoon ? "Dostępne wkrótce" : undefined}>
                     <span className="md-ic">{tabMeta[tab].icon}</span>
                     <span className={showStrike ? "guest-label" : ""}>{tabMeta[tab].label}</span>
-                    {comingSoon && <span className="md-soon-badge">Dostępne wkrótce</span>}
                     {!comingSoon && badge > 0 && <span className="md-sb-tab-badge">{badge}</span>}
                   </div>
                 );
