@@ -183,6 +183,58 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
         />
 
         <h3 style={{ fontSize: "1.05rem", fontWeight: 900, margin: "8px 0 6px" }}>
+          🚧 Tymczasowe przełączniki
+        </h3>
+
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+          background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 12, padding: 12, marginBottom: 10,
+        }}>
+          <div style={{ fontSize: ".8rem", lineHeight: 1.5 }}>
+            <div style={{ fontWeight: 800 }}>Zablokuj „Uczniowie” i „Nauczyciele”</div>
+            <div style={{ color: "#94a3b8", fontSize: ".72rem" }}>
+              Zakładki zostają widoczne, ale przekreślone i oznaczone „Dostępne wkrótce”.
+            </div>
+          </div>
+          <button
+            onClick={toggleLockTabs}
+            disabled={loading || togglingTabs}
+            style={{
+              padding: "9px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              fontWeight: 800, fontSize: ".78rem", whiteSpace: "nowrap", color: "#fff",
+              background: lockTabs ? "linear-gradient(135deg,#f87171,#ef4444)" : "rgba(255,255,255,0.1)",
+              opacity: loading || togglingTabs ? 0.6 : 1,
+            }}
+          >{lockTabs ? "Odblokuj" : "Zablokuj"}</button>
+        </div>
+
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+          background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 12, padding: 12, marginBottom: 16,
+        }}>
+          <div style={{ fontSize: ".8rem", lineHeight: 1.5 }}>
+            <div style={{ fontWeight: 800 }}>Zwolnij wszystkich z opłat</div>
+            <div style={{ color: "#94a3b8", fontSize: ".72rem" }}>
+              Rejestracja bez wyboru planu, nowe konta od razu zwolnione. Wyłączenie cofa
+              zwolnienie wszystkim uczniom.
+            </div>
+          </div>
+          <button
+            onClick={toggleAllFeeExempt}
+            disabled={loading || togglingExempt}
+            style={{
+              padding: "9px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              fontWeight: 800, fontSize: ".78rem", whiteSpace: "nowrap", color: "#fff",
+              background: allFeeExempt ? "linear-gradient(135deg,#f87171,#ef4444)" : "linear-gradient(135deg,#34d399,#10b981)",
+              opacity: loading || togglingExempt ? 0.6 : 1,
+            }}
+          >{allFeeExempt ? "Wyłącz" : "Włącz"}</button>
+        </div>
+
+
+        <h3 style={{ fontSize: "1.05rem", fontWeight: 900, margin: "8px 0 6px" }}>
           💳 Linki do płatności
         </h3>
         <p style={{ fontSize: ".78rem", color: "#94a3b8", marginBottom: 12, lineHeight: 1.55 }}>
