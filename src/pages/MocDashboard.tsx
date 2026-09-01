@@ -100,7 +100,26 @@ const MocDashboard = () => {
   const roleBadgeColor = roleInfo?.color || (isAdmin ? "#f87171" : isTeacher ? "#fbbf24" : "#60a5fa");
   const roleBadgeBackground = roleBadgeColor.startsWith("linear-gradient") ? roleBadgeColor : `${roleBadgeColor}20`;
   const roleBadgeTextColor = roleBadgeColor.startsWith("linear-gradient") ? "#fff" : roleBadgeColor;
-  const isTabLocked = (tab: Tab) => guestMode && !["overview", "notes", "calendar", "languages", "tests", "friends", "tips", "ranking", "settings", "teacher"].includes(tab);
+  const [communityLocked, setCommunityLocked] = useState(false);
+  useEffect(() => {
+    let active = true;
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "lock_community_tabs")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active) setCommunityLocked(String((data as any)?.value ?? "") === "true");
+      });
+    const onChange = (e: Event) => setCommunityLocked(!!(e as CustomEvent).detail);
+    window.addEventListener("communityTabsLockChanged", onChange);
+    return () => { active = false; window.removeEventListener("communityTabsLockChanged", onChange); };
+  }, []);
+  const isComingSoon = (tab: Tab) => communityLocked && (tab === "teacher" || tab === "students");
+  const isTabLocked = (tab: Tab) =>
+    isComingSoon(tab) ||
+    (guestMode && !["overview", "notes", "calendar", "languages", "tests", "friends", "tips", "ranking", "settings", "teacher"].includes(tab));
+
   const getTabBadge = (tab: Tab) => {
     if (tab === "teacher") return unreadCounts.teacher;
     if (tab === "students") return unreadCounts.student;
