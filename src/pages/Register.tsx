@@ -66,11 +66,24 @@ const Register = () => {
       localStorage.setItem("userUsername", data.account.username);
       localStorage.setItem("userRole", "uczeń");
       toast.success("Konto utworzone! Witaj w Moc Nauki 🎉");
-      if (pendingPlan === "30" || pendingPlan === "90") {
+      let allFeeExempt = false;
+      try {
+        const { data: setting } = await supabase
+          .from("app_settings")
+          .select("value")
+          .eq("key", "all_fee_exempt")
+          .maybeSingle();
+        allFeeExempt = String((setting as any)?.value ?? "") === "true";
+      } catch {}
+      if (allFeeExempt) {
+        try { localStorage.removeItem("pendingPlan"); } catch {}
+        navigate("/dashboard", { replace: true });
+      } else if (pendingPlan === "30" || pendingPlan === "90") {
         navigate(`/pricing?plan=${pendingPlan}&autostart=1`);
       } else {
         navigate("/pricing");
       }
+
     } catch (e: any) {
       toast.error(e.message || "Błąd rejestracji");
     } finally {

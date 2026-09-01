@@ -10,6 +10,10 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
   const [androidUrl, setAndroidUrl] = useState("");
   const [pay30, setPay30] = useState("");
   const [pay90, setPay90] = useState("");
+  const [lockTabs, setLockTabs] = useState(false);
+  const [allFeeExempt, setAllFeeExempt] = useState(false);
+  const [togglingExempt, setTogglingExempt] = useState(false);
+  const [togglingTabs, setTogglingTabs] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -21,7 +25,7 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
         const res = await invokeCloudFunction<SettingRow[]>("manage-app-settings", {
           body: {
             action: "get",
-            keys: ["app_download_android_url", "payment_link_30", "payment_link_90"],
+            keys: ["app_download_android_url", "payment_link_30", "payment_link_90", "lock_community_tabs", "all_fee_exempt"],
           },
         });
         const pick = (key: string) => {
@@ -31,6 +35,8 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
         setAndroidUrl(pick("app_download_android_url"));
         setPay30(pick("payment_link_30"));
         setPay90(pick("payment_link_90"));
+        setLockTabs(pick("lock_community_tabs") === "true");
+        setAllFeeExempt(pick("all_fee_exempt") === "true");
       } catch {
         toast.error("Nie udało się pobrać aktualnego linku");
       } finally {
@@ -40,6 +46,40 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
   }, [open]);
 
   if (!open) return null;
+
+  const toggleLockTabs = async () => {
+    const next = !lockTabs;
+    setTogglingTabs(true);
+    try {
+      await invokeCloudFunction("manage-app-settings", {
+        body: { action: "set", key: "lock_community_tabs", value: next ? "true" : "false" },
+      });
+      setLockTabs(next);
+      window.dispatchEvent(new CustomEvent("communityTabsLockChanged", { detail: next }));
+      toast.success(next ? "Zakładki zablokowane („Dostępne wkrótce”)" : "Zakładki odblokowane");
+    } catch {
+      toast.error("Nie udało się zmienić ustawienia");
+    } finally {
+      setTogglingTabs(false);
+    }
+  };
+
+  const toggleAllFeeExempt = async () => {
+    const next = !allFeeExempt;
+    if (!next && !window.confirm("Wyłączyć zwolnienie z opłat? Wszyscy uczniowie ze statusem zwolnienia stracą go.")) return;
+    setTogglingExempt(true);
+    try {
+      await invokeCloudFunction("manage-app-settings", {
+        body: { action: "set_all_fee_exempt", value: next },
+      });
+      setAllFeeExempt(next);
+      toast.success(next ? "Wszyscy zwolnieni z opłat — rejestracja bez wyboru planu" : "Przywrócono opłaty i cofnięto zwolnienia");
+    } catch {
+      toast.error("Nie udało się zmienić ustawienia");
+    } finally {
+      setTogglingExempt(false);
+    }
+  };
 
   const save = async () => {
     const url = androidUrl.trim();
@@ -71,6 +111,7 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
       setSaving(false);
     }
   };
+
 
   return (
     <div
@@ -140,6 +181,58 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
             marginBottom: 16,
           }}
         />
+
+        <h3 style={{ fontSize: "1.05rem", fontWeight: 900, margin: "8px 0 6px" }}>
+          🚧 Tymczasowe przełączniki
+        </h3>
+
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+          background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 12, padding: 12, marginBottom: 10,
+        }}>
+          <div style={{ fontSize: ".8rem", lineHeight: 1.5 }}>
+            <div style={{ fontWeight: 800 }}>Zablokuj „Uczniowie” i „Nauczyciele”</div>
+            <div style={{ color: "#94a3b8", fontSize: ".72rem" }}>
+              Zakładki zostają widoczne, ale przekreślone i oznaczone „Dostępne wkrótce”.
+            </div>
+          </div>
+          <button
+            onClick={toggleLockTabs}
+            disabled={loading || togglingTabs}
+            style={{
+              padding: "9px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              fontWeight: 800, fontSize: ".78rem", whiteSpace: "nowrap", color: "#fff",
+              background: lockTabs ? "linear-gradient(135deg,#f87171,#ef4444)" : "rgba(255,255,255,0.1)",
+              opacity: loading || togglingTabs ? 0.6 : 1,
+            }}
+          >{lockTabs ? "Odblokuj" : "Zablokuj"}</button>
+        </div>
+
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+          background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 12, padding: 12, marginBottom: 16,
+        }}>
+          <div style={{ fontSize: ".8rem", lineHeight: 1.5 }}>
+            <div style={{ fontWeight: 800 }}>Zwolnij wszystkich z opłat</div>
+            <div style={{ color: "#94a3b8", fontSize: ".72rem" }}>
+              Rejestracja bez wyboru planu, nowe konta od razu zwolnione. Wyłączenie cofa
+              zwolnienie wszystkim uczniom.
+            </div>
+          </div>
+          <button
+            onClick={toggleAllFeeExempt}
+            disabled={loading || togglingExempt}
+            style={{
+              padding: "9px 14px", borderRadius: 10, border: "none", cursor: "pointer",
+              fontWeight: 800, fontSize: ".78rem", whiteSpace: "nowrap", color: "#fff",
+              background: allFeeExempt ? "linear-gradient(135deg,#f87171,#ef4444)" : "linear-gradient(135deg,#34d399,#10b981)",
+              opacity: loading || togglingExempt ? 0.6 : 1,
+            }}
+          >{allFeeExempt ? "Wyłącz" : "Włącz"}</button>
+        </div>
+
 
         <h3 style={{ fontSize: "1.05rem", fontWeight: 900, margin: "8px 0 6px" }}>
           💳 Linki do płatności

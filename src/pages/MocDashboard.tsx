@@ -100,7 +100,26 @@ const MocDashboard = () => {
   const roleBadgeColor = roleInfo?.color || (isAdmin ? "#f87171" : isTeacher ? "#fbbf24" : "#60a5fa");
   const roleBadgeBackground = roleBadgeColor.startsWith("linear-gradient") ? roleBadgeColor : `${roleBadgeColor}20`;
   const roleBadgeTextColor = roleBadgeColor.startsWith("linear-gradient") ? "#fff" : roleBadgeColor;
-  const isTabLocked = (tab: Tab) => guestMode && !["overview", "notes", "calendar", "languages", "tests", "friends", "tips", "ranking", "settings", "teacher"].includes(tab);
+  const [communityLocked, setCommunityLocked] = useState(false);
+  useEffect(() => {
+    let active = true;
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "lock_community_tabs")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active) setCommunityLocked(String((data as any)?.value ?? "") === "true");
+      });
+    const onChange = (e: Event) => setCommunityLocked(!!(e as CustomEvent).detail);
+    window.addEventListener("communityTabsLockChanged", onChange);
+    return () => { active = false; window.removeEventListener("communityTabsLockChanged", onChange); };
+  }, []);
+  const isComingSoon = (tab: Tab) => communityLocked && (tab === "teacher" || tab === "students");
+  const isTabLocked = (tab: Tab) =>
+    isComingSoon(tab) ||
+    (guestMode && !["overview", "notes", "calendar", "languages", "tests", "friends", "tips", "ranking", "settings", "teacher"].includes(tab));
+
   const getTabBadge = (tab: Tab) => {
     if (tab === "teacher") return unreadCounts.teacher;
     if (tab === "students") return unreadCounts.student;
@@ -481,14 +500,17 @@ const MocDashboard = () => {
               {group.tabs.map((tab) => {
                 const badge = getTabBadge(tab);
                 const isLocked = isTabLocked(tab);
-                const showStrike = guestMode && tab !== "languages";
+                const comingSoon = isComingSoon(tab);
+                const showStrike = comingSoon || (guestMode && tab !== "languages");
                 return (
-                  <div key={tab} className={`md-sb-item ${activeTab === tab ? "active" : ""} ${isLocked ? "guest-disabled" : ""}`} onClick={() => handleTabClick(tab)}>
+                  <div key={tab} className={`md-sb-item ${activeTab === tab ? "active" : ""} ${isLocked ? "guest-disabled" : ""}`} onClick={() => handleTabClick(tab)} title={comingSoon ? "Dostępne wkrótce" : undefined}>
                     <span className="md-ic">{tabMeta[tab].icon}</span>
                     <span className={showStrike ? "guest-label" : ""}>{tabMeta[tab].label}</span>
-                    {badge > 0 && <span className="md-sb-tab-badge">{badge}</span>}
+                    {comingSoon && <span className="md-soon-badge">Dostępne wkrótce</span>}
+                    {!comingSoon && badge > 0 && <span className="md-sb-tab-badge">{badge}</span>}
                   </div>
                 );
+
               })}
             </div>
           ))}
@@ -695,7 +717,17 @@ const MocDashboard = () => {
               )
             )}
             {activeTab === "teacher" && (
-              guestMode ? (
+              communityLocked ? (
+                <div className="guest-locked-area">
+                  <div className="guest-blur-inner">
+                    <TeacherStudentsTab mode="teacher" onMessagesRead={handleMessagesRead} guestMode />
+                  </div>
+                  <div className="guest-lock-overlay">
+                    <div className="guest-lock-icon">🔒</div>
+                    <div className="guest-lock-text">Dostępne wkrótce</div>
+                  </div>
+                </div>
+              ) : guestMode ? (
                 <div className="guest-locked-area">
                   <div className="guest-blur-inner">
                     <TeacherStudentsTab mode="teacher" onMessagesRead={handleMessagesRead} guestMode={guestMode} />
@@ -709,7 +741,17 @@ const MocDashboard = () => {
               )
             )}
             {activeTab === "students" && (
-              guestMode ? (
+              communityLocked ? (
+                <div className="guest-locked-area">
+                  <div className="guest-blur-inner">
+                    <TeacherStudentsTab mode="student" onMessagesRead={handleMessagesRead} guestMode />
+                  </div>
+                  <div className="guest-lock-overlay">
+                    <div className="guest-lock-icon">🔒</div>
+                    <div className="guest-lock-text">Dostępne wkrótce</div>
+                  </div>
+                </div>
+              ) : guestMode ? (
                 <div className="guest-locked-area">
                   <div className="guest-blur-inner">
                     <TeacherStudentsTab mode="student" onMessagesRead={handleMessagesRead} guestMode={guestMode} />
@@ -722,6 +764,7 @@ const MocDashboard = () => {
                 <TeacherStudentsTab mode="student" onMessagesRead={handleMessagesRead} />
               )
             )}
+
             {activeTab === "overview" && (
               guestMode ? (
                 <div className="guest-locked-area">

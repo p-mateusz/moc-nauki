@@ -274,6 +274,30 @@ body:has(.moc-dashboard) #root {
   text-shadow: 0 0 30px rgba(0, 0, 0, 0.18);
 }
 
+.guest-lock-overlay {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guest-lock-text {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: rgba(226, 232, 240, 0.9);
+  letter-spacing: 0.02em;
+}
+
+.md-soon-badge {
+  margin-left: auto;
+  font-size: 0.55rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 50px;
+  background: rgba(148, 163, 184, 0.16);
+  color: rgba(203, 213, 225, 0.9);
+  white-space: nowrap;
+}
+
+
 .md-content.guest-locked-area .guest-lock-overlay {
   border-radius: 14px;
 }

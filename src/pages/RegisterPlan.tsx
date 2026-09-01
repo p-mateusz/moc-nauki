@@ -31,16 +31,22 @@ export default function RegisterPlan() {
       try {
         const { data } = await supabase
           .from("app_settings")
-          .select("value")
-          .eq("key", "registration_enabled")
-          .single();
-        setRegistrationEnabled((data as any)?.value !== "false");
+          .select("key, value")
+          .in("key", ["registration_enabled", "all_fee_exempt"]);
+        const rows = (data as any[]) || [];
+        const get = (k: string) => rows.find((r) => r.key === k)?.value;
+        setRegistrationEnabled(get("registration_enabled") !== "false");
+        if (String(get("all_fee_exempt") ?? "") === "true") {
+          try { localStorage.removeItem("pendingPlan"); } catch {}
+          navigate("/register/account", { replace: true });
+        }
       } catch {
         setRegistrationEnabled(true);
       }
     };
     check();
-  }, []);
+  }, [navigate]);
+
 
   const plan = isYearly
     ? { price: "89", period: "90 dni", saving: "Bez podpinania karty", key: "90" }
