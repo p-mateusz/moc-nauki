@@ -847,8 +847,19 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
           secId: activeSecId,
           nbName: activeNb?.name || "",
           secName: activeSec?.name || "",
-          manual: secManuallyPickedRef.current,
         }));
+        // Ręczny wybór sekcji zapamiętujemy tylko na czas sesji przeglądarki,
+        // żeby nagrywanie działało też po przełączeniu zakładek (NotesTab się odmontowuje).
+        if (secManuallyPickedRef.current) {
+          sessionStorage.setItem("notesTab_manual_selection", JSON.stringify({
+            nbId: activeNbId,
+            secId: activeSecId,
+            nbName: activeNb?.name || "",
+            secName: activeSec?.name || "",
+          }));
+        } else {
+          sessionStorage.removeItem("notesTab_manual_selection");
+        }
       }
     } catch {}
   }, [activeNbId, activeSecId, activeNb?.name, activeSec?.name]);
@@ -856,13 +867,13 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   useEffect(() => {
     (window as any).__notesTab_addNote = addNoteFromRecording;
     (window as any).__notesTab_hasSelection = () => {
-      // Nagrywanie wymaga RĘCZNEGO wyboru notesu i sekcji w tej sesji
-      if (activeNbId && activeSecId) return secManuallyPickedRef.current;
+      // Nagrywanie wymaga RĘCZNEGO wyboru notesu i sekcji (nie auto-wyboru)
+      if (activeNbId && activeSecId && secManuallyPickedRef.current) return true;
       try {
-        const raw = sessionStorage.getItem("notesTab_manual_selection") || localStorage.getItem("notesTab_selection");
+        const raw = sessionStorage.getItem("notesTab_manual_selection");
         if (!raw) return false;
         const sel = JSON.parse(raw);
-        return !!(sel?.nbId && sel?.secId && sel?.manual);
+        return !!(sel?.nbId && sel?.secId);
       } catch { return false; }
     };
     (window as any).__notesTab_getSelection = () => {
