@@ -76,6 +76,8 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   const [activeNbId, setActiveNbId] = useState<string | null>(null);
   const [activeSecId, setActiveSecId] = useState<string | null>(null);
   const [activePageId, setActivePageId] = useState<string | null>(null);
+  // true tylko gdy użytkownik SAM kliknął sekcję/stronę (nie auto-wybór pierwszej sekcji)
+  const secManuallyPickedRef = useRef(false);
   const [viewMode, setViewMode] = useState<ViewMode>("browse");
   const [showNbModal, setShowNbModal] = useState(false);
   const [nbName, setNbName] = useState("");
