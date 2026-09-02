@@ -877,11 +877,11 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
       } catch { return false; }
     };
     (window as any).__notesTab_getSelection = () => {
-      if (activeNbId && activeSecId) {
+      if (activeNbId && activeSecId && secManuallyPickedRef.current) {
         return { nbId: activeNbId, secId: activeSecId, nbName: activeNb?.name || "", secName: activeSec?.name || "" };
       }
       try {
-        const raw = localStorage.getItem("notesTab_selection");
+        const raw = sessionStorage.getItem("notesTab_manual_selection");
         return raw ? JSON.parse(raw) : null;
       } catch { return null; }
     };
