@@ -76,6 +76,8 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   const [activeNbId, setActiveNbId] = useState<string | null>(null);
   const [activeSecId, setActiveSecId] = useState<string | null>(null);
   const [activePageId, setActivePageId] = useState<string | null>(null);
+  // true tylko gdy użytkownik SAM kliknął sekcję/stronę (nie auto-wybór pierwszej sekcji)
+  const secManuallyPickedRef = useRef(false);
   const [viewMode, setViewMode] = useState<ViewMode>("browse");
   const [showNbModal, setShowNbModal] = useState(false);
   const [nbName, setNbName] = useState("");
@@ -393,12 +395,15 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     } else {
       setActiveSecId(null);
     }
+    // Auto-wybór pierwszej sekcji NIE liczy się jako ręczny wybór do nagrywania
+    secManuallyPickedRef.current = false;
     setActivePageId(null);
     setViewMode("browse");
   };
 
   const selectSection = (secId: string) => {
     setActiveSecId(secId);
+    secManuallyPickedRef.current = true;
     setActivePageId(null);
     setViewMode("browse");
   };
@@ -410,6 +415,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
       for (const sec of activeNb.sections) {
         if (sec.pages.find(p => p.id === pageId)) {
           setActiveSecId(sec.id);
+          secManuallyPickedRef.current = true;
           break;
         }
       }
@@ -702,6 +708,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     setNbColor("#3b82f6");
     setActiveNbId(nb.id);
     setActiveSecId(sec.id);
+    secManuallyPickedRef.current = true;
     setActivePageId(null);
     setViewMode("browse");
     toast.success(`Notes „${nb.name}" utworzony!`);
@@ -718,6 +725,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     if (error || !sec) return;
     activeNb.sections.push({ id: sec.id, name: sec.name, notebook_id: activeNb.id, sort_order: sec.sort_order ?? nextSort, pages: [] });
     setActiveSecId(sec.id);
+    secManuallyPickedRef.current = true;
     setNotebooks([...notebooks]);
   };
 
@@ -842,6 +850,18 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
           nbName: activeNb?.name || "",
           secName: activeSec?.name || "",
         }));
+        // Ręczny wybór sekcji zapamiętujemy tylko na czas sesji przeglądarki,
+        // żeby nagrywanie działało też po przełączeniu zakładek (NotesTab się odmontowuje).
+        if (secManuallyPickedRef.current) {
+          sessionStorage.setItem("notesTab_manual_selection", JSON.stringify({
+            nbId: activeNbId,
+            secId: activeSecId,
+            nbName: activeNb?.name || "",
+            secName: activeSec?.name || "",
+          }));
+        } else {
+          sessionStorage.removeItem("notesTab_manual_selection");
+        }
       }
     } catch {}
   }, [activeNbId, activeSecId, activeNb?.name, activeSec?.name]);
@@ -849,20 +869,21 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   useEffect(() => {
     (window as any).__notesTab_addNote = addNoteFromRecording;
     (window as any).__notesTab_hasSelection = () => {
-      if (activeNbId && activeSecId) return true;
+      // Nagrywanie wymaga RĘCZNEGO wyboru notesu i sekcji (nie auto-wyboru)
+      if (activeNbId && activeSecId && secManuallyPickedRef.current) return true;
       try {
-        const raw = localStorage.getItem("notesTab_selection");
+        const raw = sessionStorage.getItem("notesTab_manual_selection");
         if (!raw) return false;
         const sel = JSON.parse(raw);
         return !!(sel?.nbId && sel?.secId);
       } catch { return false; }
     };
     (window as any).__notesTab_getSelection = () => {
-      if (activeNbId && activeSecId) {
+      if (activeNbId && activeSecId && secManuallyPickedRef.current) {
         return { nbId: activeNbId, secId: activeSecId, nbName: activeNb?.name || "", secName: activeSec?.name || "" };
       }
       try {
-        const raw = localStorage.getItem("notesTab_selection");
+        const raw = sessionStorage.getItem("notesTab_manual_selection");
         return raw ? JSON.parse(raw) : null;
       } catch { return null; }
     };
@@ -1793,6 +1814,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                     await flushSavePage();
                     setActiveNbId(nb.id);
                     setActiveSecId(sec.id);
+                    secManuallyPickedRef.current = true;
                     setActivePageId(page.id);
                     setViewMode("page");
                   }}
@@ -1863,7 +1885,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
             <div className="sec-col-header">
               <button
                 className="notes-mobile-back"
-                onClick={(e) => { e.stopPropagation(); setActiveNbId(null); setActiveSecId(null); }}
+                onClick={(e) => { e.stopPropagation(); setActiveNbId(null); setActiveSecId(null); secManuallyPickedRef.current = false; try { sessionStorage.removeItem("notesTab_manual_selection"); } catch {} }}
                 aria-label="Wróć do notesów"
               >‹</button>
               <div className="sec-col-nb-name" style={{ color: activeNb.color }}>{activeNb.name}</div>
@@ -1927,7 +1949,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
             <div className="pages-col-header">
               <button
                 className="notes-mobile-back"
-                onClick={(e) => { e.stopPropagation(); setActiveSecId(null); }}
+                onClick={(e) => { e.stopPropagation(); setActiveSecId(null); secManuallyPickedRef.current = false; try { sessionStorage.removeItem("notesTab_manual_selection"); } catch {} }}
                 aria-label="Wróć do sekcji"
               >‹</button>
               <span>{activeSec.name}</span>
