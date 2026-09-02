@@ -708,6 +708,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     setNbColor("#3b82f6");
     setActiveNbId(nb.id);
     setActiveSecId(sec.id);
+    secManuallyPickedRef.current = true;
     setActivePageId(null);
     setViewMode("browse");
     toast.success(`Notes „${nb.name}" utworzony!`);
@@ -724,6 +725,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     if (error || !sec) return;
     activeNb.sections.push({ id: sec.id, name: sec.name, notebook_id: activeNb.id, sort_order: sec.sort_order ?? nextSort, pages: [] });
     setActiveSecId(sec.id);
+    secManuallyPickedRef.current = true;
     setNotebooks([...notebooks]);
   };
 
@@ -1812,6 +1814,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                     await flushSavePage();
                     setActiveNbId(nb.id);
                     setActiveSecId(sec.id);
+                    secManuallyPickedRef.current = true;
                     setActivePageId(page.id);
                     setViewMode("page");
                   }}
@@ -1882,7 +1885,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
             <div className="sec-col-header">
               <button
                 className="notes-mobile-back"
-                onClick={(e) => { e.stopPropagation(); setActiveNbId(null); setActiveSecId(null); }}
+                onClick={(e) => { e.stopPropagation(); setActiveNbId(null); setActiveSecId(null); secManuallyPickedRef.current = false; try { sessionStorage.removeItem("notesTab_manual_selection"); } catch {} }}
                 aria-label="Wróć do notesów"
               >‹</button>
               <div className="sec-col-nb-name" style={{ color: activeNb.color }}>{activeNb.name}</div>
@@ -1946,7 +1949,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
             <div className="pages-col-header">
               <button
                 className="notes-mobile-back"
-                onClick={(e) => { e.stopPropagation(); setActiveSecId(null); }}
+                onClick={(e) => { e.stopPropagation(); setActiveSecId(null); secManuallyPickedRef.current = false; try { sessionStorage.removeItem("notesTab_manual_selection"); } catch {} }}
                 aria-label="Wróć do sekcji"
               >‹</button>
               <span>{activeSec.name}</span>
