@@ -847,6 +847,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
           secId: activeSecId,
           nbName: activeNb?.name || "",
           secName: activeSec?.name || "",
+          manual: secManuallyPickedRef.current,
         }));
       }
     } catch {}
@@ -855,12 +856,13 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   useEffect(() => {
     (window as any).__notesTab_addNote = addNoteFromRecording;
     (window as any).__notesTab_hasSelection = () => {
-      if (activeNbId && activeSecId) return true;
+      // Nagrywanie wymaga RĘCZNEGO wyboru notesu i sekcji w tej sesji
+      if (activeNbId && activeSecId) return secManuallyPickedRef.current;
       try {
-        const raw = localStorage.getItem("notesTab_selection");
+        const raw = sessionStorage.getItem("notesTab_manual_selection") || localStorage.getItem("notesTab_selection");
         if (!raw) return false;
         const sel = JSON.parse(raw);
-        return !!(sel?.nbId && sel?.secId);
+        return !!(sel?.nbId && sel?.secId && sel?.manual);
       } catch { return false; }
     };
     (window as any).__notesTab_getSelection = () => {
