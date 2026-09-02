@@ -415,6 +415,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
       for (const sec of activeNb.sections) {
         if (sec.pages.find(p => p.id === pageId)) {
           setActiveSecId(sec.id);
+          secManuallyPickedRef.current = true;
           break;
         }
       }
