@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import TermsModal, { DocumentType } from "@/components/TermsModal";
 import { Seo } from "@/components/Seo";
+import { normalizeAllFeeExemptSetting } from "@/lib/feeExempt";
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -73,7 +74,7 @@ const Register = () => {
           .select("value")
           .eq("key", "all_fee_exempt")
           .maybeSingle();
-        allFeeExempt = String((setting as any)?.value ?? "") === "true";
+        allFeeExempt = normalizeAllFeeExemptSetting((setting as any)?.value);
       } catch {}
       if (allFeeExempt) {
         try { localStorage.removeItem("pendingPlan"); } catch {}

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { normalizeAllFeeExemptSetting } from "../_shared/feeExempt.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -205,7 +206,7 @@ Deno.serve(async (req) => {
       .select("value")
       .eq("key", "all_fee_exempt")
       .maybeSingle();
-    const allFeeExempt = String((exemptSetting as any)?.value ?? "") === "true";
+    const allFeeExempt = normalizeAllFeeExemptSetting((exemptSetting as any)?.value);
 
     // Create user_accounts record — use `id` = auth user id (no user_id column)
     const { data: newAccount, error: insertError } = await supabase
