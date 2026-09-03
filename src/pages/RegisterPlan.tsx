@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { Seo } from "@/components/Seo";
-import { normalizeAllFeeExemptSetting } from "@/lib/feeExempt";
+import { resolveFreeAccountsEnabled } from "@/lib/feeExempt";
 
 // Płatność realizujemy DOPIERO po założeniu konta — tylko wtedy
 // edge-funkcja create-checkout może przekazać user_id w metadata Stripe,
@@ -37,7 +37,7 @@ export default function RegisterPlan() {
         const rows = (data as any[]) || [];
         const get = (k: string) => rows.find((r) => r.key === k)?.value;
         setRegistrationEnabled(get("registration_enabled") !== "false");
-        if (normalizeAllFeeExemptSetting(get("all_fee_exempt"))) {
+        if (resolveFreeAccountsEnabled(get("all_fee_exempt"))) {
           try { localStorage.removeItem("pendingPlan"); } catch {}
           navigate("/register/account", { replace: true });
         }
