@@ -79,8 +79,13 @@ export function useAccessGuard(): AccessState {
         return;
       }
       if (account?.fee_exempt) {
-        setState({ loading: false, hasAccess: true, reason: "exempt", account });
-        return;
+        const exemptUntil = account?.subscription_expires_at
+          ? new Date(account.subscription_expires_at).getTime()
+          : null;
+        if (!exemptUntil || exemptUntil > Date.now()) {
+          setState({ loading: false, hasAccess: true, reason: "exempt", account });
+          return;
+        }
       }
 
       const now = Date.now();
