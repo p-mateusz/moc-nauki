@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { normalizeAllFeeExemptSetting } from "../_shared/feeExempt.ts";
+import { resolveFreeAccountsEnabled, resolveFreeAccountDays } from "../_shared/feeExempt.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -201,12 +201,15 @@ Deno.serve(async (req) => {
     const authUserId = authUser.user.id;
 
     // Global "everyone is fee exempt" mode (toggled by admin)
-    const { data: exemptSetting } = await supabase
+    const { data: exemptSettings } = await supabase
       .from("app_settings")
-      .select("value")
-      .eq("key", "all_fee_exempt")
-      .maybeSingle();
-    const allFeeExempt = normalizeAllFeeExemptSetting((exemptSetting as any)?.value);
+      .select("key, value")
+      .in("key", ["all_fee_exempt", "free_account_days"]);
+    const settingValue = (k: string) =>
+      ((exemptSettings as any[]) || []).find((r) => r.key === k)?.value;
+    const allFeeExempt = resolveFreeAccountsEnabled(settingValue("all_fee_exempt"));
+    const freeDays = resolveFreeAccountDays(settingValue("free_account_days"));
+    const freeUntil = new Date(Date.now() + freeDays * 86400000).toISOString();
 
     // Create user_accounts record — use `id` = auth user id (no user_id column)
     const { data: newAccount, error: insertError } = await supabase
@@ -217,7 +220,7 @@ Deno.serve(async (req) => {
         name: name.trim(),
         username: trimmedUsername,
         role: "uczeń",
-        ...(allFeeExempt ? { fee_exempt: true, subscription_status: "exempt" } : {}),
+        ...(allFeeExempt ? { fee_exempt: true, subscription_status: "exempt", subscription_expires_at: freeUntil } : {}),
       })
       .select("id, name, username")
       .single();

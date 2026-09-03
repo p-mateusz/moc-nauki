@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import TermsModal, { DocumentType } from "@/components/TermsModal";
 import { Seo } from "@/components/Seo";
-import { normalizeAllFeeExemptSetting } from "@/lib/feeExempt";
+import { resolveFreeAccountsEnabled } from "@/lib/feeExempt";
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -67,14 +67,14 @@ const Register = () => {
       localStorage.setItem("userUsername", data.account.username);
       localStorage.setItem("userRole", "uczeń");
       toast.success("Konto utworzone! Witaj w Moc Nauki 🎉");
-      let allFeeExempt = false;
+      let allFeeExempt = true;
       try {
         const { data: setting } = await supabase
           .from("app_settings")
           .select("value")
           .eq("key", "all_fee_exempt")
           .maybeSingle();
-        allFeeExempt = normalizeAllFeeExemptSetting((setting as any)?.value);
+        allFeeExempt = resolveFreeAccountsEnabled((setting as any)?.value);
       } catch {}
       if (allFeeExempt) {
         try { localStorage.removeItem("pendingPlan"); } catch {}

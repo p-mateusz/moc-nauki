@@ -1,7 +1,7 @@
 import Stripe from "https://esm.sh/stripe@17.7.0?target=deno";
 import { getUserIdFromRequest } from "../_shared/auth.ts";
 import { createAdminClient } from "../_shared/appSettings.ts";
-import { normalizeAllFeeExemptSetting } from "../_shared/feeExempt.ts";
+import { resolveFreeAccountsEnabled } from "../_shared/feeExempt.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
         .select("value")
         .eq("key", "all_fee_exempt")
         .maybeSingle();
-      const allFeeExempt = normalizeAllFeeExemptSetting((globalExemptSetting as any)?.value);
+      const allFeeExempt = resolveFreeAccountsEnabled((globalExemptSetting as any)?.value);
 
       const accountPayload: Record<string, unknown> = {
         id: userId,

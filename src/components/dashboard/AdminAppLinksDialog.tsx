@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { invokeCloudFunction } from "@/lib/supabase";
+import { resolveFreeAccountsEnabled, resolveFreeAccountDays } from "@/lib/feeExempt";
 
 type Props = { open: boolean; onClose: () => void };
 
@@ -11,7 +12,8 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
   const [pay30, setPay30] = useState("");
   const [pay90, setPay90] = useState("");
   const [lockTabs, setLockTabs] = useState(false);
-  const [allFeeExempt, setAllFeeExempt] = useState(false);
+  const [allFeeExempt, setAllFeeExempt] = useState(true);
+  const [freeDays, setFreeDays] = useState("365");
   const [togglingExempt, setTogglingExempt] = useState(false);
   const [togglingTabs, setTogglingTabs] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
         const res = await invokeCloudFunction<SettingRow[]>("manage-app-settings", {
           body: {
             action: "get",
-            keys: ["app_download_android_url", "payment_link_30", "payment_link_90", "lock_community_tabs", "all_fee_exempt"],
+            keys: ["app_download_android_url", "payment_link_30", "payment_link_90", "lock_community_tabs", "all_fee_exempt", "free_account_days"],
           },
         });
         const pick = (key: string) => {
@@ -36,7 +38,8 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
         setPay30(pick("payment_link_30"));
         setPay90(pick("payment_link_90"));
         setLockTabs(pick("lock_community_tabs") === "true");
-        setAllFeeExempt(pick("all_fee_exempt") === "true");
+        setAllFeeExempt(resolveFreeAccountsEnabled(pick("all_fee_exempt") || undefined));
+        setFreeDays(String(resolveFreeAccountDays(pick("free_account_days") || undefined)));
       } catch {
         toast.error("Nie udało się pobrać aktualnego linku");
       } finally {
@@ -89,8 +92,10 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
       ["app_download_android_url", url],
       ["payment_link_30", link30],
       ["payment_link_90", link90],
+      ["free_account_days", String(resolveFreeAccountDays(freeDays))],
     ];
-    for (const [, v] of entries) {
+    for (const [k, v] of entries) {
+      if (k === "free_account_days") continue;
       if (v && !/^https:\/\//i.test(v) && !/^http:\/\//i.test(v)) {
         toast.error("Każdy link musi zaczynać się od http:// lub https://");
         return;
@@ -231,6 +236,31 @@ const AdminAppLinksDialog = ({ open, onClose }: Props) => {
               opacity: loading || togglingExempt ? 0.6 : 1,
             }}
           >{allFeeExempt ? "Wyłącz" : "Włącz"}</button>
+        </div>
+
+        <div style={{
+          background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 12, padding: 12, marginBottom: 16,
+        }}>
+          <div style={{ fontWeight: 800, fontSize: ".8rem", marginBottom: 4 }}>
+            Długość darmowego dostępu (dni)
+          </div>
+          <div style={{ color: "#94a3b8", fontSize: ".72rem", marginBottom: 8, lineHeight: 1.5 }}>
+            Nowe konta dostają zwolnienie z opłat na tyle dni. Zapisz przyciskiem „Zapisz ustawienia”.
+          </div>
+          <input
+            type="number"
+            min={1}
+            max={3650}
+            value={freeDays}
+            onChange={(e) => setFreeDays(e.target.value)}
+            disabled={loading || saving}
+            style={{
+              width: 120, padding: "9px 12px", borderRadius: 10,
+              border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)",
+              color: "#fff", fontSize: ".85rem",
+            }}
+          />
         </div>
 
 
