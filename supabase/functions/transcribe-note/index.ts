@@ -46,7 +46,7 @@ serve(async (req) => {
     } catch (fetchErr: any) {
       clearTimeout(timeoutId);
       if (fetchErr.name === "AbortError") {
-        throw new Error("Webhook timeout (>25s) - audio processing took too long");
+        throw new Error("Webhook timeout (>150s) - audio processing took too long");
       }
       throw fetchErr;
     }
