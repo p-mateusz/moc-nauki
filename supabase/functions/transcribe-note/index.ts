@@ -30,9 +30,9 @@ serve(async (req) => {
     console.log("Calling transcribe-note webhook:", webhookUrl);
     console.log("Payload size:", JSON.stringify({ audioBase64, duration, type: "transcribe" }).length, "bytes");
 
-    // Create abort controller with 25s timeout (leaving 5s buffer for edge function limit)
+    // 150s timeout — spójny z proxy-n8n-audio; LLM potrafi odpowiadać znacznie dłużej niż 25s.
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000);
+    const timeoutId = setTimeout(() => controller.abort(), 150000);
 
     let response;
     try {

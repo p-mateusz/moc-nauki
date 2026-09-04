@@ -87,7 +87,7 @@ serve(async (req) => {
     } catch (fetchErr: any) {
       clearTimeout(timeoutId);
       if (fetchErr.name === "AbortError") {
-        throw new Error("n8n webhook timeout (>25s) - audio processing took too long");
+        throw new Error("n8n webhook timeout (>150s) - audio processing took too long");
       }
       throw fetchErr;
     }
