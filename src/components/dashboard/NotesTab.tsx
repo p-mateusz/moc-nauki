@@ -395,8 +395,8 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     } else {
       setActiveSecId(null);
     }
-    // Auto-wybór pierwszej sekcji NIE liczy się jako ręczny wybór do nagrywania
-    secManuallyPickedRef.current = false;
+    // Ręczny wybór notesu + auto-wybór sekcji (gdy istnieje) wystarcza do nagrywania
+    secManuallyPickedRef.current = !!(nb && nb.sections.length > 0);
     setActivePageId(null);
     setViewMode("browse");
   };
