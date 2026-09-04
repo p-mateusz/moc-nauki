@@ -603,7 +603,8 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
      } catch (err: any) {
        lastError = err;
        console.error(err);
-       if (attempt < MAX_RETRIES) { toast.warning(`Próba ${attempt} nieudana…`); await new Promise((r) => setTimeout(r, 2000 * attempt)); }
+       // Kolejne próby wykonujemy po cichu — użytkownik widzi tylko "Wysyłam nagranie…".
+       if (attempt < MAX_RETRIES) { await new Promise((r) => setTimeout(r, 3000 * attempt)); }
      }
    }
    setSending(false);

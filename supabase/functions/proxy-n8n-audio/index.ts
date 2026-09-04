@@ -54,9 +54,10 @@ serve(async (req) => {
     console.log("Forwarding audio (binary) to webhook:", webhookUrl);
     console.log("File:", filename, mime, blob.size, "bytes, duration:", duration, "detailLevel:", noteDetailLevel);
 
-    // 25s timeout — leaves buffer before edge function hard limit
+    // 150s timeout — przetwarzanie audio w n8n (transkrypcja + LLM) potrafi trwać
+    // znacznie dłużej niż wcześniejsze 25s, co powodowało zbędne ponowne próby.
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000);
+    const timeoutId = setTimeout(() => controller.abort(), 150000);
 
     try {
       const response = await fetch(webhookUrl, {
@@ -86,7 +87,7 @@ serve(async (req) => {
     } catch (fetchErr: any) {
       clearTimeout(timeoutId);
       if (fetchErr.name === "AbortError") {
-        throw new Error("n8n webhook timeout (>25s) - audio processing took too long");
+        throw new Error("n8n webhook timeout (>150s) - audio processing took too long");
       }
       throw fetchErr;
     }
