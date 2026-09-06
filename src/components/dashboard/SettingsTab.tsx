@@ -392,6 +392,8 @@ const SettingsTab = ({
             style={{
               position: "absolute",
 
+              zIndex: 5,
+
               bottom: 16,
 
               right: 16,
