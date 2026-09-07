@@ -30,9 +30,9 @@ serve(async (req) => {
     console.log("Calling transcribe-note webhook:", webhookUrl);
     console.log("Payload size:", JSON.stringify({ audioBase64, duration, type: "transcribe" }).length, "bytes");
 
-    // 150s timeout — spójny z proxy-n8n-audio; LLM potrafi odpowiadać znacznie dłużej niż 25s.
+    // 240s (4 min) timeout — spójny z proxy-n8n-audio; LLM potrafi odpowiadać znacznie dłużej niż 25s.
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 150000);
+    const timeoutId = setTimeout(() => controller.abort(), 240000);
 
     let response;
     try {
@@ -46,7 +46,7 @@ serve(async (req) => {
     } catch (fetchErr: any) {
       clearTimeout(timeoutId);
       if (fetchErr.name === "AbortError") {
-        throw new Error("Webhook timeout (>150s) - audio processing took too long");
+        throw new Error("Webhook timeout (>240s / 4 min) - audio processing took too long");
       }
       throw fetchErr;
     }

@@ -67,8 +67,8 @@ const response = await fetch(webhookUrl, {
 ```
 
 **Timeout wartości**:
-- `proxy-n8n-audio`: 25s (audio processing)
-- `transcribe-note`: 25s (audio processing)
+- `proxy-n8n-audio`: 240s / 4 min (audio processing)
+- `transcribe-note`: 240s / 4 min (audio processing)
 - `extract-events`: 15s (text processing, szybsze)
 
 ---
@@ -129,8 +129,8 @@ eventTime = (json.eventTime || "").trim();
 | Łata | Plik | Zmiana |
 |------|------|--------|
 | #1 | extract-events/index.ts | Dodany `type: "extract-events"` |
-| #2 | proxy-n8n-audio/index.ts | Dodany AbortController (25s timeout) |
-| #2 | transcribe-note/index.ts | Dodany AbortController (25s timeout) |
+| #2 | proxy-n8n-audio/index.ts | Dodany AbortController (240s / 4 min timeout) |
+| #2 | transcribe-note/index.ts | Dodany AbortController (240s / 4 min timeout) |
 | #2 | extract-events/index.ts | Dodany AbortController (15s timeout) |
 | #3 | RecordingWidget.tsx | Naprawiony fallback parsing |
 | #4 | RecordingWidget.tsx | Dodany `.trim()` do validacji |
@@ -200,7 +200,7 @@ console.log("Webhook URL:", data?.[0]?.value);
 - [x] Response contains `title` and `content`
 - [x] Notatka appears in UI
 - [x] RetrysMy" 3 times if webhook fails
-- [x] Timeout after 25s, returns to frontend
+- [x] Timeout after 240s (4 min), returns to frontend
 - [x] Calendar events extracted (if mentioned in audio)
 
 ---
@@ -223,8 +223,8 @@ console.log("Webhook URL:", data?.[0]?.value);
 
 ### Symptom: "Aplikacja czeka 30 sekund, potem error"
 
-**Naprawka**: To było przed timeout'ami. Teraz powinno być 25s max.
-- Jeśli nadal 30s → n8n jest bardzo powoli
+**Naprawka**: To było przed timeout'ami. Teraz powinno być 240s (4 min) max.
+- Jeśli nadal dłużej → n8n jest bardzo powoli
 - Sprawdzić n8n logs (może model LLM je powolna)
 
 ### Symptom: "Transcript jest pusty"
@@ -246,11 +246,11 @@ console.log("Webhook URL:", data?.[0]?.value);
 + Added AbortController timeout (15s)
 
 # proxy-n8n-audio/index.ts
-+ Added AbortController timeout (25s)
++ Added AbortController timeout (240s / 4 min)
 + Added console logging for debugging
 
 # transcribe-note/index.ts
-+ Added AbortController timeout (25s)
++ Added AbortController timeout (240s / 4 min)
 + Added AbortError handling
 
 # RecordingWidget.tsx
