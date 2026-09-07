@@ -246,11 +246,11 @@ console.log("Webhook URL:", data?.[0]?.value);
 + Added AbortController timeout (15s)
 
 # proxy-n8n-audio/index.ts
-+ Added AbortController timeout (25s)
++ Added AbortController timeout (240s / 4 min)
 + Added console logging for debugging
 
 # transcribe-note/index.ts
-+ Added AbortController timeout (25s)
++ Added AbortController timeout (240s / 4 min)
 + Added AbortError handling
 
 # RecordingWidget.tsx
