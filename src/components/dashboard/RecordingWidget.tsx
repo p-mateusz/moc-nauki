@@ -42,19 +42,15 @@ const ignoreAudioError = () => undefined;
 
 const AUDIO_BITS_PER_SECOND = 32000;
 
-const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
+const AUDIO_CONSTRAINTS = {
   echoCancellation: true,
   noiseSuppression: true,
   autoGainControl: true,
   channelCount: 1,
   sampleRate: 16000,
   sampleSize: 16,
-  // Starsze wersje Chrome / Chromium
-  // @ts-ignore
   googNoiseSuppression: true,
-  // @ts-ignore
   googEchoCancellation: true,
-  // @ts-ignore
   googAutoGainControl: true,
 } as MediaTrackConstraints;
 
