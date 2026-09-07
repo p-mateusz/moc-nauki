@@ -223,8 +223,8 @@ console.log("Webhook URL:", data?.[0]?.value);
 
 ### Symptom: "Aplikacja czeka 30 sekund, potem error"
 
-**Naprawka**: To było przed timeout'ami. Teraz powinno być 25s max.
-- Jeśli nadal 30s → n8n jest bardzo powoli
+**Naprawka**: To było przed timeout'ami. Teraz powinno być 240s (4 min) max.
+- Jeśli nadal dłużej → n8n jest bardzo powoli
 - Sprawdzić n8n logs (może model LLM je powolna)
 
 ### Symptom: "Transcript jest pusty"
