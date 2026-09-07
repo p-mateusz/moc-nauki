@@ -67,8 +67,8 @@ const response = await fetch(webhookUrl, {
 ```
 
 **Timeout wartości**:
-- `proxy-n8n-audio`: 25s (audio processing)
-- `transcribe-note`: 25s (audio processing)
+- `proxy-n8n-audio`: 240s / 4 min (audio processing)
+- `transcribe-note`: 240s / 4 min (audio processing)
 - `extract-events`: 15s (text processing, szybsze)
 
 ---
