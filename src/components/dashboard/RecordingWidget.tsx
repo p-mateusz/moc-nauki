@@ -49,7 +49,6 @@ const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   channelCount: 1,
   sampleRate: 16000,
   sampleSize: 16,
-  latency: 0,
   // Starsze wersje Chrome / Chromium
   // @ts-ignore
   googNoiseSuppression: true,
@@ -57,7 +56,7 @@ const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   googEchoCancellation: true,
   // @ts-ignore
   googAutoGainControl: true,
-};
+} as MediaTrackConstraints;
 
 function getSupportedMimeType(): string {
   const candidates = [
