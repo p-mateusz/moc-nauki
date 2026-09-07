@@ -423,14 +423,17 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
     // Mic został zerwany — ponownie żądamy dostępu (musi być w geście użytkownika).
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        audio: AUDIO_CONSTRAINTS,
         video: false,
       });
       streamRef.current = stream;
       lostHandledRef.current = false;
       attachStreamGuards(stream);
       attachStreamToSink(stream);
-      const newRec = new MediaRecorder(stream);
+      const mimeType = getSupportedMimeType();
+      const newRec = mimeType
+        ? new MediaRecorder(stream, { mimeType, audioBitsPerSecond: AUDIO_BITS_PER_SECOND })
+        : new MediaRecorder(stream, { audioBitsPerSecond: AUDIO_BITS_PER_SECOND });
       newRec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       newRec.start(1000);
       mediaRecorderRef.current = newRec;
