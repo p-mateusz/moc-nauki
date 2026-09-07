@@ -716,8 +716,8 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
          flexShrink: 0,
        }} />
        <div>
-          <div style={{ fontSize: ".82rem", fontWeight: 700, color: "#bfdbfe", letterSpacing: ".01em" }}>Tworzę notatkę…</div>
-          <div style={{ fontSize: ".68rem", color: "#8899b4", marginTop: 2 }}>Może potrwać do 4 minut.</div>
+           <div style={{ fontSize: ".82rem", fontWeight: 700, color: "#bfdbfe", letterSpacing: ".01em" }}>Tworzę notatkę…</div>
+           <div style={{ fontSize: ".68rem", color: "#8899b4", marginTop: 2 }}>Może to chwilę potrwać</div>
        </div>
      </div>
    );
