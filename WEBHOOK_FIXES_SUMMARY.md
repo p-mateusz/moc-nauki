@@ -129,8 +129,8 @@ eventTime = (json.eventTime || "").trim();
 | Łata | Plik | Zmiana |
 |------|------|--------|
 | #1 | extract-events/index.ts | Dodany `type: "extract-events"` |
-| #2 | proxy-n8n-audio/index.ts | Dodany AbortController (25s timeout) |
-| #2 | transcribe-note/index.ts | Dodany AbortController (25s timeout) |
+| #2 | proxy-n8n-audio/index.ts | Dodany AbortController (240s / 4 min timeout) |
+| #2 | transcribe-note/index.ts | Dodany AbortController (240s / 4 min timeout) |
 | #2 | extract-events/index.ts | Dodany AbortController (15s timeout) |
 | #3 | RecordingWidget.tsx | Naprawiony fallback parsing |
 | #4 | RecordingWidget.tsx | Dodany `.trim()` do validacji |
@@ -200,7 +200,7 @@ console.log("Webhook URL:", data?.[0]?.value);
 - [x] Response contains `title` and `content`
 - [x] Notatka appears in UI
 - [x] RetrysMy" 3 times if webhook fails
-- [x] Timeout after 25s, returns to frontend
+- [x] Timeout after 240s (4 min), returns to frontend
 - [x] Calendar events extracted (if mentioned in audio)
 
 ---
