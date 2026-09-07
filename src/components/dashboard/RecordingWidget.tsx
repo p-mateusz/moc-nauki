@@ -40,6 +40,41 @@ type WindowWithWebkitAudio = Window & typeof globalThis & {
 
 const ignoreAudioError = () => undefined;
 
+const AUDIO_BITS_PER_SECOND = 32000;
+
+const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: true,
+  channelCount: 1,
+  sampleRate: 16000,
+  sampleSize: 16,
+  latency: 0,
+  // Starsze wersje Chrome / Chromium
+  // @ts-ignore
+  googNoiseSuppression: true,
+  // @ts-ignore
+  googEchoCancellation: true,
+  // @ts-ignore
+  googAutoGainControl: true,
+};
+
+function getSupportedMimeType(): string {
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/mp4",
+    "audio/aac",
+    "audio/ogg;codecs=opus",
+    "audio/ogg",
+  ];
+  if (typeof MediaRecorder === "undefined") return "audio/webm";
+  for (const type of candidates) {
+    if (MediaRecorder.isTypeSupported(type)) return type;
+  }
+  return "";
+}
+
 const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: RecordingWidgetProps = {}) => {
  const location = useLocation();
  const [currentTab, setCurrentTab] = useState<string>(() => {
