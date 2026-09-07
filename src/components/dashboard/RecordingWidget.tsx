@@ -40,6 +40,36 @@ type WindowWithWebkitAudio = Window & typeof globalThis & {
 
 const ignoreAudioError = () => undefined;
 
+const AUDIO_BITS_PER_SECOND = 32000;
+
+const AUDIO_CONSTRAINTS = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: true,
+  channelCount: 1,
+  sampleRate: 16000,
+  sampleSize: 16,
+  googNoiseSuppression: true,
+  googEchoCancellation: true,
+  googAutoGainControl: true,
+} as MediaTrackConstraints;
+
+function getSupportedMimeType(): string {
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/mp4",
+    "audio/aac",
+    "audio/ogg;codecs=opus",
+    "audio/ogg",
+  ];
+  if (typeof MediaRecorder === "undefined") return "audio/webm";
+  for (const type of candidates) {
+    if (MediaRecorder.isTypeSupported(type)) return type;
+  }
+  return "";
+}
+
 const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: RecordingWidgetProps = {}) => {
  const location = useLocation();
  const [currentTab, setCurrentTab] = useState<string>(() => {
@@ -338,7 +368,7 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
     await requestBackgroundPermissions();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        audio: AUDIO_CONSTRAINTS,
         video: false,
       });
       streamRef.current = stream;
@@ -346,7 +376,10 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
       lostHandledRef.current = false;
       attachStreamGuards(stream);
       attachStreamToSink(stream);
-      const recorder = new MediaRecorder(stream);
+      const mimeType = getSupportedMimeType();
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType, audioBitsPerSecond: AUDIO_BITS_PER_SECOND })
+        : new MediaRecorder(stream, { audioBitsPerSecond: AUDIO_BITS_PER_SECOND });
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       recorder.start(1000);
      mediaRecorderRef.current = recorder;
@@ -390,14 +423,17 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
     // Mic został zerwany — ponownie żądamy dostępu (musi być w geście użytkownika).
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        audio: AUDIO_CONSTRAINTS,
         video: false,
       });
       streamRef.current = stream;
       lostHandledRef.current = false;
       attachStreamGuards(stream);
       attachStreamToSink(stream);
-      const newRec = new MediaRecorder(stream);
+      const mimeType = getSupportedMimeType();
+      const newRec = mimeType
+        ? new MediaRecorder(stream, { mimeType, audioBitsPerSecond: AUDIO_BITS_PER_SECOND })
+        : new MediaRecorder(stream, { audioBitsPerSecond: AUDIO_BITS_PER_SECOND });
       newRec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       newRec.start(1000);
       mediaRecorderRef.current = newRec;
@@ -436,7 +472,10 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
   };
 
   const finalizeAndSend = async (finalSeconds: number) => {
-    const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+    const recorderMime = mediaRecorderRef.current?.mimeType;
+    const chunkMime = chunksRef.current[0]?.type;
+    const blobType = recorderMime || chunkMime || "audio/webm";
+    const blob = new Blob(chunksRef.current, { type: blobType });
     streamRef.current?.getTracks().forEach((t) => t.stop());
     mediaRecorderRef.current = null;
     streamRef.current = null;
