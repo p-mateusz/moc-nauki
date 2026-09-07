@@ -472,7 +472,10 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
   };
 
   const finalizeAndSend = async (finalSeconds: number) => {
-    const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+    const recorderMime = mediaRecorderRef.current?.mimeType;
+    const chunkMime = chunksRef.current[0]?.type;
+    const blobType = recorderMime || chunkMime || "audio/webm";
+    const blob = new Blob(chunksRef.current, { type: blobType });
     streamRef.current?.getTracks().forEach((t) => t.stop());
     mediaRecorderRef.current = null;
     streamRef.current = null;
