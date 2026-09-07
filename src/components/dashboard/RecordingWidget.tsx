@@ -368,7 +368,7 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
     await requestBackgroundPermissions();
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        audio: AUDIO_CONSTRAINTS,
         video: false,
       });
       streamRef.current = stream;
@@ -376,7 +376,10 @@ const RecordingWidget = ({ activeTab: activeTabProp, onRecordingStateChange }: R
       lostHandledRef.current = false;
       attachStreamGuards(stream);
       attachStreamToSink(stream);
-      const recorder = new MediaRecorder(stream);
+      const mimeType = getSupportedMimeType();
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType, audioBitsPerSecond: AUDIO_BITS_PER_SECOND })
+        : new MediaRecorder(stream, { audioBitsPerSecond: AUDIO_BITS_PER_SECOND });
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       recorder.start(1000);
      mediaRecorderRef.current = recorder;
