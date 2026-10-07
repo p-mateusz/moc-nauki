@@ -21,6 +21,7 @@ import TestsTab from "@/components/dashboard/TestsTab";
 import RankingTab from "@/components/dashboard/RankingTab";
 import AdminUsersTab from "@/components/dashboard/AdminUsersTab";
 import TipsTab from "@/components/dashboard/TipsTab";
+import PendingNoteDialog from "@/components/dashboard/PendingNoteDialog";
 import { LoadingScreen } from "@/components/ui/loading-state";
 import "./MocDashboard.css";
 type Tab =
@@ -479,6 +480,7 @@ const MocDashboard = () => {
   return (
     <div className="moc-dashboard">
       <Seo title="Panel ucznia — Moc Nauki" description="Twój panel w Moc Nauki: notatki AI, kalendarz, fiszki, języki, testy i komunikacja z nauczycielami w jednym miejscu." path="/dashboard" />
+      {!guestMode && <PendingNoteDialog userId={userId} />}
       {sidebarOpen && <div className="md-sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
 
       <aside className={`md-sidebar ${sidebarOpen ? "open" : ""}`}>
