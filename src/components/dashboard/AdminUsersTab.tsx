@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { invokeCloudFunction, supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRoles, type Role } from "@/hooks/use-roles";
+import AdminSendNoteView from "@/components/dashboard/AdminSendNoteView";
 
 // Helper to call admin-manage-users edge function
 const adminUpdateUser = async (id: string, updates: Record<string, any>) => {
@@ -32,7 +33,7 @@ interface UserAccount {
      webhook_suspended_reason?: string | null;
   }
 
-  type AdminTab = "dashboard" | "users" | "stats" | "roles" | "settings";
+  type AdminTab = "dashboard" | "users" | "stats" | "roles" | "settings" | "sendnote";
 
   const RESERVED_ADMIN_USERNAME = "wieża";
 
@@ -113,6 +114,7 @@ interface UserAccount {
     { id: "users", icon: "👥", label: "Użytkownicy" },
     { id: "stats", icon: "📊", label: "Statystyki" },
     { id: "roles", icon: "🎭", label: "Role" },
+    { id: "sendnote", icon: "📨", label: "Wyślij notatkę" },
     { id: "settings", icon: "⚙️", label: "Ustawienia" },
   ];
 
@@ -175,6 +177,7 @@ interface UserAccount {
             {adminTab === "stats" && <StatsView users={users} customRoles={customRoles} />}
             {adminTab === "roles" && <RolesView users={users} onRefresh={() => { fetchUsers(); refetchRoles(); }} customRoles={customRoles} allRoleNames={allRoleNames} />}
             {adminTab === "settings" && <SettingsView />}
+            {adminTab === "sendnote" && <AdminSendNoteView users={users} />}
           </>
         )}
       </div>
