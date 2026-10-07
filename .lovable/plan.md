@@ -1,62 +1,50 @@
-## Audyt bezpieczeństwa aplikacji
+# Ręczne wysyłanie notatek użytkownikom (panel admina)
 
-Przeprowadzę kompleksowy skan kodu i backendu pod kątem podatności, które mogłyby zostać wykorzystane przez atakujących.
+## Co zobaczy administrator
+W panelu administratora nowa sekcja **„Wyślij notatkę"**:
+1. Duże pole do wklejenia kodu z n8n (format `title:` / `text:` oraz opcjonalnie wydarzenia `name:` / `description:` / `eventDate:` / `eventTime:`).
+2. Podgląd: tytuł, fragment treści i lista wykrytych wydarzeń (np. „Polski – sprawdzian, 12.10.2026, cały dzień").
+3. Wybór użytkownika z wyszukiwarką (imię / nazwa konta / e-mail).
+4. Przycisk „Wyślij". Poniżej lista wysłanych notatek ze statusem: oczekuje / przyjęta / odrzucona.
 
-### Zakres audytu
+## Co zobaczy użytkownik
+Po najbliższym otwarciu aplikacji (po zalogowaniu) wyskakuje okno:
+- „Masz nową notatkę", tytuł i pierwsze ~200 znaków treści.
+- Wybór notesu i sekcji (domyślnie pierwszy notes i jego pierwsza sekcja).
+- **Przyjmij** → notatka trafia jako nowa strona do wybranej sekcji, a wydarzenia (jeśli są) do kalendarza, tak samo jak przy nagraniu.
+- **Odrzuć** → znika na zawsze.
+Jeśli czeka kilka notatek, pokazują się po kolei.
 
-**1. Sekrety i klucze API w kodzie**
-- Skan `src/`, `supabase/functions/`, plików konfiguracyjnych i publicznych pod kątem twardo zakodowanych sekretów (API keys, service role keys, hasła)
-- Weryfikacja, czy `SUPABASE_SERVICE_ROLE_KEY` nigdy nie trafia do frontendu
-- Sprawdzenie plików `.env`, `capacitor.config.ts`, `public/*` i `netlify.toml`
+## SQL do wklejenia w Supabase
+Aplikacja korzysta z Twojej bazy Supabase, więc po zatwierdzeniu planu wyślę Ci ten kod:
 
-**2. Edge Functions**
-- Weryfikacja JWT w każdej funkcji, która modyfikuje dane
-- Sprawdzenie, czy funkcje publiczne (`verify_jwt = false`) mają własną autoryzację (np. Stripe webhook signature, callback secrets)
-- Walidacja inputu (zod/ręczna) — szczególnie w `submit-form`, `upload-chat-image`, `proxy-n8n-audio`, `auth-register`, `auth-login`, `manage-app-settings`, `admin-manage-users`
-- Sprawdzenie CORS i wycieków szczegółów błędów
-- SSRF/URL-injection w proxy do n8n
+```sql
+create table public.pending_notes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  title text not null,
+  content text not null,
+  events jsonb not null default '[]'::jsonb,
+  status text not null default 'pending',
+  created_by uuid,
+  created_at timestamptz not null default now(),
+  resolved_at timestamptz
+);
+grant select, insert, update on public.pending_notes to authenticated;
+grant all on public.pending_notes to service_role;
+alter table public.pending_notes enable row level security;
+create policy "admin all" on public.pending_notes for all to authenticated
+  using (public.get_user_role(auth.uid()) = 'admin')
+  with check (public.get_user_role(auth.uid()) = 'admin');
+create policy "owner read" on public.pending_notes for select to authenticated
+  using (user_id = auth.uid());
+create policy "owner resolve" on public.pending_notes for update to authenticated
+  using (user_id = auth.uid() and status = 'pending')
+  with check (user_id = auth.uid() and status in ('accepted','rejected'));
+```
 
-**3. RLS i uprawnienia bazy danych**
-- Uruchomienie skanera bezpieczeństwa i Supabase lintera
-- Sprawdzenie polityk RLS wszystkich tabel (szczególnie: `user_accounts`, `messages`, `tests`, `user_profiles`, `custom_roles`, `app_settings`, `webhook_usage`, `registration_attempts`)
-- Kontrola GRANTów dla `anon` i `authenticated`
-- Weryfikacja, czy funkcje `SECURITY DEFINER` mają `search_path` i sprawdzają `auth.uid()`
-
-**4. Storage buckets**
-- Polityki dla `avatars` (publiczny), `note-images`, `chat-images`
-- Weryfikacja ścieżek plików (folder = user id)
-- Czas życia signed URLs
-
-**5. Autoryzacja po stronie klienta**
-- Sprawdzenie, czy role/uprawnienia nie są nigdy czytane wyłącznie z `localStorage`
-- Weryfikacja ścieżek admin (`AdminUsersTab`, `AdminAppLinksDialog`) — server-side check
-- Ochrona routingu (`use-access-guard`, `use-user-role`)
-
-**6. Rate limiting i anti-abuse**
-- Przegląd istniejących limitów (`registration_attempts`, `webhook_usage`)
-- Identyfikacja endpointów bez limitu, które mogłyby zostać nadużyte (login brute-force, upload zdjęć, proxy n8n audio, generowanie definicji/zdań)
-- Uwaga: platforma nie ma standardowego primitive'u rate limitingu — zaproponuję ad-hoc rozwiązania tam, gdzie ryzyko jest realne
-
-**7. XSS, SQL injection, otwarte przekierowania**
-- Wyszukanie `dangerouslySetInnerHTML`, `eval`, konstrukcji SQL z interpolacją stringów
-- Walidacja URL-i używanych do `window.location` / redirectów (Stripe, share links)
-- Sprawdzenie escapowania w chatach, notatkach, testach
-
-**8. Zależności npm**
-- `code--dependency_scan` — luki high/critical w bibliotekach
-
-### Deliverable
-
-Raport w formacie:
-- **Krytyczne** (natychmiastowa poprawka wymagana) — z konkretnymi plikami i liniami
-- **Wysokie** (poprawić w tej rundzie)
-- **Średnie / do rozważenia**
-- **Działania po Twojej stronie** — cokolwiek wymagającego ręcznej zmiany w View Backend (np. rotacja klucza, ustawienia Auth, polityki storage niedostępne przez migrację)
-
-Po Twojej akceptacji przejdę do trybu build i wprowadzę poprawki plik po pliku — jedna migracja SQL na wszystkie zmiany RLS/GRANT, jeden zestaw edycji edge functions, jeden zestaw poprawek frontendu. Findings z panelu bezpieczeństwa oznaczę odpowiednio (`mark_as_fixed` / `ignore` z uzasadnieniem) i zaktualizuję `@security-memory`.
-
-### Czego nie zrobię bez pytania
-
-- Nie będę wprowadzał zmian łamiących UX (np. wymuszania 2FA, wylogowania wszystkich sesji) — jeśli coś takiego wyjdzie z audytu, zapytam
-- Nie dodam rate limitingu bez potwierdzenia (zgodnie z polityką platformy trzeba świadomie zaakceptować tradeoff)
-- Nie ruszę auto-generowanych plików (`src/integrations/supabase/client.ts`, `types.ts`, `.env`)
+## Szczegóły techniczne
+- Parser (wspólny plik w `src/lib`): dzieli tekst na bloki `klucz:wartość`, zamienia `\n` na nowe linie; obsługuje też wklejony JSON w tym samym kształcie co odpowiedź webhooka. `eventTime: cd` → wydarzenie całodniowe (jak w nagrywaniu).
+- Panel admina: nowy komponent wpięty w `AdminUsersTab.tsx`, zapis bezpośrednio do `pending_notes` (RLS sprawdza rolę admina).
+- Użytkownik: komponent `PendingNoteDialog` montowany w `MocDashboard.tsx`; pobiera notatki `status='pending'`, przy przyjęciu wstawia rekord do `notebook_pages` (sort_order na końcu sekcji) i wydarzenia do `calendar_events`, następnie ustawia `status='accepted'`; odrzucenie ustawia `status='rejected'`. Po przyjęciu zakładka Notatki odświeża dane.
+- Nie zmieniam nagrywania ani webhooków.
