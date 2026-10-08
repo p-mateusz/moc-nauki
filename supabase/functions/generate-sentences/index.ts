@@ -61,7 +61,7 @@ serve(async (req) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 120000);
 
-    const username = await getUsernameForUser(adminSb, userId);
+    const username = await getUsernameForUser(adminSb, authedUserId);
 
     const response = await fetch(webhookUrl, {
       method: "POST",
