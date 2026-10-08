@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getUserIdFromRequest } from "../_shared/auth.ts";
 import { reserveWebhookCall, webhookLimitResponse } from "../_shared/webhookUsage.ts";
-import { createAdminClient, getAppSetting } from "../_shared/appSettings.ts";
+import { createAdminClient, getAppSetting, getUsernameForUser } from "../_shared/appSettings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,10 +40,11 @@ serve(async (req) => {
 
     let response;
     try {
+      const username = await getUsernameForUser(adminSb, userId);
       response = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "extract-events", pageTitle, content, noteDate, subject }),
+        body: JSON.stringify({ username, type: "extract-events", pageTitle, content, noteDate, subject }),
         signal: controller.signal as any,
       });
       clearTimeout(timeoutId);

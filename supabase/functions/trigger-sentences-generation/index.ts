@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getUserIdFromRequest } from "../_shared/auth.ts";
 import { reserveWebhookCall, webhookLimitResponse } from "../_shared/webhookUsage.ts";
-import { createAdminClient, getRequiredWebhookUrl, webhookErrorMessage } from "../_shared/appSettings.ts";
+import { createAdminClient, getRequiredWebhookUrl, webhookErrorMessage, getUsernameForUser } from "../_shared/appSettings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -100,11 +100,12 @@ serve(async (req) => {
     let response: Response;
     try {
       const sentencesWebhookUrl = await getRequiredWebhookUrl(adminSb, "webhook_languages_sentences", "Webhook zdań");
+      const username = await getUsernameForUser(adminSb, authedUserId);
       response = await fetch(sentencesWebhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify({
+        body: JSON.stringify({ username,
           words: formattedWords,
           language,
           definitionLanguage: definitionLanguageInfo,
