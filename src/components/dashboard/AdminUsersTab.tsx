@@ -3,6 +3,7 @@ import { invokeCloudFunction, supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRoles, type Role } from "@/hooks/use-roles";
 import AdminSendNoteView from "@/components/dashboard/AdminSendNoteView";
+import AdminAppLinksDialog from "@/components/dashboard/AdminAppLinksDialog";
 
 // Helper to call admin-manage-users edge function
 const adminUpdateUser = async (id: string, updates: Record<string, any>) => {
@@ -1354,6 +1355,7 @@ const SettingsView = () => {
   const [error, setError] = useState<string | null>(null);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const [savedRegistrationEnabled, setSavedRegistrationEnabled] = useState(true);
+  const [appLinksOpen, setAppLinksOpen] = useState(false);
 
   const userId = localStorage.getItem("userId");
     const callSettings = useCallback(async (body: any) => {
@@ -1551,6 +1553,17 @@ const SettingsView = () => {
           </>
         )}
       </div>
+      {/* App links, payments, free accounts, tab lock */}
+      <div className="admin-card" style={{ marginTop: 20 }}>
+        <div className="admin-section-title">🛠️ Aplikacja, płatności i dostęp</div>
+        <p style={{ fontSize: ".8rem", color: "#8899b4", lineHeight: 1.6, marginBottom: 16 }}>
+          Link do APK, linki do płatności, darmowe konta oraz blokada zakładek „Uczniowie” i „Nauczyciele”.
+        </p>
+        <button className="admin-btn admin-btn-grad admin-btn-sm" onClick={() => setAppLinksOpen(true)}>
+          Otwórz ustawienia
+        </button>
+      </div>
+      <AdminAppLinksDialog open={appLinksOpen} onClose={() => setAppLinksOpen(false)} />
     </>
   );
 };

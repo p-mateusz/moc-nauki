@@ -10,7 +10,6 @@ import { LoadingInline } from "@/components/ui/loading-state";
 import PreferencesDialog from "@/components/dashboard/PreferencesDialog";
 import CalendarConnectDialog from "@/components/dashboard/CalendarConnectDialog";
 import DownloadAppDialog from "@/components/dashboard/DownloadAppDialog";
-import AdminAppLinksDialog from "@/components/dashboard/AdminAppLinksDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -90,7 +89,6 @@ const SettingsTab = ({
   const [preferencesDialogOpen, setPreferencesDialogOpen] = useState(false);
   const [calendarDialogOpen, setCalendarDialogOpen] = useState(false);
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
-  const [adminLinksDialogOpen, setAdminLinksDialogOpen] = useState(false);
 
   const [newPassword, setNewPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -833,12 +831,7 @@ const SettingsTab = ({
               action: () => setDownloadDialogOpen(true),
             },
 
-            ...(userRole === "admin" ? [{
-              icon: "🛠️",
-              title: "Link do APK (admin)",
-              sub: "Ustaw publiczny URL pliku aplikacji Android",
-              action: () => setAdminLinksDialogOpen(true),
-            }] : []),
+
 
 
 
@@ -1168,9 +1161,6 @@ const SettingsTab = ({
       <PreferencesDialog open={preferencesDialogOpen} onClose={() => setPreferencesDialogOpen(false)} />
       <CalendarConnectDialog open={calendarDialogOpen} onClose={() => setCalendarDialogOpen(false)} />
       <DownloadAppDialog open={downloadDialogOpen} onClose={() => setDownloadDialogOpen(false)} />
-      {userRole === "admin" && (
-        <AdminAppLinksDialog open={adminLinksDialogOpen} onClose={() => setAdminLinksDialogOpen(false)} />
-      )}
 
     </div>
   );
