@@ -30,3 +30,11 @@ export function webhookErrorMessage(label: string, status: number, body: string)
   }
   return `${label} zwrócił błąd ${status}: ${body.slice(0, 300)}`;
 }
+export async function getUsernameForUser(adminSb: any, userId: string): Promise<string> {
+  try {
+    const { data } = await adminSb.from("user_accounts").select("username").eq("id", userId).maybeSingle();
+    return typeof data?.username === "string" ? data.username : "";
+  } catch {
+    return "";
+  }
+}

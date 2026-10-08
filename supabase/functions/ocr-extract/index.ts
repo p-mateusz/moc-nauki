@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getUserIdFromRequest } from "../_shared/auth.ts";
 import { reserveWebhookCall, webhookLimitResponse } from "../_shared/webhookUsage.ts";
-import { createAdminClient, getRequiredWebhookUrl, webhookErrorMessage } from "../_shared/appSettings.ts";
+import { createAdminClient, getRequiredWebhookUrl, webhookErrorMessage, getUsernameForUser } from "../_shared/appSettings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -84,6 +84,7 @@ serve(async (req) => {
     // Forward as multipart/form-data so n8n receives a true binary file plus language metadata
     const outgoing = new FormData();
     outgoing.append("file", blob, filename);
+    outgoing.append("username", await getUsernameForUser(adminSb, userId));
     if (language) outgoing.append("language", language);
     if (definitionLanguage) outgoing.append("definitionLanguage", definitionLanguage);
     if (definitionLanguageInfo) outgoing.append("definitionLanguageInfo", definitionLanguageInfo);
