@@ -23,9 +23,22 @@ export function normalizeEvent(e: any): ParsedEvent | null {
 
 const unescape = (s: string) => s.replace(/\\n/g, "\n").replace(/\\t/g, "\t").replace(/\\"/g, '"');
 
+/** Some browsers/clipboard tools paste text URL-encoded (spaces → %20, newlines → %0A). Undo that. */
+export function fixUrlEncodedPaste(s: string): string {
+  if (!/%(20|0A|0D|3C|3E)/i.test(s)) return s;
+  const encoded = (s.match(/%(20|0A|0D)/gi) || []).length;
+  const literal = (s.match(/[ \n]/g) || []).length;
+  if (encoded <= literal) return s;
+  try {
+    return decodeURIComponent(s.replace(/%(?![0-9A-Fa-f]{2})/g, "%25"));
+  } catch {
+    return s.replace(/%20/gi, " ").replace(/%0D%0A|%0A/gi, "\n").replace(/%0D/gi, "\n");
+  }
+}
+
 /** Parses n8n note output: either JSON or "key:value" lines (title, text/content, name, description, eventDate, eventTime). */
 export function parseN8nNote(input: string): ParsedNote {
-  const txt = input.trim();
+  const txt = fixUrlEncodedPaste(input).trim();
   try {
     const j = JSON.parse(txt);
     const o = Array.isArray(j) ? j[0] : j;
