@@ -1070,13 +1070,15 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     });
     const code = DOMPurify.sanitize(container.innerHTML).trim();
     if (!code) { toast.info("Nie ma nic do skopiowania."); return; }
+    const pageTitle = (titleRef.current?.value || activePage?.title || "").trim();
+    const payload = `Title: ${pageTitle}\n\nText: ${code}`;
     try {
       try {
-        await navigator.clipboard.writeText(code);
+        await navigator.clipboard.writeText(payload);
       } catch {
         const handler = (ev: ClipboardEvent) => {
           ev.preventDefault();
-          ev.clipboardData?.setData("text/plain", code);
+          ev.clipboardData?.setData("text/plain", payload);
         };
         document.addEventListener("copy", handler, { once: true });
         document.execCommand("copy");
