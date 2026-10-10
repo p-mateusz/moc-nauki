@@ -1050,6 +1050,77 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     }
   };
 
+  // Ctrl+Shift+C → copy selection (or whole note when nothing selected) as HTML
+  // with formatting baked into inline styles, so it looks the same when pasted elsewhere.
+  const copyWithFormatting = async () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const sel = window.getSelection();
+    const container = document.createElement("div");
+    let plain = "";
+    let usedSelection = false;
+    if (sel && sel.rangeCount > 0 && !sel.isCollapsed && editor.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+      container.appendChild(sel.getRangeAt(0).cloneContents());
+      plain = sel.toString();
+      usedSelection = true;
+    } else {
+      container.innerHTML = editor.innerHTML;
+      plain = editor.innerText;
+    }
+    if (!container.innerHTML.trim()) { toast.info("Nie ma nic do skopiowania."); return; }
+
+    // Render the clone off-screen with the editor's CSS so computed styles match what the user sees.
+    const host = document.createElement("div");
+    host.className = "editor-content rich-editor";
+    host.style.cssText = "position:fixed;left:-99999px;top:0;width:" + Math.max(editor.clientWidth, 300) + "px;visibility:hidden;pointer-events:none;";
+    host.appendChild(container);
+    (editor.parentElement || document.body).appendChild(host);
+    try {
+      const props = [
+        "font-family", "font-size", "font-weight", "font-style", "text-decoration-line",
+        "text-align", "line-height", "list-style-type", "margin-top", "margin-bottom",
+        "padding-left", "vertical-align", "white-space",
+      ];
+      container.querySelectorAll<HTMLElement>("*").forEach((el) => {
+        const cs = getComputedStyle(el);
+        const tag = el.tagName;
+        const inline = props.map((p) => `${p}:${cs.getPropertyValue(p)}`).join(";");
+        let extra = "";
+        if (tag === "TABLE") extra = ";border-collapse:collapse";
+        if (tag === "TD" || tag === "TH") extra = ";border:1px solid #999;padding:8px 12px";
+        if (tag === "PRE" || tag === "CODE") extra = ";font-family:monospace";
+        if (tag === "HR") extra = ";border:none;border-top:1px solid #999";
+        // Existing inline styles (colors, highlights) win over generated ones.
+        el.setAttribute("style", inline + extra + (el.getAttribute("style") ? ";" + el.getAttribute("style") : ""));
+        el.removeAttribute("contenteditable");
+        el.removeAttribute("data-note-path");
+      });
+      const html = `<div>${container.innerHTML}</div>`;
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([html], { type: "text/html" }),
+            "text/plain": new Blob([plain], { type: "text/plain" }),
+          }),
+        ]);
+      } catch {
+        // Fallback for browsers without async clipboard write
+        const handler = (ev: ClipboardEvent) => {
+          ev.preventDefault();
+          ev.clipboardData?.setData("text/html", html);
+          ev.clipboardData?.setData("text/plain", plain);
+        };
+        document.addEventListener("copy", handler, { once: true });
+        document.execCommand("copy");
+      }
+      toast.success(usedSelection ? "Skopiowano z formatowaniem" : "Skopiowano całą notatkę z formatowaniem");
+    } catch {
+      toast.error("Nie udało się skopiować z formatowaniem");
+    } finally {
+      host.remove();
+    }
+  };
+
   const handleEditorPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     const cd = e.clipboardData;
     if (!cd) return;
