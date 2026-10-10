@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { parseN8nNote, stripHtml } from "@/lib/pendingNotes";
+import { parseN8nNote, stripHtml, fixUrlEncodedPaste } from "@/lib/pendingNotes";
 
 type U = { id: string; name: string; username: string; email: string };
 type Sent = { id: string; user_id: string; title: string; status: string; created_at: string };
@@ -51,7 +51,7 @@ export default function AdminSendNoteView({ users }: { users: U[] }) {
       <div className="admin-card" style={{ display: "grid", gap: 12, padding: 16 }}>
         <textarea
           value={raw}
-          onChange={e => setRaw(e.target.value)}
+          onChange={e => setRaw(fixUrlEncodedPaste(e.target.value))}
           placeholder={"Wklej kod z n8n, np.\ntitle:Tytuł\ntext:<h1>…</h1>"}
           rows={8}
           style={{ width: "100%", fontFamily: "monospace", fontSize: 12, padding: 10, borderRadius: 8, background: "rgba(255,255,255,0.04)", color: "inherit", border: "1px solid rgba(255,255,255,0.12)" }}
