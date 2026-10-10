@@ -1631,6 +1631,11 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
               onCopy={(e) => handleEditorCopy(e, false)}
               onCut={(e) => handleEditorCopy(e, true)}
               onKeyDown={(e) => {
+                if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === "KeyC") {
+                  e.preventDefault();
+                  void copyWithFormatting();
+                  return;
+                }
                 const sel = window.getSelection();
                 if (!sel || sel.rangeCount === 0) return;
 
