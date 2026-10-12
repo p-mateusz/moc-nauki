@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, invokeCloudFunction } from "@/lib/supabase";
 import { toast } from "sonner";
 import { parseN8nNote, stripHtml, fixUrlEncodedPaste } from "@/lib/pendingNotes";
 
@@ -8,7 +8,15 @@ type Sent = { id: string; user_id: string; title: string; status: string; create
 
 const STATUS: Record<string, string> = { pending: "⏳ oczekuje", accepted: "✅ przyjęta", rejected: "❌ odrzucona" };
 
-export default function AdminSendNoteView({ users }: { users: U[] }) {
+export default function AdminSendNoteView({ users: usersProp }: { users?: U[] }) {
+  const [fetchedUsers, setFetchedUsers] = useState<U[]>([]);
+  useEffect(() => {
+    if (usersProp) return;
+    invokeCloudFunction<U[]>("admin-manage-users", { body: { action: "list_recipients" } })
+      .then(r => setFetchedUsers(Array.isArray(r) ? r.map(u => ({ ...u, name: u.name || "", username: u.username || "", email: u.email || "" })) : []))
+      .catch(e => { console.error(e); toast.error("Nie udało się pobrać listy użytkowników"); });
+  }, [usersProp]);
+  const users = usersProp ?? fetchedUsers;
   const [raw, setRaw] = useState("");
   const [search, setSearch] = useState("");
   const [userId, setUserId] = useState("");
