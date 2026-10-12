@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, invokeCloudFunction } from "@/lib/supabase";
 import {
   fetchTests, Test,
   BADGES, getEarnedFromTests, ptsFromTests, calcStreak, avInitials,
@@ -9,7 +9,7 @@ import { LoadingInline } from "@/components/ui/loading-state";
 
 interface Props { userName: string; guestMode?: boolean }
 
-type SortKey = "points" | "tests" | "likes" | "uses";
+type SortKey = "points" | "tests" | "notes" | "likes" | "uses";
 
 interface DBUser {
   id: string;
@@ -17,6 +17,7 @@ interface DBUser {
   avatar_color?: string;
   avatar_url?: string | null;
   activityDays: string[];
+  noteCount: number;
 }
 
 const RankingTab = ({ userName, guestMode }: Props) => {
@@ -30,7 +31,7 @@ const RankingTab = ({ userName, guestMode }: Props) => {
   useEffect(() => {
     const load = async () => {
       if (guestMode) {
-        const demoUsers: DBUser[] = [
+        const demoUsers: Omit<DBUser, "noteCount">[] = [
           { id: "demo1", name: "Anna Kowalska", avatar_color: "av-c1", avatar_url: null, activityDays: Array.from({ length: 60 }, (_, i) => `2024-04-${String(i % 30 + 1).padStart(2, "0")}`) },
           { id: "demo2", name: "Michał Wiśniewski", avatar_color: "av-c2", avatar_url: null, activityDays: Array.from({ length: 45 }, (_, i) => `2024-04-${String(i % 30 + 1).padStart(2, "0")}`) },
           { id: "demo3", name: "Katarzyna Nowak", avatar_color: "av-c3", avatar_url: null, activityDays: Array.from({ length: 50 }, (_, i) => `2024-04-${String(i % 30 + 1).padStart(2, "0")}`) },
@@ -156,20 +157,27 @@ const RankingTab = ({ userName, guestMode }: Props) => {
           },
         ];
 
-        setDbUsers(demoUsers);
+        setDbUsers(demoUsers.map((u, i) => ({ ...u, noteCount: 12 + ((i * 13) % 46) })));
         setAllTests(demoTests);
         setLoading(false);
         return;
       }
 
-      const [tests, usersRes, profilesRes, activityRes] = await Promise.all([
+      const [tests, usersRes, profilesRes, activityRes, notesRes] = await Promise.all([
         fetchTests(),
         supabase.from("users").select("id, name"),
         supabase.from("user_profiles").select("user_id, avatar_color, avatar_url"),
         supabase.from("activity_days").select("user_id, date"),
+        invokeCloudFunction<{ counts?: Record<string, number> }>("note-counts", { body: {} })
+          .catch((): { counts?: Record<string, number> } => ({})),
       ]);
 
       setAllTests(tests);
+
+      const rawCounts = (notesRes as { counts?: Record<string, number> } | undefined)?.counts || {};
+      const noteCounts = new Map<string, number>(
+        Object.keys(rawCounts).map((k) => [k, Number((rawCounts as any)[k]) || 0] as [string, number]),
+      );
 
       const users = (usersRes.data || []).map((u: any) => {
         const profile = (profilesRes.data || []).find((p: any) => p.user_id === u.id);
@@ -183,6 +191,7 @@ const RankingTab = ({ userName, guestMode }: Props) => {
           avatar_color: profile?.avatar_color || "av-c1",
           avatar_url: profile?.avatar_url || null,
           activityDays: days,
+          noteCount: noteCounts.get(String(u.id)) || 0,
         };
       });
 
@@ -199,7 +208,7 @@ const RankingTab = ({ userName, guestMode }: Props) => {
     const uses = mt.reduce((a, t) => a + (t.uses || 0), 0);
     const points = ptsFromTests(allTests, user.id, user.activityDays, 0);
 
-    return { mt, likes, uses, points };
+    return { mt, likes, uses, points, notes: user.noteCount || 0 };
   };
 
   const sorted = [...dbUsers].sort((a, b) => {
@@ -208,6 +217,7 @@ const RankingTab = ({ userName, guestMode }: Props) => {
 
     if (sort === "points") return mb.points - ma.points;
     if (sort === "tests") return mb.mt.length - ma.mt.length;
+    if (sort === "notes") return mb.notes - ma.notes;
     if (sort === "likes") return mb.likes - ma.likes;
 
     return mb.uses - ma.uses;
@@ -228,6 +238,7 @@ const RankingTab = ({ userName, guestMode }: Props) => {
   const vlbl: Record<SortKey, string> = {
     points: "pkt",
     tests: "testów",
+    notes: "notatek",
     likes: "polubień",
     uses: "rozwiązań",
   };
@@ -235,6 +246,7 @@ const RankingTab = ({ userName, guestMode }: Props) => {
   const sortBtns: { key: SortKey; label: string }[] = [
     { key: "points", label: "⭐ Punkty" },
     { key: "tests", label: "📝 Testy" },
+    { key: "notes", label: "📚 Notatki" },
     { key: "likes", label: "❤️ Polubienia" },
     { key: "uses", label: "▶️ Rozwiązania" },
   ];
@@ -291,6 +303,8 @@ const RankingTab = ({ userName, guestMode }: Props) => {
               ? m.points
               : sort === "tests"
               ? m.mt.length
+              : sort === "notes"
+              ? m.notes
               : sort === "likes"
               ? m.likes
               : m.uses;
@@ -342,7 +356,7 @@ const RankingTab = ({ userName, guestMode }: Props) => {
                 </div>
 
                 <div className="lb-sub">
-                  📝{m.mt.length} · ❤️{m.likes} · ▶️{m.uses} · {streak.cur}🔥
+                  📝{m.mt.length} · 📚{m.notes} · ❤️{m.likes} · ▶️{m.uses} · {streak.cur}🔥
                 </div>
               </div>
 

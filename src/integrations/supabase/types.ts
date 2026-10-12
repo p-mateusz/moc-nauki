@@ -1146,6 +1146,13 @@ export type Database = {
       get_user_role: { Args: { uid: string }; Returns: string }
       increment_test_uses: { Args: { p_test_id: string }; Returns: undefined }
       toggle_test_like: { Args: { p_test_id: string }; Returns: undefined }
+      user_note_counts: {
+        Args: never
+        Returns: {
+          note_count: number
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
