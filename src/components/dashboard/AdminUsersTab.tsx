@@ -445,7 +445,7 @@ const UserRow = ({ user, isMe, isAdminAccount, onEdit, onDelete, onResetPassword
   const [newPw, setNewPw] = useState("");
   const [cancelling, setCancelling] = useState(false);
 
-  const isTeacher = user.role === "nauczyciel";
+  const isTeacher = user.role === "nauczyciel" || user.role === "profesor";
   const isFeeExempt = user.fee_exempt || isTeacher;
 
   const getSubscriptionLabel = () => {

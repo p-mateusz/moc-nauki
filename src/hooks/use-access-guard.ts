@@ -74,7 +74,7 @@ export function useAccessGuard(): AccessState {
         setState({ loading: false, hasAccess: true, reason: "admin", account });
         return;
       }
-      if (role === "nauczyciel" || role === "teacher") {
+      if (role === "nauczyciel" || role === "teacher" || role === "profesor") {
         setState({ loading: false, hasAccess: true, reason: "teacher", account });
         return;
       }

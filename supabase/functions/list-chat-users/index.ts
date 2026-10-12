@@ -10,6 +10,7 @@ const corsHeaders = {
 const normalizeRole = (role?: string) => {
   const r = (role || "").toString().toLowerCase();
   if (r === "teacher" || r === "nauczyciel") return "nauczyciel";
+  if (r === "profesor") return "profesor";
   if (r === "student" || r === "uczeń" || r === "uczen") return "uczeń";
   if (r === "admin" || r === "administrator") return "admin";
   return r;
@@ -17,7 +18,7 @@ const normalizeRole = (role?: string) => {
 
 const isVisibleRole = (role: string, mode: string) => {
   const normalized = normalizeRole(role);
-  if (mode === "teacher") return normalized === "nauczyciel" || normalized === "admin";
+  if (mode === "teacher") return normalized === "nauczyciel" || normalized === "profesor" || normalized === "admin";
   return normalized === "uczeń" || normalized === "admin";
 };
 

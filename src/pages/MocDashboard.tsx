@@ -49,8 +49,8 @@ type ChatUserSummary = {
 
 const normalizeChatRole = (role?: string | null) => {
   const value = (role || "").toString().toLowerCase();
-  if (value === "teacher" || value === "nauczyciel") return "teacher";
-  if (value === "student" || value === "uczeń" || value === "uczen" || value === "profesor") return "student";
+  if (value === "teacher" || value === "nauczyciel" || value === "profesor") return "teacher";
+  if (value === "student" || value === "uczeń" || value === "uczen") return "student";
   if (value === "admin" || value === "administrator") return "teacher";
   return null;
 };
@@ -93,9 +93,9 @@ const MocDashboard = () => {
   const userId = storedUserId;
   const userName = localStorage.getItem("userName") || "Uczeń";
   const userUsername = localStorage.getItem("userUsername") || "";
-  const isTeacher = userRole === "teacher" || userRole === "nauczyciel";
-  const isAdmin = userRole === "admin";
   const isProfessor = userRole === "profesor";
+  const isTeacher = userRole === "teacher" || userRole === "nauczyciel" || isProfessor;
+  const isAdmin = userRole === "admin";
   const initials = userName.split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase();
   const { roles: availableRoles, getRoleLabel, getRoleColor } = useRoles();
 
@@ -290,10 +290,10 @@ const MocDashboard = () => {
             const newRole = (payload.new as any)?.role;
             if (newRole && newRole !== userRole) {
               localStorage.setItem("userRole", newRole);
-              const newIsTeacher = newRole === "teacher" || newRole === "nauczyciel";
+              const newIsTeacher = newRole === "teacher" || newRole === "nauczyciel" || newRole === "profesor";
               const newIsAdmin = newRole === "admin";
               const baseTabs = ["overview", "notes", "calendar", "languages", "tests", "friends", "tips", "ranking", "settings"];
-              const roleTabs = newIsAdmin ? ["teacher", "students", "admin_users"] : newIsTeacher ? ["students"] : newRole === "profesor" ? ["teacher", "professor"] : ["teacher"];
+              const roleTabs = newIsAdmin ? ["teacher", "students", "admin_users"] : newRole === "profesor" ? ["students", "professor"] : newIsTeacher ? ["students"] : ["teacher"];
               const allowedTabs = [...baseTabs, ...roleTabs] as Tab[];
               
               if (!allowedTabs.includes(activeTab)) {

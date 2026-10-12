@@ -525,7 +525,7 @@ const SubscriptionCard = () => {
   if (loading || !info) return null;
 
   const role = (info.role || "").toLowerCase();
-  const isStaff = role === "admin" || role === "nauczyciel" || role === "teacher";
+  const isStaff = role === "admin" || role === "nauczyciel" || role === "teacher" || role === "profesor";
   const expires = info.subscription_expires_at ? new Date(info.subscription_expires_at) : null;
   const expiresStr = expires ? expires.toLocaleDateString("pl-PL") : null;
 
@@ -533,7 +533,7 @@ const SubscriptionCard = () => {
   let body: string;
   let badge: { text: string; color: string };
   if (isStaff) {
-    body = "Masz pełny dostęp jako " + (role === "admin" ? "administrator" : "nauczyciel") + ".";
+    body = "Masz pełny dostęp jako " + (role === "admin" ? "administrator" : role === "profesor" ? "profesor" : "nauczyciel") + ".";
     badge = { text: "Pełny dostęp", color: "#34d399" };
   } else if (info.fee_exempt) {
     body = "Twoje konto jest zwolnione z opłat.";

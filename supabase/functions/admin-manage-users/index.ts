@@ -172,7 +172,7 @@ Deno.serve(async (req) => {
         username,
         role,
       };
-      if (role === "nauczyciel" || allFeeExempt) {
+      if (role === "nauczyciel" || role === "profesor" || allFeeExempt) {
         accountPayload.fee_exempt = true;
         accountPayload.subscription_status = "exempt";
       }
