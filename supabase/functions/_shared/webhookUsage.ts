@@ -18,7 +18,7 @@ const NO_ACCESS_MESSAGE = "Twoje konto nie posiada aktywnej subskrypcji wymagane
 function hasActiveAccess(account: any): boolean {
   if (!account) return false;
   const role = (account.role || "").toLowerCase();
-  if (role === "admin" || role === "nauczyciel" || role === "teacher") return true;
+  if (role === "admin" || role === "nauczyciel" || role === "teacher" || role === "profesor") return true;
   if (account.fee_exempt) return true;
   const now = Date.now();
   const expires = account.subscription_expires_at ? new Date(account.subscription_expires_at).getTime() : null;

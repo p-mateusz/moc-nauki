@@ -50,5 +50,5 @@ export function useUserRole() {
     };
   }, []);
 
-  return { role, loading, isAdmin: role === "admin", isTeacher: role === "nauczyciel" };
+  return { role, loading, isAdmin: role === "admin", isTeacher: role === "nauczyciel" || role === "profesor" };
 }

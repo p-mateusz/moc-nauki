@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
           .from("user_accounts")
           .update({ fee_exempt: false, subscription_status: "inactive" })
           .eq("fee_exempt", true)
-          .not("role", "in", '("admin","nauczyciel")');
+          .not("role", "in", '("admin","nauczyciel","profesor")');
         if (revokeError) throw revokeError;
       }
 
