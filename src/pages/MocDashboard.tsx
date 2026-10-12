@@ -20,6 +20,7 @@ import TeacherStudentsTab from "@/components/dashboard/TeacherStudentsTab";
 import TestsTab from "@/components/dashboard/TestsTab";
 import RankingTab from "@/components/dashboard/RankingTab";
 import AdminUsersTab from "@/components/dashboard/AdminUsersTab";
+import AdminSendNoteView from "@/components/dashboard/AdminSendNoteView";
 import TipsTab from "@/components/dashboard/TipsTab";
 import PendingNoteDialog from "@/components/dashboard/PendingNoteDialog";
 import { LoadingScreen } from "@/components/ui/loading-state";
@@ -36,6 +37,7 @@ type Tab =
   | "tips"
   | "ranking"
   | "admin_users"
+  | "professor"
   | "settings";
 
 type ChatUserSummary = {
@@ -48,7 +50,7 @@ type ChatUserSummary = {
 const normalizeChatRole = (role?: string | null) => {
   const value = (role || "").toString().toLowerCase();
   if (value === "teacher" || value === "nauczyciel") return "teacher";
-  if (value === "student" || value === "uczeń" || value === "uczen") return "student";
+  if (value === "student" || value === "uczeń" || value === "uczen" || value === "profesor") return "student";
   if (value === "admin" || value === "administrator") return "teacher";
   return null;
 };
@@ -93,6 +95,7 @@ const MocDashboard = () => {
   const userUsername = localStorage.getItem("userUsername") || "";
   const isTeacher = userRole === "teacher" || userRole === "nauczyciel";
   const isAdmin = userRole === "admin";
+  const isProfessor = userRole === "profesor";
   const initials = userName.split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase();
   const { roles: availableRoles, getRoleLabel, getRoleColor } = useRoles();
 
@@ -290,7 +293,7 @@ const MocDashboard = () => {
               const newIsTeacher = newRole === "teacher" || newRole === "nauczyciel";
               const newIsAdmin = newRole === "admin";
               const baseTabs = ["overview", "notes", "calendar", "languages", "tests", "friends", "tips", "ranking", "settings"];
-              const roleTabs = newIsAdmin ? ["teacher", "students", "admin_users"] : newIsTeacher ? ["students"] : ["teacher"];
+              const roleTabs = newIsAdmin ? ["teacher", "students", "admin_users"] : newIsTeacher ? ["students"] : newRole === "profesor" ? ["teacher", "professor"] : ["teacher"];
               const allowedTabs = [...baseTabs, ...roleTabs] as Tab[];
               
               if (!allowedTabs.includes(activeTab)) {
@@ -458,6 +461,7 @@ const MocDashboard = () => {
     tips: { label: "Porady", icon: "💡" },
     ranking: { label: "Ranking", icon: "🏆" },
     admin_users: { label: "Użytkownicy", icon: "👑" },
+    professor: { label: "Profesura", icon: "🎓" },
     settings: { label: "Ustawienia", icon: "⚙️" },
   };
 
@@ -467,6 +471,7 @@ const MocDashboard = () => {
     "tips",
     "ranking",
     ...(isAdmin ? ["admin_users" as Tab] : []),
+    ...(isProfessor ? ["professor" as Tab] : []),
   ];
 
   const sidebarItems: { section?: string; tabs: Tab[] }[] = [
@@ -475,7 +480,7 @@ const MocDashboard = () => {
     { section: "Konto", tabs: ["settings"] },
   ];
 
-  const isFullWidth = activeTab === "notes" || activeTab === "calendar" || activeTab === "tests" || activeTab === "ranking" || activeTab === "admin_users" || activeTab === "tips";
+  const isFullWidth = activeTab === "notes" || activeTab === "calendar" || activeTab === "tests" || activeTab === "ranking" || activeTab === "admin_users" || activeTab === "professor" || activeTab === "tips";
 
   return (
     <div className="moc-dashboard">
@@ -681,6 +686,7 @@ const MocDashboard = () => {
               )
             )}
             {activeTab === "admin_users" && isAdmin && <AdminUsersTab />}
+            {activeTab === "professor" && isProfessor && <AdminSendNoteView />}
             {activeTab === "admin_users" && !isAdmin && (
               <div style={{ color: "#ef4444", padding: 40, textAlign: "center" }}>
                 ❌ Brak dostępu - wymagane uprawnienia administratora

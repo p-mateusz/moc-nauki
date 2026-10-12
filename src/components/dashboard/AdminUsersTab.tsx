@@ -781,11 +781,11 @@ const RolesView = ({ users, onRefresh, customRoles, allRoleNames }: {
   }));
 
   // Add built-in roles that might be missing from custom_roles
-  const builtInRoles = ["admin", "uczeń", "nauczyciel"];
+  const builtInRoles = ["admin", "uczeń", "nauczyciel", "profesor"];
   for (const builtIn of builtInRoles) {
     if (!allRoles.find(r => r.name === builtIn)) {
-      const defaultColors: Record<string, string> = { admin: "#f87171", uczeń: "#60a5fa", nauczyciel: "#fbbf24" };
-      const defaultLabels: Record<string, string> = { admin: "Admin", uczeń: "Uczeń", nauczyciel: "Nauczyciel" };
+      const defaultColors: Record<string, string> = { admin: "#f87171", uczeń: "#60a5fa", nauczyciel: "#fbbf24", profesor: "#a78bfa" };
+      const defaultLabels: Record<string, string> = { admin: "Admin", uczeń: "Uczeń", nauczyciel: "Nauczyciel", profesor: "Profesor" };
       allRoles.unshift({
         name: builtIn,
         count: users.filter(u => u.role === builtIn).length,
@@ -893,7 +893,7 @@ const RolesView = ({ users, onRefresh, customRoles, allRoleNames }: {
     if (!editedRoleLabel.trim()) { toast.error("Podaj nazwę roli"); return; }
     if (!editedRoleColor.trim()) { toast.error("Podaj kolor roli"); return; }
 
-    const isBuiltIn = ["admin", "uczeń", "nauczyciel"].includes(roleName);
+    const isBuiltIn = ["admin", "uczeń", "nauczyciel", "profesor"].includes(roleName);
     
     try {
       const { error: insertError } = await supabase.from("custom_roles").upsert({ 
