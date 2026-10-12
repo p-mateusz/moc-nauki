@@ -14,6 +14,7 @@ const BUILT_IN_ROLE_DEFAULTS: Record<string, { label: string; color: string; is_
   admin: { label: "Admin", color: "#f87171", is_builtin: true },
   uczeń: { label: "Uczeń", color: "#60a5fa", is_builtin: true },
   nauczyciel: { label: "Nauczyciel", color: "#fbbf24", is_builtin: true },
+  profesor: { label: "Profesor", color: "#a78bfa", is_builtin: true },
 };
 
 const mergeWithBuiltInRoles = (serverRoles: Role[]): Role[] => {
@@ -65,7 +66,7 @@ export const useRoles = () => {
       const processedData = (data || []).map(role => ({
         ...role,
         label: BUILT_IN_ROLE_DEFAULTS[role.name]?.label || role.name,
-        is_builtin: ["uczeń", "admin", "nauczyciel"].includes(role.name),
+        is_builtin: ["uczeń", "admin", "nauczyciel", "profesor"].includes(role.name),
       })) as Role[];
       const filtered = processedData.filter(r => r.name !== 'teacher');
       setRoles(mergeWithBuiltInRoles(filtered));

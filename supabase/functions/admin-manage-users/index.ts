@@ -30,6 +30,18 @@ Deno.serve(async (req) => {
       .eq("id", callerId)
       .single();
 
+    const peekBody = await req.clone().json().catch(() => ({}));
+    if (peekBody?.action === "list_recipients" && caller && (caller.role === "admin" || caller.role === "profesor")) {
+      const { data, error } = await supabase
+        .from("user_accounts")
+        .select("id, name, username, email")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return new Response(JSON.stringify(data || []), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (!caller || caller.role !== "admin") {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
