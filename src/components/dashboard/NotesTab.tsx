@@ -1352,6 +1352,11 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   const handleDrop = async (e: React.DragEvent, targetNbId: string) => {
     e.preventDefault();
     setDragOverNbId(null);
+    if (dragPageId) {
+      await movePageToNotebook(dragPageId, targetNbId);
+      setDragPageId(null);
+      return;
+    }
     if (dragSecId) {
       await moveSectionToNotebookId(dragSecId, targetNbId);
       setDragSecId(null);
