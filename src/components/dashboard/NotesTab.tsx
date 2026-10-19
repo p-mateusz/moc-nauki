@@ -1281,6 +1281,34 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     toast.success(`Strona przeniesiona do „${targetSec.name}"`);
   };
 
+  // === Move page to another notebook (lands in its first section) ===
+  const movePageToNotebook = async (pageId: string, targetNbId: string) => {
+    if (!activeNb || activeNb.id === targetNbId) return;
+    let srcSec: Section | undefined;
+    let page: Page | undefined;
+    for (const sec of activeNb.sections) {
+      const p = sec.pages.find(x => x.id === pageId);
+      if (p) { srcSec = sec; page = p; break; }
+    }
+    const targetNb = notebooks.find(n => n.id === targetNbId);
+    if (!srcSec || !page || !targetNb) return;
+    const targetSec = targetNb.sections[0];
+    if (!targetSec) { toast.error(`Notes „${targetNb.name}" nie ma żadnej sekcji`); return; }
+    const newSortOrder = targetSec.pages.reduce((m, p) => Math.max(m, p.sort_order), -1) + 1;
+    const { error } = await supabase
+      .from("notebook_pages")
+      .update({ section_id: targetSec.id, sort_order: newSortOrder })
+      .eq("id", pageId);
+    if (error) { toast.error("Nie udało się przenieść strony"); return; }
+    srcSec.pages = srcSec.pages.filter(p => p.id !== pageId);
+    page.section_id = targetSec.id;
+    page.sort_order = newSortOrder;
+    targetSec.pages.push(page);
+    if (activePageId === pageId) setActivePageId(null);
+    setNotebooks([...notebooks]);
+    toast.success(`Strona przeniesiona do „${targetNb.name}"`);
+  };
+
   // === Move section to another notebook ===
   const moveSectionToNotebookId = async (secId: string, targetNbId: string) => {
     if (!activeNb || activeNb.id === targetNbId) return;
@@ -1310,8 +1338,8 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   };
 
   const handleDragOver = (e: React.DragEvent, nbId: string) => {
-    // Accept notebook reorder OR section-drop (move section into this notebook)
-    if (!dragNbId && !dragSecId) return;
+    // Accept notebook reorder OR section-drop OR page-drop (move into this notebook)
+    if (!dragNbId && !dragSecId && !dragPageId) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (dragNbId !== nbId) setDragOverNbId(nbId);
@@ -1324,6 +1352,11 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
   const handleDrop = async (e: React.DragEvent, targetNbId: string) => {
     e.preventDefault();
     setDragOverNbId(null);
+    if (dragPageId) {
+      await movePageToNotebook(dragPageId, targetNbId);
+      setDragPageId(null);
+      return;
+    }
     if (dragSecId) {
       await moveSectionToNotebookId(dragSecId, targetNbId);
       setDragSecId(null);
