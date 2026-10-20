@@ -103,6 +103,9 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     return (tmp.textContent || tmp.innerText || "").toLowerCase();
   };
 
+  // Literal "\n" left by webhooks/pastes should render as line breaks, not visible text.
+  const fixLiteralBreaks = (html: string) => (html || "").replace(/\\n/g, "<br>");
+
   useEffect(() => {
     const detect = () => {
       const editor = editorRef.current;
@@ -484,7 +487,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
     if (viewMode !== "page" || !activePage) return;
     if (titleRef.current) titleRef.current.value = activePage.title;
     if (editorRef.current) {
-      editorRef.current.innerHTML = DOMPurify.sanitize(activePage.content || "", { ADD_ATTR: ["data-note-path"] });
+      editorRef.current.innerHTML = DOMPurify.sanitize(fixLiteralBreaks(activePage.content || ""), { ADD_ATTR: ["data-note-path"] });
       void resolveNoteImageSrcs(editorRef.current);
     }
   }, [viewMode, activePage?.id]);
@@ -2057,7 +2060,7 @@ const NotesTab = ({ onEventsExtracted, userId, guestMode, initialPageId, onIniti
                   <div className="pages-col-item-preview">
                     {(() => {
                       const tmp = document.createElement("div");
-                      tmp.innerHTML = p.content;
+                      tmp.innerHTML = fixLiteralBreaks(p.content);
                       const txt = (tmp.textContent || "").trim();
                       if (!txt) return "Pusta strona";
                       const firstLine = txt.split(/\r?\n/)[0].trim();
