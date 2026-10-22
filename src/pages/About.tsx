@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { invokeCloudFunction } from "@/lib/supabase";
 import TermsModal, { DocumentType } from "@/components/TermsModal";
 import { Seo } from "@/components/Seo";
+import konstantyAvatar from "@/assets/konstanty.jpg.asset.json";
 import "./LandingPage.css";
 
 const About = () => {
@@ -157,6 +158,7 @@ const About = () => {
       name: "Konstanty",
       role: "Laureat Olimpiady Przedsiębiorczości",
       color: "linear-gradient(135deg,#f59e0b,#ef4444)",
+      avatar: konstantyAvatar.url,
     },
   ];
 
