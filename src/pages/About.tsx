@@ -157,6 +157,7 @@ const About = () => {
       name: "Konstanty",
       role: "Laureat Olimpiady Przedsiębiorczości",
       color: "linear-gradient(135deg,#f59e0b,#ef4444)",
+      avatar: "/avatars/konstanty.jpg",
     },
   ];
 
