@@ -141,6 +141,13 @@ const About = () => {
       avatar: "/avatars/mateusz.jpg",
     },
     {
+      initials: "K",
+      name: "Konstanty",
+      role: "Laureat Olimpiady Przedsiębiorczości",
+      color: "linear-gradient(135deg,#f59e0b,#ef4444)",
+      avatar: "/avatars/konstanty.jpg",
+    },
+    {
       initials: "F",
       name: "Filip",
       role: "Nauczyciel angielskiego",
@@ -151,13 +158,6 @@ const About = () => {
       name: "Julia",
       role: "Finalistka Olimpiady Języka Hiszpańskiego",
       color: "linear-gradient(135deg,#34d399,#059669)",
-    },
-    {
-      initials: "K",
-      name: "Konstanty",
-      role: "Laureat Olimpiady Przedsiębiorczości",
-      color: "linear-gradient(135deg,#f59e0b,#ef4444)",
-      avatar: "/avatars/konstanty.jpg",
     },
   ];
 
